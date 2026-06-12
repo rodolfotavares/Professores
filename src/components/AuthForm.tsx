@@ -23,6 +23,7 @@ export function LoginForm() {
     setLoading(true);
     setError('');
 
+    await supabaseBrowser.auth.signOut();
     const { error: loginError } = await supabaseBrowser.auth.signInWithPassword({ email, password });
     if (loginError) {
       setError('E-mail ou senha incorretos.');

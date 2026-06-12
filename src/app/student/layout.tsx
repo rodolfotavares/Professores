@@ -1,13 +1,16 @@
 import { StudentNav } from '@/components/AppNav';
+import { RoleGate } from '@/components/RoleGate';
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   return (
-    <main className="page">
-      <div className="shell">
-        <h1>Aluno</h1>
-        <StudentNav />
-        {children}
-      </div>
-    </main>
+    <RoleGate expected="student">
+      <main className="page">
+        <div className="shell">
+          <h1>Aluno</h1>
+          <StudentNav />
+          {children}
+        </div>
+      </main>
+    </RoleGate>
   );
 }
