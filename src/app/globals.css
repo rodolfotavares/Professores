@@ -1,13 +1,16 @@
 :root {
-  --bg: #f8fafc;
+  --bg: #f4f7fb;
   --panel: #ffffff;
-  --text: #0f172a;
-  --muted: #64748b;
-  --line: #e2e8f0;
-  --teacher: #2563eb;
-  --student: #7c3aed;
-  --danger: #dc2626;
-  --ok: #16a34a;
+  --panel-soft: #f8fbff;
+  --text: #122033;
+  --muted: #68758a;
+  --line: #dce5ef;
+  --teacher: #1f6feb;
+  --teacher-strong: #174ea6;
+  --student: #0f9f8f;
+  --danger: #c62828;
+  --ok: #16803a;
+  --shadow: 0 14px 32px rgba(18, 32, 51, 0.08);
 }
 
 * {
@@ -33,14 +36,19 @@ select {
   font: inherit;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
 .page {
   min-height: 100vh;
 }
 
 .shell {
-  max-width: 1120px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 26px;
 }
 
 .auth-shell {
@@ -50,11 +58,37 @@ select {
   padding: 24px;
 }
 
-.card {
+.auth-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(31, 111, 235, 0.12), rgba(15, 159, 143, 0.10));
+  pointer-events: none;
+}
+
+.card,
+.metric,
+.empty,
+.notice,
+.topbar,
+.panel-note {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.card {
   padding: 18px;
+}
+
+.metric {
+  padding: 20px;
+}
+
+.metric h2 {
+  margin: 4px 0 0;
+  font-size: 34px;
 }
 
 .grid {
@@ -63,7 +97,7 @@ select {
 }
 
 .grid-2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr);
 }
 
 .grid-3 {
@@ -77,20 +111,59 @@ select {
   flex-wrap: wrap;
 }
 
-.between {
+.grow {
+  flex: 1;
+  min-width: 220px;
+}
+
+.between,
+.list-item {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 16px;
 }
 
 .stack {
   display: grid;
-  gap: 12px;
+  gap: 14px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+}
+
+.eyebrow {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.code-pill,
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #e9f2ff;
+  color: var(--teacher-strong);
+  white-space: nowrap;
 }
 
 .nav {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  margin: 18px 0;
+  margin: 16px 0 22px;
 }
 
 .nav a,
@@ -100,12 +173,23 @@ select {
   border-radius: 8px;
   padding: 10px 12px;
   cursor: pointer;
+  min-height: 42px;
+}
+
+.nav a:hover,
+.btn:hover {
+  border-color: #b7c6d8;
+  background: var(--panel-soft);
 }
 
 .btn.primary {
   background: var(--teacher);
   border-color: var(--teacher);
   color: white;
+}
+
+.btn.primary:hover {
+  background: var(--teacher-strong);
 }
 
 .btn.student {
@@ -124,8 +208,18 @@ select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 11px 12px;
   background: white;
+}
+
+.input:focus {
+  border-color: var(--teacher);
+  outline: 3px solid rgba(31, 111, 235, 0.12);
+}
+
+.textarea {
+  min-height: 110px;
+  resize: vertical;
 }
 
 .label {
@@ -133,18 +227,11 @@ select {
   gap: 6px;
   color: var(--muted);
   font-size: 13px;
+  font-weight: 700;
 }
 
 .muted {
   color: var(--muted);
-}
-
-.badge {
-  display: inline-flex;
-  border-radius: 999px;
-  padding: 4px 8px;
-  font-size: 12px;
-  background: #eef2ff;
 }
 
 .error {
@@ -155,7 +242,58 @@ select {
   color: var(--ok);
 }
 
-@media (max-width: 760px) {
+.notice,
+.empty,
+.panel-note {
+  padding: 14px;
+  color: var(--muted);
+}
+
+.notice.error {
+  border-color: #f0b8b8;
+  background: #fff5f5;
+  color: var(--danger);
+}
+
+.empty {
+  display: grid;
+  gap: 4px;
+  background: var(--panel-soft);
+}
+
+.empty p,
+.panel-note p,
+.card p {
+  margin: 6px 0 0;
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.segmented button {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 8px;
+  padding: 9px 4px;
+  cursor: pointer;
+}
+
+.segmented button.selected {
+  border-color: var(--teacher);
+  background: #e9f2ff;
+  color: var(--teacher-strong);
+  font-weight: 700;
+}
+
+h1,
+h2 {
+  margin: 0;
+}
+
+@media (max-width: 820px) {
   .grid-2,
   .grid-3 {
     grid-template-columns: 1fr;
@@ -163,5 +301,15 @@ select {
 
   .shell {
     padding: 16px;
+  }
+
+  .topbar,
+  .list-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .segmented {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }

@@ -72,6 +72,13 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
     setSuccess('');
 
     try {
+      let currentRole: string | null = null;
+      if (mode === 'student') {
+        currentRole = await apiFetch<{ profile: { role: string } }>('/api/me')
+          .then((res) => res.profile.role)
+          .catch(() => null);
+      }
+
       const path = mode === 'teacher' ? '/api/auth/register-teacher' : '/api/auth/register-student';
       const result = await fetch(path, {
         method: 'POST',
@@ -85,6 +92,11 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
         setSuccess(`Professor criado. Codigo de acesso: ${payload.access_code}`);
       } else {
         setSuccess('Aluno criado e vinculado ao professor.');
+      }
+
+      if (mode === 'student' && currentRole === 'teacher') {
+        router.push('/teacher/students');
+        return;
       }
 
       await supabaseBrowser.auth.signInWithPassword({ email: form.email, password: form.password });
