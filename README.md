@@ -1,6 +1,6 @@
-# EduAssist Pro - Supabase
+# Professores - EduAssist Pro
 
-Aplicativo proprio do EduAssist Pro, feito fora do Base44 com Next.js e Supabase.
+App para professores e alunos, feito fora do Base44 com Next.js e Supabase.
 
 ## O que este app faz
 
