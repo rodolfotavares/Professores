@@ -4,7 +4,7 @@ import { RoleGate } from '@/components/RoleGate';
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
   return (
     <RoleGate expected="teacher">
-      <main className="page">
+      <main className="page teacher-portal">
         <div className="shell">
           <h1>Professor</h1>
           <TeacherNav />

@@ -24,13 +24,13 @@ export function TeacherNav() {
         </div>
         {profile?.access_code && <span className="code-pill">Codigo: {profile.access_code}</span>}
       </div>
-      <nav className="nav">
+      <nav className="nav teacher-nav">
         <Link href="/teacher">Painel</Link>
         <Link href="/teacher/students">Alunos</Link>
         <Link href="/teacher/schedule">Agenda</Link>
         <Link href="/teacher/activities">Atividades</Link>
         <Link href="/teacher/messages">Recados</Link>
-        <LogoutButton />
+        <LogoutButton tone="teacher" />
       </nav>
     </>
   );
@@ -45,18 +45,18 @@ export function StudentNav() {
           <strong>EduAssist Pro</strong>
         </div>
       </div>
-      <nav className="nav">
+      <nav className="nav student-nav">
         <Link href="/student">Inicio</Link>
         <Link href="/student/schedule">Agenda</Link>
         <Link href="/student/activities">Atividades</Link>
         <Link href="/student/messages">Recados</Link>
-        <LogoutButton />
+        <LogoutButton tone="student" />
       </nav>
     </>
   );
 }
 
-function LogoutButton() {
+function LogoutButton({ tone }: { tone: 'teacher' | 'student' }) {
   const router = useRouter();
 
   async function logout() {
@@ -64,5 +64,5 @@ function LogoutButton() {
     router.push('/login');
   }
 
-  return <button className="btn" onClick={logout}>Sair</button>;
+  return <button className={`btn logout ${tone}`} onClick={logout}>Sair</button>;
 }
