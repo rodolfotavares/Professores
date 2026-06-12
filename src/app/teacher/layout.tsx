@@ -5,9 +5,8 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   return (
     <RoleGate expected="teacher">
       <main className="page teacher-portal">
+        <TeacherNav />
         <div className="shell">
-          <h1>Professor</h1>
-          <TeacherNav />
           {children}
         </div>
       </main>

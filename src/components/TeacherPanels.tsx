@@ -79,6 +79,8 @@ function Stat({ title, value }: { title: string; value: number }) {
 export function StudentsPanel() {
   const [students, setStudents] = useState<Student[]>([]);
   const [form, setForm] = useState({ full_name: '', email: '', whatsapp: '', subject: '', days_of_week: '1,3', class_time: '14:00' });
+  const [editingId, setEditingId] = useState('');
+  const [regenerateSchedule, setRegenerateSchedule] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -108,14 +110,47 @@ export function StudentsPanel() {
     setSaving(true);
     setError('');
     try {
-      await apiFetch('/api/teacher/students', { method: 'POST', body: JSON.stringify({ ...form, duration_minutes: 60 }) });
+      if (editingId) {
+        await apiFetch(`/api/teacher/students/${editingId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ ...form, duration_minutes: 60, regenerate_schedule: regenerateSchedule }),
+        });
+      } else {
+        await apiFetch('/api/teacher/students', { method: 'POST', body: JSON.stringify({ ...form, duration_minutes: 60 }) });
+      }
       setForm({ full_name: '', email: '', whatsapp: '', subject: '', days_of_week: '1,3', class_time: '14:00' });
+      setEditingId('');
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao salvar aluno.');
     } finally {
       setSaving(false);
     }
+  }
+
+  function editStudent(student: Student) {
+    setEditingId(student.id);
+    setForm({
+      full_name: student.full_name,
+      email: student.email,
+      whatsapp: student.whatsapp || '',
+      subject: student.subject || '',
+      days_of_week: student.days_of_week?.join(',') || '',
+      class_time: student.class_time || '14:00',
+    });
+    setRegenerateSchedule(true);
+  }
+
+  async function deleteStudent(student: Student) {
+    const ok = window.confirm(`Excluir ${student.full_name}? Isso remove agenda, atividades, entregas e recados vinculados.`);
+    if (!ok) return;
+    await apiFetch(`/api/teacher/students/${student.id}`, { method: 'DELETE' });
+    await load();
+  }
+
+  function cancelEdit() {
+    setEditingId('');
+    setForm({ full_name: '', email: '', whatsapp: '', subject: '', days_of_week: '1,3', class_time: '14:00' });
   }
 
   const selectedDays = useMemo(() => form.days_of_week.split(',').filter(Boolean), [form.days_of_week]);
@@ -125,7 +160,7 @@ export function StudentsPanel() {
       <form className="card stack" onSubmit={submit}>
         <div>
           <span className="eyebrow">Cadastro vinculado</span>
-          <h2>Novo aluno</h2>
+          <h2>{editingId ? 'Editar aluno' : 'Novo aluno'}</h2>
         </div>
         <StatusMessage error={error} loading={false} />
         <Input label="Nome" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
@@ -141,7 +176,16 @@ export function StudentsPanel() {
           ))}
         </div>
         <Input label="Horario" type="time" value={form.class_time} onChange={(v) => setForm({ ...form, class_time: v })} />
-        <button className="btn primary" disabled={saving}>{saving ? 'Salvando...' : 'Salvar e gerar agenda'}</button>
+        {editingId && (
+          <label className="check-row">
+            <input type="checkbox" checked={regenerateSchedule} onChange={(event) => setRegenerateSchedule(event.target.checked)} />
+            Recriar aulas futuras com estes dias e horario
+          </label>
+        )}
+        <div className="row">
+          <button className="btn primary" disabled={saving}>{saving ? 'Salvando...' : editingId ? 'Salvar alteracoes' : 'Salvar e gerar agenda'}</button>
+          {editingId && <button type="button" className="btn" onClick={cancelEdit}>Cancelar edicao</button>}
+        </div>
       </form>
       <div className="stack">
         <StatusMessage error="" loading={loading} />
@@ -153,7 +197,11 @@ export function StudentsPanel() {
               <p className="muted">{student.email} - {student.subject || 'Sem materia'}</p>
               <small>{student.class_time ? `Aulas as ${student.class_time}` : 'Horario nao definido'}</small>
             </div>
-            <span className="badge">{student.status}</span>
+            <div className="row">
+              <span className="badge">{student.status}</span>
+              <button className="btn small" onClick={() => editStudent(student)}>Editar</button>
+              <button className="btn small danger" onClick={() => deleteStudent(student)}>Excluir</button>
+            </div>
           </div>
         ))}
       </div>
@@ -165,6 +213,7 @@ export function TeacherSchedulePanel() {
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<ClassSchedule[]>([]);
   const [form, setForm] = useState({ student_id: '', class_date: new Date().toISOString().slice(0, 10), class_time: '14:00' });
+  const [editingClassId, setEditingClassId] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -190,7 +239,12 @@ export function TeacherSchedulePanel() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!form.student_id) return;
-    await apiFetch('/api/teacher/schedule', { method: 'POST', body: JSON.stringify({ ...form, duration_minutes: 60 }) });
+    if (editingClassId) {
+      await apiFetch(`/api/teacher/schedule/${editingClassId}`, { method: 'PATCH', body: JSON.stringify({ class_date: form.class_date, class_time: form.class_time, duration_minutes: 60 }) });
+      setEditingClassId('');
+    } else {
+      await apiFetch('/api/teacher/schedule', { method: 'POST', body: JSON.stringify({ ...form, duration_minutes: 60 }) });
+    }
     await load();
   }
 
@@ -199,15 +253,30 @@ export function TeacherSchedulePanel() {
     await load();
   }
 
+  function editClass(item: ClassSchedule) {
+    setEditingClassId(item.id);
+    setForm({ student_id: item.student_id, class_date: item.class_date, class_time: item.class_time.slice(0, 5) });
+  }
+
+  async function deleteClass(id: string) {
+    const ok = window.confirm('Excluir esta aula da agenda?');
+    if (!ok) return;
+    await apiFetch(`/api/teacher/schedule/${id}`, { method: 'DELETE' });
+    await load();
+  }
+
   return (
     <div className="grid grid-2">
       <form className="card stack" onSubmit={submit}>
-        <h2>Agendar aula</h2>
+        <h2>{editingClassId ? 'Editar aula' : 'Agendar aula'}</h2>
         <StatusMessage error={error} loading={false} />
         <label className="label">Aluno<select className="input" value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })}>{students.map((s) => <option value={s.id} key={s.id}>{s.full_name}</option>)}</select></label>
         <Input label="Data" type="date" value={form.class_date} onChange={(v) => setForm({ ...form, class_date: v })} />
         <Input label="Horario" type="time" value={form.class_time} onChange={(v) => setForm({ ...form, class_time: v })} />
-        <button className="btn primary" disabled={!students.length}>Agendar</button>
+        <div className="row">
+          <button className="btn primary" disabled={!students.length}>{editingClassId ? 'Salvar aula' : 'Agendar'}</button>
+          {editingClassId && <button type="button" className="btn" onClick={() => setEditingClassId('')}>Cancelar</button>}
+        </div>
       </form>
       <div className="stack">
         <StatusMessage error="" loading={loading} />
@@ -225,6 +294,8 @@ export function TeacherSchedulePanel() {
               <button className="btn" onClick={() => updateStatus(item.id, 'completed')}>Realizada</button>
               <button className="btn" onClick={() => updateStatus(item.id, 'cancelled')}>Cancelar</button>
               <button className="btn" onClick={() => updateStatus(item.id, 'absence')}>Falta</button>
+              <button className="btn" onClick={() => editClass(item)}>Editar</button>
+              <button className="btn danger" onClick={() => deleteClass(item.id)}>Excluir</button>
             </div>
           </div>
         ))}

@@ -16,47 +16,49 @@ export function TeacherNav() {
   }, []);
 
   return (
-    <>
-      <div className="topbar">
+    <aside className="sidebar">
+      <div className="brand">
+        <div className="brand-mark">E</div>
         <div>
-          <span className="eyebrow">Area do professor</span>
-          <strong>{profile?.full_name || 'Professor'}</strong>
+          <strong>EduAssist Pro</strong>
+          <span>Portal do professor</span>
         </div>
-        {profile?.access_code && <span className="code-pill">Codigo: {profile.access_code}</span>}
       </div>
-      <nav className="nav teacher-nav">
+      {profile?.access_code && <div className="sidebar-code">Codigo: {profile.access_code}</div>}
+      <nav className="sidebar-nav">
         <Link href="/teacher">Painel</Link>
         <Link href="/teacher/students">Alunos</Link>
         <Link href="/teacher/schedule">Agenda</Link>
         <Link href="/teacher/activities">Atividades</Link>
         <Link href="/teacher/messages">Recados</Link>
-        <LogoutButton tone="teacher" />
       </nav>
-    </>
+      <LogoutButton />
+    </aside>
   );
 }
 
 export function StudentNav() {
   return (
-    <>
-      <div className="topbar">
+    <aside className="sidebar">
+      <div className="brand">
+        <div className="brand-mark">E</div>
         <div>
-          <span className="eyebrow">Area do aluno</span>
           <strong>EduAssist Pro</strong>
+          <span>Portal do aluno</span>
         </div>
       </div>
-      <nav className="nav student-nav">
+      <nav className="sidebar-nav">
         <Link href="/student">Inicio</Link>
         <Link href="/student/schedule">Agenda</Link>
         <Link href="/student/activities">Atividades</Link>
         <Link href="/student/messages">Recados</Link>
-        <LogoutButton tone="student" />
       </nav>
-    </>
+      <LogoutButton />
+    </aside>
   );
 }
 
-function LogoutButton({ tone }: { tone: 'teacher' | 'student' }) {
+function LogoutButton() {
   const router = useRouter();
 
   async function logout() {
@@ -64,5 +66,5 @@ function LogoutButton({ tone }: { tone: 'teacher' | 'student' }) {
     router.push('/login');
   }
 
-  return <button className={`btn logout ${tone}`} onClick={logout}>Sair</button>;
+  return <button className="btn logout" onClick={logout}>Sair</button>;
 }
