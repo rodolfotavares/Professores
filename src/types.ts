@@ -9,6 +9,9 @@ export type Student = {
   days_of_week: number[];
   class_time: string | null;
   duration_minutes: number;
+  classes_per_week: number | null;
+  classes_per_month: number | null;
+  price_per_class: number;
   status: 'active' | 'paused' | 'inactive';
 };
 
@@ -36,6 +39,7 @@ export type Activity = {
   subject: string | null;
   due_date: string | null;
   points: number;
+  file_url: string | null;
   status: 'pending' | 'submitted' | 'corrected' | 'expired';
   visible_to_student: boolean;
   students?: { full_name: string } | null;
@@ -48,6 +52,7 @@ export type ActivitySubmission = {
   student_id: string;
   student_user_id: string | null;
   answer_text: string | null;
+  answer_file_url: string | null;
   grade: number | null;
   feedback: string | null;
   status: 'submitted' | 'corrected';

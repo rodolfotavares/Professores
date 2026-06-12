@@ -13,6 +13,8 @@ const schema = z.object({
   days_of_week: z.string().optional(),
   class_time: z.string().optional(),
   duration_minutes: z.number().optional(),
+  classes_per_week: z.number().optional(),
+  price_per_class: z.number().optional(),
   status: z.enum(['active', 'paused', 'inactive']).optional(),
   regenerate_schedule: z.boolean().optional(),
 });
@@ -34,6 +36,11 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     if (daysOfWeek !== undefined) update.days_of_week = daysOfWeek;
     if (body.class_time !== undefined) update.class_time = body.class_time || null;
     if (body.duration_minutes !== undefined) update.duration_minutes = body.duration_minutes;
+    if (body.classes_per_week !== undefined) {
+      update.classes_per_week = body.classes_per_week;
+      update.classes_per_month = body.classes_per_week * 4;
+    }
+    if (body.price_per_class !== undefined) update.price_per_class = body.price_per_class;
     if (body.status !== undefined) update.status = body.status;
     update.updated_at = new Date().toISOString();
 

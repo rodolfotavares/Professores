@@ -23,6 +23,12 @@ function usePanelLoad(load: () => Promise<void>, interval = 15000) {
   }, []);
 }
 
+async function uploadFile(file: File) {
+  const body = new FormData();
+  body.append('file', file);
+  return apiFetch<{ url: string }>('/api/upload', { method: 'POST', body });
+}
+
 export function TeacherDashboard() {
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<ClassSchedule[]>([]);
@@ -78,7 +84,8 @@ function Stat({ title, value }: { title: string; value: number }) {
 
 export function StudentsPanel() {
   const [students, setStudents] = useState<Student[]>([]);
-  const [form, setForm] = useState({ full_name: '', email: '', whatsapp: '', subject: '', days_of_week: '1,3', class_time: '14:00' });
+  const emptyForm = { full_name: '', email: '', whatsapp: '', subject: '', days_of_week: '1,3', class_time: '14:00', classes_per_week: '2', price_per_class: '100' };
+  const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState('');
   const [regenerateSchedule, setRegenerateSchedule] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -113,12 +120,12 @@ export function StudentsPanel() {
       if (editingId) {
         await apiFetch(`/api/teacher/students/${editingId}`, {
           method: 'PATCH',
-          body: JSON.stringify({ ...form, duration_minutes: 60, regenerate_schedule: regenerateSchedule }),
+          body: JSON.stringify({ ...form, classes_per_week: Number(form.classes_per_week || 0), price_per_class: Number(form.price_per_class || 0), duration_minutes: 60, regenerate_schedule: regenerateSchedule }),
         });
       } else {
-        await apiFetch('/api/teacher/students', { method: 'POST', body: JSON.stringify({ ...form, duration_minutes: 60 }) });
+        await apiFetch('/api/teacher/students', { method: 'POST', body: JSON.stringify({ ...form, classes_per_week: Number(form.classes_per_week || 0), price_per_class: Number(form.price_per_class || 0), duration_minutes: 60 }) });
       }
-      setForm({ full_name: '', email: '', whatsapp: '', subject: '', days_of_week: '1,3', class_time: '14:00' });
+      setForm(emptyForm);
       setEditingId('');
       await load();
     } catch (err) {
@@ -137,6 +144,8 @@ export function StudentsPanel() {
       subject: student.subject || '',
       days_of_week: student.days_of_week?.join(',') || '',
       class_time: student.class_time || '14:00',
+      classes_per_week: String(student.classes_per_week || 2),
+      price_per_class: String(student.price_per_class || 100),
     });
     setRegenerateSchedule(true);
   }
@@ -150,10 +159,11 @@ export function StudentsPanel() {
 
   function cancelEdit() {
     setEditingId('');
-    setForm({ full_name: '', email: '', whatsapp: '', subject: '', days_of_week: '1,3', class_time: '14:00' });
+    setForm(emptyForm);
   }
 
   const selectedDays = useMemo(() => form.days_of_week.split(',').filter(Boolean), [form.days_of_week]);
+  const monthlyValue = (Number(form.classes_per_week || 0) * Number(form.price_per_class || 0) * 4).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
     <div className="grid grid-2">
@@ -176,6 +186,11 @@ export function StudentsPanel() {
           ))}
         </div>
         <Input label="Horario" type="time" value={form.class_time} onChange={(v) => setForm({ ...form, class_time: v })} />
+        <div className="grid grid-2 compact-grid">
+          <Input label="Aulas por semana" type="number" value={form.classes_per_week} onChange={(v) => setForm({ ...form, classes_per_week: v })} />
+          <Input label="Valor por aula" type="number" value={form.price_per_class} onChange={(v) => setForm({ ...form, price_per_class: v })} />
+        </div>
+        <div className="panel-note">Previsao mensal: <strong>{monthlyValue}</strong></div>
         {editingId && (
           <label className="check-row">
             <input type="checkbox" checked={regenerateSchedule} onChange={(event) => setRegenerateSchedule(event.target.checked)} />
@@ -196,6 +211,7 @@ export function StudentsPanel() {
               <strong>{student.full_name}</strong>
               <p className="muted">{student.email} - {student.subject || 'Sem materia'}</p>
               <small>{student.class_time ? `Aulas as ${student.class_time}` : 'Horario nao definido'}</small>
+              <p className="muted">{student.classes_per_week || 0} aulas/semana - {Number(student.price_per_class || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} por aula - mensal: {Number((student.classes_per_week || 0) * (student.price_per_class || 0) * 4).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
             </div>
             <div className="row">
               <span className="badge">{student.status}</span>
@@ -309,7 +325,9 @@ export function TeacherActivitiesPanel() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [submissions, setSubmissions] = useState<ActivitySubmission[]>([]);
   const [form, setForm] = useState({ title: '', description: '', subject: '', student_id: '', due_date: '' });
+  const [file, setFile] = useState<File | null>(null);
   const [grade, setGrade] = useState('10');
+  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -335,9 +353,19 @@ export function TeacherActivitiesPanel() {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    await apiFetch('/api/teacher/activities', { method: 'POST', body: JSON.stringify({ ...form, points: 10, student_id: form.student_id || undefined }) });
-    setForm({ title: '', description: '', subject: '', student_id: '', due_date: '' });
-    await load();
+    setSaving(true);
+    setError('');
+    try {
+      const uploaded = file ? await uploadFile(file) : null;
+      await apiFetch('/api/teacher/activities', { method: 'POST', body: JSON.stringify({ ...form, points: 10, student_id: form.student_id || undefined, file_url: uploaded?.url }) });
+      setForm({ title: '', description: '', subject: '', student_id: '', due_date: '' });
+      setFile(null);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao criar atividade.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function correct(id: string) {
@@ -355,7 +383,8 @@ export function TeacherActivitiesPanel() {
         <Input label="Materia" value={form.subject} onChange={(v) => setForm({ ...form, subject: v })} />
         <label className="label">Aluno<select className="input" value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })}><option value="">Todos</option>{students.map((s) => <option value={s.id} key={s.id}>{s.full_name}</option>)}</select></label>
         <Input label="Prazo" type="date" value={form.due_date} onChange={(v) => setForm({ ...form, due_date: v })} />
-        <button className="btn primary">Criar</button>
+        <label className="label">Arquivo da atividade<input className="input" type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} /></label>
+        <button className="btn primary" disabled={saving}>{saving ? 'Enviando...' : 'Criar'}</button>
       </form>
       <div className="stack">
         <StatusMessage error="" loading={loading} />
@@ -365,6 +394,7 @@ export function TeacherActivitiesPanel() {
             <strong>{submission.activities?.title}</strong>
             <p className="muted">{submission.students?.full_name || 'Aluno'} - {submission.status}</p>
             <p>{submission.answer_text}</p>
+            {submission.answer_file_url && <a className="file-link" href={submission.answer_file_url} target="_blank">Arquivo entregue pelo aluno</a>}
             <Input label="Nota" value={grade} onChange={setGrade} />
             <button className="btn primary" onClick={() => correct(submission.id)}>Corrigir</button>
           </div>
@@ -374,6 +404,7 @@ export function TeacherActivitiesPanel() {
             <div>
               <strong>{activity.title}</strong>
               <p className="muted">{activity.students?.full_name || 'Todos'} - {activity.status}</p>
+              {activity.file_url && <a className="file-link" href={activity.file_url} target="_blank">Arquivo da atividade</a>}
             </div>
             <span className="badge">{activity.due_date || 'Sem prazo'}</span>
           </div>
@@ -435,6 +466,77 @@ export function TeacherMessagesPanel() {
       <div className="stack">
         {!loading && messages.length === 0 && <EmptyState title="Sem recados" text="As mensagens trocadas com o aluno aparecem aqui." />}
         {messages.map((message) => <div className="card" key={message.id}><span className="badge">{message.sender_role}</span><p>{message.text}</p></div>)}
+      </div>
+    </div>
+  );
+}
+
+type LessonPlan = {
+  title: string;
+  summary: string;
+  steps: string[];
+  materials: string[];
+  homework: string;
+};
+
+export function LessonPlannerPanel() {
+  const [form, setForm] = useState({ subject: '', topic: '', level: '', duration: '60 minutos', objective: '' });
+  const [plan, setPlan] = useState<LessonPlan | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const data = await apiFetch<{ plan: LessonPlan }>('/api/teacher/lesson-plan', {
+        method: 'POST',
+        body: JSON.stringify(form),
+      });
+      setPlan(data.plan);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao gerar plano.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="grid grid-2">
+      <form className="card stack" onSubmit={submit}>
+        <div>
+          <span className="eyebrow">Assistente do professor</span>
+          <h2>Planejar aula</h2>
+        </div>
+        <StatusMessage error={error} loading={false} />
+        <Input label="Materia" value={form.subject} onChange={(v) => setForm({ ...form, subject: v })} />
+        <Input label="Tema da aula" value={form.topic} onChange={(v) => setForm({ ...form, topic: v })} />
+        <Input label="Nivel do aluno" value={form.level} onChange={(v) => setForm({ ...form, level: v })} />
+        <Input label="Duracao" value={form.duration} onChange={(v) => setForm({ ...form, duration: v })} />
+        <label className="label">Objetivo<textarea className="input textarea" value={form.objective} onChange={(e) => setForm({ ...form, objective: e.target.value })} /></label>
+        <button className="btn primary" disabled={loading}>{loading ? 'Gerando...' : 'Gerar plano'}</button>
+      </form>
+      <div className="stack">
+        {!plan && <EmptyState title="Plano pronto para montar" text="Informe materia, tema e objetivo para receber uma estrutura de aula." />}
+        {plan && (
+          <div className="card stack">
+            <div>
+              <span className="eyebrow">Plano sugerido</span>
+              <h2>{plan.title}</h2>
+              <p className="muted">{plan.summary}</p>
+            </div>
+            <div>
+              <strong>Roteiro</strong>
+              <ol className="clean-list">{plan.steps.map((step) => <li key={step}>{step}</li>)}</ol>
+            </div>
+            <div>
+              <strong>Materiais</strong>
+              <ul className="clean-list">{plan.materials.map((item) => <li key={item}>{item}</li>)}</ul>
+            </div>
+            <div className="panel-note"><strong>Tarefa sugerida:</strong> {plan.homework}</div>
+          </div>
+        )}
       </div>
     </div>
   );

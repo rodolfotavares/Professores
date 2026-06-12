@@ -13,6 +13,12 @@ function usePanelLoad(load: () => Promise<void>, interval = 15000) {
   }, []);
 }
 
+async function uploadFile(file: File) {
+  const body = new FormData();
+  body.append('file', file);
+  return apiFetch<{ url: string }>('/api/upload', { method: 'POST', body });
+}
+
 export function StudentDashboard() {
   const [student, setStudent] = useState<Student | null>(null);
   const [classes, setClasses] = useState<ClassSchedule[]>([]);
@@ -99,6 +105,8 @@ export function StudentActivitiesPanel() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [submissions, setSubmissions] = useState<ActivitySubmission[]>([]);
   const [answer, setAnswer] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [savingId, setSavingId] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -118,15 +126,26 @@ export function StudentActivitiesPanel() {
   usePanelLoad(load);
 
   async function submit(activityId: string) {
-    await apiFetch(`/api/student/activities/${activityId}/submit`, { method: 'POST', body: JSON.stringify({ answer_text: answer || 'Entregue' }) });
-    setAnswer('');
-    await load();
+    setSavingId(activityId);
+    setError('');
+    try {
+      const uploaded = file ? await uploadFile(file) : null;
+      await apiFetch(`/api/student/activities/${activityId}/submit`, { method: 'POST', body: JSON.stringify({ answer_text: answer || 'Entregue', answer_file_url: uploaded?.url }) });
+      setAnswer('');
+      setFile(null);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao entregar atividade.');
+    } finally {
+      setSavingId('');
+    }
   }
 
   return (
     <div className="stack">
       <StatusMessage error={error} loading={loading} />
       <textarea className="input textarea" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Resposta da atividade" />
+      <label className="label">Anexar arquivo da resposta<input className="input" type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} /></label>
       {!loading && activities.length === 0 && <EmptyState title="Nenhuma atividade" text="Quando o professor publicar atividades, elas aparecem aqui." />}
       {activities.map((activity) => {
         const submission = submissions.find((item) => item.activity_id === activity.id);
@@ -135,9 +154,11 @@ export function StudentActivitiesPanel() {
             <div>
               <strong>{activity.title}</strong>
               <p className="muted">{activity.description}</p>
+              {activity.file_url && <a className="file-link" href={activity.file_url} target="_blank">Abrir arquivo da atividade</a>}
               {submission?.grade != null && <p className="success">Nota: {submission.grade} - {submission.feedback}</p>}
+              {submission?.answer_file_url && <a className="file-link" href={submission.answer_file_url} target="_blank">Arquivo enviado</a>}
             </div>
-            {submission ? <span className="badge">{submission.status}</span> : <button className="btn student" onClick={() => submit(activity.id)}>Entregar</button>}
+            {submission ? <span className="badge">{submission.status}</span> : <button className="btn student" disabled={savingId === activity.id} onClick={() => submit(activity.id)}>{savingId === activity.id ? 'Enviando...' : 'Entregar'}</button>}
           </div>
         );
       })}

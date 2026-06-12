@@ -9,8 +9,10 @@ type RegisterMode = 'teacher' | 'student';
 
 export function LoginForm() {
   const router = useRouter();
+  const [roleHint, setRoleHint] = useState<'teacher' | 'student'>('teacher');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -36,12 +38,34 @@ export function LoginForm() {
   }
 
   return (
-    <form className="card stack" onSubmit={submit} style={{ width: '100%', maxWidth: 440 }}>
-      <h1>Entrar</h1>
+    <form className="card stack auth-card" onSubmit={submit}>
+      <div>
+        <span className="eyebrow">EduAssist Pro</span>
+        <h1>Entrar</h1>
+      </div>
+      <div className="role-picker">
+        <button type="button" className={roleHint === 'teacher' ? 'selected' : ''} onClick={() => setRoleHint('teacher')}>
+          Professor
+          <small>Gerenciar alunos, aulas e atividades</small>
+        </button>
+        <button type="button" className={roleHint === 'student' ? 'selected' : ''} onClick={() => setRoleHint('student')}>
+          Aluno
+          <small>Ver agenda, recados e entregar tarefas</small>
+        </button>
+      </div>
       {error && <p className="error">{error}</p>}
       <label className="label">E-mail<input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
-      <label className="label">Senha<input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
+      <label className="label">Senha
+        <span className="password-field">
+          <input className="input" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <button type="button" onClick={() => setShowPassword((current) => !current)}>{showPassword ? 'Ocultar' : 'Mostrar'}</button>
+        </span>
+      </label>
       <button className="btn primary" disabled={loading}>{loading ? 'Entrando...' : 'Entrar'}</button>
+      <div className="row auth-links">
+        <a href="/register/teacher">Criar professor</a>
+        <a href="/register/student">Criar aluno</a>
+      </div>
     </form>
   );
 }

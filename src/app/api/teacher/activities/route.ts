@@ -10,6 +10,7 @@ const schema = z.object({
   student_id: z.string().uuid().optional(),
   due_date: z.string().optional(),
   points: z.number().optional(),
+  file_url: z.string().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -56,6 +57,7 @@ export async function POST(req: NextRequest) {
         subject: body.subject || null,
         due_date: body.due_date || null,
         points: body.points || 10,
+        file_url: body.file_url || null,
       })
       .select('*, students(full_name)')
       .single();

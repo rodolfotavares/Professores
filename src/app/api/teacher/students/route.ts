@@ -13,6 +13,7 @@ const schema = z.object({
   days_of_week: z.string().optional(),
   class_time: z.string().optional(),
   duration_minutes: z.number().optional(),
+  classes_per_week: z.number().optional(),
   price_per_class: z.number().optional(),
 });
 
@@ -55,6 +56,8 @@ export async function POST(req: NextRequest) {
         days_of_week: daysOfWeek,
         class_time: classTime,
         duration_minutes: durationMinutes,
+        classes_per_week: body.classes_per_week || null,
+        classes_per_month: body.classes_per_week ? body.classes_per_week * 4 : null,
         price_per_class: body.price_per_class || 100,
       })
       .select('*')

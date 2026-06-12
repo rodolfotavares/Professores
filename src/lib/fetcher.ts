@@ -3,11 +3,12 @@ import { supabaseBrowser } from './supabase-browser';
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const { data } = await supabaseBrowser.auth.getSession();
   const token = data.session?.access_token;
+  const isFormData = init.body instanceof FormData;
 
   const res = await fetch(path, {
     ...init,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init.headers || {}),
     },

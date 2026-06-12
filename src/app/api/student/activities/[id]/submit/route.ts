@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 
 const schema = z.object({
   answer_text: z.string().optional(),
+  answer_file_url: z.string().optional(),
 });
 
 export async function POST(req: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -40,6 +41,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
         student_id: student.id,
         student_user_id: user.id,
         answer_text: body.answer_text || '',
+        answer_file_url: body.answer_file_url || null,
         is_late: isLate,
       })
       .select('*, activities(title)')

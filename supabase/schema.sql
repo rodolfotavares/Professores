@@ -37,6 +37,7 @@ create table public.students (
   days_of_week integer[] not null default '{}',
   class_time time,
   duration_minutes integer not null default 60,
+  classes_per_week integer,
   classes_per_month integer,
   price_per_class numeric(10,2) not null default 100,
   status public.student_status not null default 'active',

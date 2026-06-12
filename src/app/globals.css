@@ -70,6 +70,11 @@ button:disabled {
   padding: 30px;
 }
 
+.auth-card {
+  width: 100%;
+  max-width: 520px;
+}
+
 .home-card h1 {
   font-size: 42px;
 }
@@ -195,6 +200,10 @@ button:disabled {
 
 .grid-3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.compact-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .row {
@@ -383,6 +392,77 @@ button:disabled {
   color: var(--blue-strong);
 }
 
+.role-picker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.role-picker button {
+  min-height: 88px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: white;
+  color: var(--blue-strong);
+  cursor: pointer;
+  font-weight: 800;
+  text-align: left;
+}
+
+.role-picker button.selected {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+}
+
+.role-picker small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.password-field {
+  position: relative;
+  display: block;
+}
+
+.password-field .input {
+  padding-right: 86px;
+}
+
+.password-field button {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  min-height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--blue-soft);
+  color: var(--blue-strong);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.auth-links {
+  justify-content: center;
+}
+
+.auth-links a,
+.file-link {
+  color: var(--blue-strong);
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.clean-list {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding-left: 22px;
+}
+
 h1,
 h2 {
   margin: 0;
@@ -405,6 +485,11 @@ h2 {
 
   .grid-2,
   .grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .compact-grid,
+  .role-picker {
     grid-template-columns: 1fr;
   }
 
