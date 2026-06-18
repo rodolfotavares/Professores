@@ -82,6 +82,143 @@ function Stat({ title, value }: { title: string; value: number }) {
   );
 }
 
+export function TeacherFinancePanel() {
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  async function load() {
+    try {
+      setError('');
+      const data = await apiFetch<{ students: Student[] }>('/api/teacher/students');
+      setStudents(data.students);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao carregar financeiro.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  usePanelLoad(load);
+
+  const rows = students.map((student) => {
+    const weeklyClasses = student.classes_per_week || Math.ceil((student.classes_per_month || 0) / 4);
+    const monthly = weeklyClasses * (student.price_per_class || 0) * 4;
+    return { ...student, weeklyClasses, monthly };
+  });
+  const total = rows.reduce((sum, student) => sum + student.monthly, 0);
+  const active = rows.filter((student) => student.status === 'active').length;
+  const max = Math.max(...rows.map((student) => student.monthly), 1);
+
+  return (
+    <div className="stack">
+      <StatusMessage error={error} loading={loading} />
+      <div className="grid grid-3">
+        <div className="metric"><p className="muted">Previsao mensal</p><h2>{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2></div>
+        <div className="metric"><p className="muted">Alunos ativos</p><h2>{active}</h2></div>
+        <div className="metric"><p className="muted">Media por aluno</p><h2>{(active ? total / active : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2></div>
+      </div>
+      {!loading && rows.length === 0 && <EmptyState title="Sem previsao ainda" text="Cadastre alunos com aulas por semana e valor por aula." />}
+      {rows.length > 0 && (
+        <div className="grid grid-2">
+          <div className="card finance-chart">
+            <div>
+              <span className="eyebrow">Ganhos previstos</span>
+              <h2>Total mensal</h2>
+            </div>
+            <div className="finance-ring" style={{ background: `conic-gradient(#084eb8 0 360deg)` }}>
+              <div>
+                <strong>{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong>
+                <span>por mes</span>
+              </div>
+            </div>
+          </div>
+          <div className="card stack">
+            <div>
+              <span className="eyebrow">Por aluno</span>
+              <h2>Distribuicao</h2>
+            </div>
+            <div className="bar-list">
+              {rows.map((student) => (
+                <div className="finance-row" key={student.id}>
+                  <div className="between">
+                    <strong>{student.full_name}</strong>
+                    <span>{student.monthly.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                  </div>
+                  <div className="bar-track"><span style={{ width: `${Math.max(6, (student.monthly / max) * 100)}%` }} /></div>
+                  <small className="muted">{student.weeklyClasses} aulas/semana x {(student.price_per_class || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</small>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type NewsArticle = {
+  title: string;
+  link: string;
+  source: string;
+  published_at: string;
+};
+
+export function TeacherNewsPanel() {
+  const [subject, setSubject] = useState('Matematica');
+  const [articles, setArticles] = useState<NewsArticle[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function load(nextSubject = subject) {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await apiFetch<{ articles: NewsArticle[] }>(`/api/teacher/news?subject=${encodeURIComponent(nextSubject)}`);
+      setArticles(data.articles);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao carregar noticias.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load('Matematica');
+  }, []);
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    load(subject);
+  }
+
+  return (
+    <div className="stack">
+      <form className="card news-search" onSubmit={submit}>
+        <div>
+          <span className="eyebrow">Noticias por materia</span>
+          <h2>Atualizacoes para preparar aulas</h2>
+        </div>
+        <div className="row grow">
+          <input className="input grow" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Ex: matematica, biologia, portugues" />
+          <button className="btn primary" disabled={loading}>{loading ? 'Buscando...' : 'Buscar'}</button>
+        </div>
+      </form>
+      <StatusMessage error={error} loading={loading} />
+      {!loading && articles.length === 0 && <EmptyState title="Nenhuma noticia encontrada" text="Tente outra materia ou palavra-chave." />}
+      <div className="news-grid">
+        {articles.map((article) => (
+          <a className="card news-card" href={article.link} target="_blank" key={`${article.title}-${article.published_at}`}>
+            <span className="eyebrow">{article.source}</span>
+            <h2>{article.title}</h2>
+            <p className="muted">{article.published_at ? new Date(article.published_at).toLocaleDateString('pt-BR') : 'Data nao informada'}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function StudentsPanel() {
   const [students, setStudents] = useState<Student[]>([]);
   const emptyForm = { full_name: '', email: '', whatsapp: '', subject: '', days_of_week: '1,3', class_time: '14:00', classes_per_week: '2', price_per_class: '100' };

@@ -31,6 +31,8 @@ export function TeacherNav() {
         <Link href="/teacher/schedule">Agenda</Link>
         <Link href="/teacher/activities">Atividades</Link>
         <Link href="/teacher/planner">Planos de aula</Link>
+        <Link href="/teacher/finance">Financeiro</Link>
+        <Link href="/teacher/news">Noticias</Link>
         <Link href="/teacher/messages">Recados</Link>
       </nav>
       <LogoutButton />

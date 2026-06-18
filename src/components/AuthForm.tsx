@@ -9,7 +9,6 @@ type RegisterMode = 'teacher' | 'student';
 
 export function LoginForm() {
   const router = useRouter();
-  const [roleHint, setRoleHint] = useState<'teacher' | 'student'>('teacher');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -39,19 +38,10 @@ export function LoginForm() {
 
   return (
     <form className="card stack auth-card" onSubmit={submit}>
-      <div>
+      <div className="auth-heading">
         <span className="eyebrow">EduAssist Pro</span>
         <h1>Entrar</h1>
-      </div>
-      <div className="role-picker">
-        <button type="button" className={roleHint === 'teacher' ? 'selected' : ''} onClick={() => setRoleHint('teacher')}>
-          Professor
-          <small>Gerenciar alunos, aulas e atividades</small>
-        </button>
-        <button type="button" className={roleHint === 'student' ? 'selected' : ''} onClick={() => setRoleHint('student')}>
-          Aluno
-          <small>Ver agenda, recados e entregar tarefas</small>
-        </button>
+        <p>Acesse seu portal com e-mail e senha.</p>
       </div>
       {error && <p className="error">{error}</p>}
       <label className="label">E-mail<input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>

@@ -104,8 +104,9 @@ export function StudentSchedulePanel() {
 export function StudentActivitiesPanel() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [submissions, setSubmissions] = useState<ActivitySubmission[]>([]);
-  const [answer, setAnswer] = useState('');
-  const [file, setFile] = useState<File | null>(null);
+  const [expandedId, setExpandedId] = useState('');
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [files, setFiles] = useState<Record<string, File | null>>({});
   const [savingId, setSavingId] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -129,10 +130,12 @@ export function StudentActivitiesPanel() {
     setSavingId(activityId);
     setError('');
     try {
+      const answer = answers[activityId] || '';
+      const file = files[activityId] || null;
       const uploaded = file ? await uploadFile(file) : null;
       await apiFetch(`/api/student/activities/${activityId}/submit`, { method: 'POST', body: JSON.stringify({ answer_text: answer || 'Entregue', answer_file_url: uploaded?.url }) });
-      setAnswer('');
-      setFile(null);
+      setAnswers((current) => ({ ...current, [activityId]: '' }));
+      setFiles((current) => ({ ...current, [activityId]: null }));
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao entregar atividade.');
@@ -156,21 +159,43 @@ export function StudentActivitiesPanel() {
     <div className="stack">
       <StatusMessage error={error} loading={loading} />
       <ActivityChart pending={activityStats.pending} completed={activityStats.completed} expired={activityStats.expired} />
-      <textarea className="input textarea" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Resposta da atividade" />
-      <label className="label">Anexar arquivo da resposta<input className="input" type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} /></label>
       {!loading && activities.length === 0 && <EmptyState title="Nenhuma atividade" text="Quando o professor publicar atividades, elas aparecem aqui." />}
       {activities.map((activity) => {
         const submission = submissions.find((item) => item.activity_id === activity.id);
+        const expanded = expandedId === activity.id;
+        const expired = !submission && activity.due_date ? new Date() > new Date(`${activity.due_date}T23:59:59`) : false;
         return (
-          <div className="card list-item" key={activity.id}>
-            <div>
-              <strong>{activity.title}</strong>
-              <p className="muted">{activity.description}</p>
-              {activity.file_url && <a className="file-link" href={activity.file_url} target="_blank">Abrir arquivo da atividade</a>}
-              {submission?.grade != null && <p className="success">Nota: {submission.grade} - {submission.feedback}</p>}
-              {submission?.answer_file_url && <a className="file-link" href={submission.answer_file_url} target="_blank">Arquivo enviado</a>}
-            </div>
-            {submission ? <span className="badge">{submission.status}</span> : <button className="btn student" disabled={savingId === activity.id} onClick={() => submit(activity.id)}>{savingId === activity.id ? 'Enviando...' : 'Entregar'}</button>}
+          <div className={`card activity-task ${expanded ? 'expanded' : ''}`} key={activity.id}>
+            <button className="activity-task-head" type="button" onClick={() => setExpandedId(expanded ? '' : activity.id)}>
+              <span>
+                <strong>{activity.title}</strong>
+                <small>{activity.subject || 'Atividade'} {activity.due_date ? `- prazo ${activity.due_date}` : '- sem prazo'}</small>
+              </span>
+              <span className="row">
+                <span className="badge">{submission ? submission.status : expired ? 'expirada' : 'pendente'}</span>
+                <span className="activity-chevron">{expanded ? 'Fechar' : 'Abrir'}</span>
+              </span>
+            </button>
+            {expanded && (
+              <div className="activity-task-body">
+                <p className="muted">{activity.description}</p>
+                {activity.file_url && <a className="file-link" href={activity.file_url} target="_blank">Abrir arquivo da atividade</a>}
+                {submission ? (
+                  <div className="panel-note">
+                    <strong>Entrega enviada.</strong>
+                    <p>{submission.answer_text || 'Sem texto enviado.'}</p>
+                    {submission.answer_file_url && <a className="file-link" href={submission.answer_file_url} target="_blank">Arquivo enviado</a>}
+                    {submission.grade != null && <p className="success">Nota: {submission.grade} - {submission.feedback}</p>}
+                  </div>
+                ) : (
+                  <div className="stack">
+                    <label className="label">Resposta<textarea className="input textarea" value={answers[activity.id] || ''} onChange={(e) => setAnswers((current) => ({ ...current, [activity.id]: e.target.value }))} placeholder="Digite sua resposta aqui" /></label>
+                    <label className="label">Arquivo da resposta<input className="input" type="file" onChange={(e) => setFiles((current) => ({ ...current, [activity.id]: e.target.files?.[0] || null }))} /></label>
+                    <button className="btn student" disabled={savingId === activity.id} onClick={() => submit(activity.id)}>{savingId === activity.id ? 'Enviando...' : 'Entregar atividade'}</button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         );
       })}
