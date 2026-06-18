@@ -2604,4 +2604,62 @@ select.input option {
   .icon-nav a:hover::after {
     display: none;
   }
+
+  .teacher-portal .teacher-icon-sidebar,
+  .student-portal .teacher-icon-sidebar {
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+    min-height: 86px;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
+  }
+
+  .teacher-portal .teacher-icon-sidebar .compact-brand,
+  .student-portal .teacher-icon-sidebar .compact-brand {
+    flex: 0 0 auto;
+    padding: 0;
+  }
+
+  .teacher-portal .compact-code,
+  .student-portal .compact-code {
+    display: none;
+  }
+
+  .teacher-portal .icon-nav,
+  .student-portal .icon-nav {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 48px;
+    grid-template-columns: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    justify-content: start;
+    padding: 2px 4px 4px;
+  }
+
+  .teacher-portal .teacher-icon-sidebar .logout,
+  .student-portal .teacher-icon-sidebar .logout {
+    flex: 0 0 48px;
+  }
+}
+
+@media (max-width: 520px) {
+  .teacher-portal .teacher-icon-sidebar,
+  .student-portal .teacher-icon-sidebar {
+    min-height: 76px;
+    padding: 8px;
+    border-radius: 22px;
+  }
+
+  .teacher-portal .teacher-icon-sidebar .brand-mark,
+  .student-portal .teacher-icon-sidebar .brand-mark {
+    width: 40px;
+    height: 40px;
+  }
 }

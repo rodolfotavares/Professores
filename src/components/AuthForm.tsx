@@ -87,12 +87,7 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
     setSuccess('');
 
     try {
-      let currentRole: string | null = null;
-      if (mode === 'student') {
-        currentRole = await apiFetch<{ profile: { role: string } }>('/api/me')
-          .then((res) => res.profile.role)
-          .catch(() => null);
-      }
+      await supabaseBrowser.auth.signOut();
 
       const path = mode === 'teacher' ? '/api/auth/register-teacher' : '/api/auth/register-student';
       const result = await fetch(path, {
@@ -109,12 +104,17 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
         setSuccess('Aluno criado e vinculado ao professor.');
       }
 
-      if (mode === 'student' && currentRole === 'teacher') {
-        router.push('/teacher/students');
-        return;
+      const { error: signInError } = await supabaseBrowser.auth.signInWithPassword({ email: form.email, password: form.password });
+      if (signInError) throw new Error('Conta criada, mas nao foi possivel entrar automaticamente. Tente fazer login.');
+
+      const { profile } = await apiFetch<{ profile: { role: string } }>('/api/me');
+      if (profile.role !== mode) {
+        await supabaseBrowser.auth.signOut();
+        throw new Error(mode === 'student'
+          ? 'Cadastro criado, mas o perfil nao foi reconhecido como aluno. Entre em contato com o suporte.'
+          : 'Cadastro criado, mas o perfil nao foi reconhecido como professor. Entre em contato com o suporte.');
       }
 
-      await supabaseBrowser.auth.signInWithPassword({ email: form.email, password: form.password });
       router.push(mode === 'teacher' ? '/teacher' : '/student');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro inesperado.');
