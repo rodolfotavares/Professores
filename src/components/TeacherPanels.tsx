@@ -94,11 +94,11 @@ export function TeacherDashboard() {
     <div className="teacher-glass-dashboard">
       <div className="dashboard-topline">
         <div>
-          <h1>Portal do Professor</h1>
+          <h1>Resumo do Professor</h1>
           <p>Visao premium das aulas, alunos e entregas.</p>
         </div>
         <div className="dashboard-actions">
-          <button className="glass-icon-button" title="Notificacoes">◎</button>
+          <button className="glass-icon-button" title="Notificacoes" aria-label="Notificacoes">o</button>
           <div className="teacher-avatar">P</div>
         </div>
       </div>

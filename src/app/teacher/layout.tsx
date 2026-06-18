@@ -1,4 +1,5 @@
 import { TeacherNav } from '@/components/AppNav';
+import { AppLayout } from '@/components/AppShell';
 import { RoleGate } from '@/components/RoleGate';
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
@@ -6,9 +7,9 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
     <RoleGate expected="teacher">
       <main className="page teacher-portal">
         <TeacherNav />
-        <div className="shell">
+        <AppLayout area="teacher">
           {children}
-        </div>
+        </AppLayout>
       </main>
     </RoleGate>
   );
