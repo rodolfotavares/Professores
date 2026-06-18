@@ -1559,6 +1559,8 @@ select.input option {
   width: 78px;
   align-items: center;
   padding: 14px 10px;
+  overflow: visible;
+  z-index: 30;
 }
 
 .teacher-icon-sidebar .compact-brand {
@@ -1586,6 +1588,7 @@ select.input option {
 .icon-nav {
   width: 100%;
   justify-items: center;
+  overflow: visible;
 }
 
 .icon-nav a,
@@ -1609,15 +1612,16 @@ select.input option {
   left: 58px;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 5;
+  z-index: 1000;
   padding: 8px 10px;
   border-radius: 999px;
-  background: rgba(8, 20, 24, 0.86);
+  background: rgba(8, 20, 24, 0.96);
   color: white;
   white-space: nowrap;
   font-size: 12px;
   font-weight: 800;
-  box-shadow: var(--shadow);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.36);
+  pointer-events: none;
 }
 
 .teacher-glass-dashboard {
@@ -2582,5 +2586,22 @@ select.input option {
   .global-background-light {
     opacity: 0.28;
     filter: blur(130px);
+  }
+}
+
+.teacher-portal .teacher-icon-sidebar,
+.student-portal .teacher-icon-sidebar {
+  z-index: 50;
+  overflow: visible;
+}
+
+.teacher-portal .app-glass-shell,
+.student-portal .app-glass-shell {
+  z-index: 3;
+}
+
+@media (max-width: 900px) {
+  .icon-nav a:hover::after {
+    display: none;
   }
 }

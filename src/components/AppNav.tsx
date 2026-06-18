@@ -36,7 +36,7 @@ export function TeacherNav() {
         <NavIcon href="/teacher/finance" label="Relatorios" icon="chart" />
         <NavIcon href="/teacher/messages" label="Mensagens" icon="message" />
         <NavIcon href="/teacher/settings" label="Configuracoes" icon="settings" />
-        <NavIcon href="/teacher/planner" label="Planejar" icon="settings" />
+        <NavIcon href="/teacher/planner" label="Planos de aula" icon="planner" />
         <NavIcon href="/teacher/news" label="Noticias" icon="news" />
       </nav>
       <LogoutButton />
@@ -90,7 +90,7 @@ function NavIcon({ href, label, icon }: { href: string; label: string; icon: Ico
   );
 }
 
-type IconName = 'home' | 'calendar' | 'users' | 'tasks' | 'chart' | 'settings' | 'news' | 'message' | 'classes' | 'grades' | 'frequency' | 'materials';
+type IconName = 'home' | 'calendar' | 'users' | 'tasks' | 'chart' | 'settings' | 'planner' | 'news' | 'message' | 'classes' | 'grades' | 'frequency' | 'materials';
 
 function Icon({ name }: { name: IconName }) {
   const common = { width: 19, height: 19, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
@@ -103,6 +103,7 @@ function Icon({ name }: { name: IconName }) {
   if (name === 'frequency') return <svg {...common}><path d="M4 19V5" /><path d="M4 19h16" /><path d="M7 15l3-3 3 2 5-7" /></svg>;
   if (name === 'chart') return <svg {...common}><path d="M4 19V5" /><path d="M4 19h16" /><rect x="7" y="11" width="3" height="5" rx="1" /><rect x="12" y="7" width="3" height="9" rx="1" /><rect x="17" y="9" width="3" height="7" rx="1" /></svg>;
   if (name === 'settings') return <svg {...common}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.2.37.52.7.91.9.34.18.72.27 1.1.27H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z" /></svg>;
+  if (name === 'planner') return <svg {...common}><path d="M4 19.5V5a2 2 0 0 1 2-2h11a3 3 0 0 1 3 3v15H6a2 2 0 0 1-2-1.5Z" /><path d="M8 7h6" /><path d="M8 11h8" /><path d="M8 15h4" /><path d="M17 3v6h3" /></svg>;
   if (name === 'news') return <svg {...common}><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13Z" /><path d="M8 8h8M8 12h8M8 16h5" /></svg>;
   if (name === 'materials') return <svg {...common}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M8 13h8M8 17h5" /></svg>;
   return <svg {...common}><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z" /></svg>;
