@@ -1235,3 +1235,318 @@ h2 {
     margin: 0 auto;
   }
 }
+
+:root {
+  --bg: #0e1f25;
+  --panel: rgba(255, 255, 255, 0.13);
+  --panel-soft: rgba(255, 255, 255, 0.10);
+  --text: #f5fbfd;
+  --muted: rgba(229, 241, 244, 0.70);
+  --line: rgba(255, 255, 255, 0.18);
+  --blue: #36c7f4;
+  --blue-strong: #f5fbfd;
+  --blue-soft: rgba(54, 199, 244, 0.14);
+  --blue-soft-2: rgba(255, 255, 255, 0.08);
+  --teal: #38d67a;
+  --teal-soft: rgba(56, 214, 122, 0.16);
+  --gold: #e5ce00;
+  --gold-soft: rgba(229, 206, 0, 0.16);
+  --coral: #94a800;
+  --shadow: 0 22px 60px rgba(0, 0, 0, 0.26);
+  --shadow-strong: 0 34px 90px rgba(0, 0, 0, 0.34);
+}
+
+body {
+  background:
+    linear-gradient(140deg, #071318 0%, #16323a 44%, #0f2127 100%);
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.20));
+  background-size: 72px 72px, 72px 72px, auto;
+  pointer-events: none;
+}
+
+.page,
+.auth-shell,
+.marketing-page {
+  background:
+    linear-gradient(140deg, rgba(6, 18, 22, 0.96), rgba(25, 57, 65, 0.92) 52%, rgba(11, 24, 29, 0.98)),
+    var(--bg);
+}
+
+.marketing-hero {
+  grid-template-columns: minmax(320px, 0.86fr) minmax(380px, 1.14fr);
+}
+
+.product-preview,
+.auth-card,
+.sidebar,
+.card,
+.metric,
+.empty,
+.notice,
+.panel-note,
+.preview-stat,
+.preview-card {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08));
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.card,
+.metric,
+.empty,
+.notice,
+.panel-note {
+  border-radius: 18px;
+}
+
+.card::before,
+.metric::before {
+  background: linear-gradient(180deg, rgba(54, 199, 244, 0.96), rgba(229, 206, 0, 0.92), rgba(56, 214, 122, 0.90));
+}
+
+.teacher-portal,
+.student-portal {
+  grid-template-columns: 286px minmax(0, 1fr);
+}
+
+.teacher-portal .sidebar,
+.student-portal .sidebar,
+.sidebar {
+  top: 22px;
+  height: calc(100vh - 44px);
+  margin: 22px 0 22px 22px;
+  border-radius: 26px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.07));
+}
+
+.brand {
+  border-bottom-color: rgba(255, 255, 255, 0.15);
+}
+
+.brand-mark {
+  background: rgba(255, 255, 255, 0.16);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  box-shadow: none;
+}
+
+.brand span,
+.hero-copy p,
+.trust-strip span,
+.preview-stat small,
+.preview-card p {
+  color: rgba(245, 251, 253, 0.72);
+}
+
+.sidebar-code,
+.sidebar-nav a,
+.sidebar .logout {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.86);
+  box-shadow: none;
+}
+
+.sidebar-nav a:hover,
+.sidebar .logout:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
+}
+
+.shell {
+  max-width: 1240px;
+  padding: 34px;
+}
+
+.panel-header {
+  padding: 2px 2px 14px;
+}
+
+.panel-header h1,
+.home-card h1,
+.hero-copy h1,
+.auth-heading h1,
+.metric h2,
+.shell form.card h2,
+.shell .card h2,
+.preview-stat strong,
+.activity-task-head strong,
+.finance-row strong,
+.shell .list-item strong {
+  color: #f9feff;
+}
+
+.eyebrow {
+  color: rgba(229, 206, 0, 0.92);
+}
+
+.muted,
+.panel-header p,
+.label,
+.shell small,
+.finance-row small,
+.chart-donut span,
+.chart-legend-item small,
+.finance-ring span,
+.auth-heading p {
+  color: rgba(229, 241, 244, 0.68);
+}
+
+.input,
+.password-field button,
+.segmented button {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(4, 13, 16, 0.28);
+  color: white;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.input::placeholder {
+  color: rgba(229, 241, 244, 0.48);
+}
+
+.input:focus {
+  border-color: rgba(54, 199, 244, 0.78);
+  outline-color: rgba(54, 199, 244, 0.18);
+  box-shadow: 0 0 0 4px rgba(54, 199, 244, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+select.input option {
+  background: #10242b;
+  color: white;
+}
+
+.btn {
+  border-radius: 999px;
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.10);
+  color: white;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.18), 0 16px 28px rgba(0, 0, 0, 0.18);
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 9px 0 rgba(0, 0, 0, 0.18), 0 24px 42px rgba(0, 0, 0, 0.22);
+}
+
+.btn.primary,
+.btn.student,
+.btn.danger {
+  background: linear-gradient(135deg, #36c7f4, #38d67a);
+  color: #071318;
+}
+
+.btn.accent {
+  background: linear-gradient(135deg, #e5ce00, #94a800);
+  color: #071318;
+}
+
+.btn.ghost {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.badge,
+.chart-legend-item,
+.feature-strip span,
+.trust-strip span {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.10);
+  color: rgba(245, 251, 253, 0.88);
+}
+
+.activity-task {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.07));
+}
+
+.activity-task-head {
+  border-left-color: rgba(54, 199, 244, 0.82);
+  background: transparent;
+  color: white;
+}
+
+.activity-task-head:hover,
+.activity-task-body {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.activity-chevron,
+.auth-links a,
+.file-link,
+.success,
+.error {
+  color: #36c7f4;
+}
+
+.chart-donut > div,
+.finance-ring > div {
+  background: rgba(6, 18, 22, 0.62);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.bar-track {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.chart-dot.strong {
+  background: #36c7f4;
+}
+
+.chart-dot.main {
+  background: #e5ce00;
+}
+
+.chart-dot.soft {
+  background: #38d67a;
+}
+
+.finance-ring,
+.chart-donut {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.11), 0 22px 54px rgba(0, 0, 0, 0.24);
+}
+
+.news-card:hover,
+.activity-task.expanded,
+.shell .list-item:hover {
+  box-shadow: var(--shadow-strong);
+}
+
+.preview-topbar,
+.preview-stat,
+.preview-card {
+  color: white;
+}
+
+.preview-topbar {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.preview-topbar small {
+  color: #38d67a;
+}
+
+@media (max-width: 900px) {
+  .teacher-portal,
+  .student-portal {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-portal .sidebar,
+  .student-portal .sidebar,
+  .sidebar {
+    height: auto;
+    margin: 14px;
+    top: 0;
+  }
+}
