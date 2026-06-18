@@ -49,6 +49,18 @@ export function AppLayout({ children, area }: { children: React.ReactNode; area:
   );
 }
 
+export function GlobalBackground() {
+  return (
+    <div className="global-background" aria-hidden="true">
+      <div className="global-background-image" />
+      <div className="global-background-overlay" />
+      <div className="global-background-light light-blue" />
+      <div className="global-background-light light-cyan" />
+      <div className="global-background-light light-violet" />
+    </div>
+  );
+}
+
 export function GlassCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return <section className={`card glass-card ${className}`}>{children}</section>;
 }
