@@ -185,6 +185,16 @@ button:disabled {
   cursor: pointer;
 }
 
+.sidebar-actions {
+  margin-top: auto;
+  display: grid;
+  gap: 8px;
+}
+
+.sidebar-action-button {
+  cursor: pointer;
+}
+
 .card,
 .metric,
 .empty,
@@ -1351,7 +1361,8 @@ body::before {
 
 .sidebar-code,
 .sidebar-nav a,
-.sidebar .logout {
+.sidebar .logout,
+.sidebar .share-app {
   border-color: rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.86);
@@ -1359,7 +1370,8 @@ body::before {
 }
 
 .sidebar-nav a:hover,
-.sidebar .logout:hover {
+.sidebar .logout:hover,
+.sidebar .share-app:hover {
   background: rgba(255, 255, 255, 0.18);
   color: white;
 }
@@ -1592,7 +1604,8 @@ select.input option {
 }
 
 .icon-nav a,
-.teacher-icon-sidebar .logout {
+.teacher-icon-sidebar .logout,
+.teacher-icon-sidebar .share-app {
   position: relative;
   width: 48px;
   min-height: 48px;
@@ -1602,11 +1615,37 @@ select.input option {
 }
 
 .icon-nav a span,
-.teacher-icon-sidebar .logout {
+.teacher-icon-sidebar .logout span,
+.teacher-icon-sidebar .share-app span {
   font-size: 0;
 }
 
 .icon-nav a:hover::after {
+  content: attr(title);
+  position: absolute;
+  left: 58px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1000;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(8, 20, 24, 0.96);
+  color: white;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.36);
+  pointer-events: none;
+}
+
+.teacher-icon-sidebar .sidebar-action-button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.teacher-icon-sidebar .sidebar-action-button:hover::after {
   content: attr(title);
   position: absolute;
   left: 58px;
@@ -2129,7 +2168,9 @@ select.input option {
 .teacher-portal .icon-nav a,
 .student-portal .icon-nav a,
 .teacher-portal .sidebar .logout,
-.student-portal .sidebar .logout {
+.student-portal .sidebar .logout,
+.teacher-portal .sidebar .share-app,
+.student-portal .sidebar .share-app {
   background: rgba(255, 255, 255, 0.10);
   border-color: rgba(255, 255, 255, 0.15);
   color: rgba(255, 255, 255, 0.86);
@@ -2141,6 +2182,8 @@ select.input option {
 .student-portal .icon-nav a:hover,
 .teacher-portal .sidebar .logout:hover,
 .student-portal .sidebar .logout:hover,
+.teacher-portal .sidebar .share-app:hover,
+.student-portal .sidebar .share-app:hover,
 .btn:hover {
   transform: translateY(-2px) perspective(600px) rotateX(3deg);
   background: rgba(255, 255, 255, 0.18);
@@ -2422,6 +2465,12 @@ select.input option {
     margin-top: 0;
   }
 
+  .teacher-icon-sidebar .sidebar-actions {
+    margin-top: 0;
+    display: flex;
+    gap: 8px;
+  }
+
   .app-glass-shell {
     width: calc(100vw - 20px);
     min-height: auto;
@@ -2605,6 +2654,10 @@ select.input option {
     display: none;
   }
 
+  .teacher-icon-sidebar .sidebar-action-button:hover::after {
+    display: none;
+  }
+
   .teacher-portal .teacher-icon-sidebar,
   .student-portal .teacher-icon-sidebar {
     width: calc(100vw - 20px);
@@ -2644,7 +2697,9 @@ select.input option {
   }
 
   .teacher-portal .teacher-icon-sidebar .logout,
-  .student-portal .teacher-icon-sidebar .logout {
+  .student-portal .teacher-icon-sidebar .logout,
+  .teacher-portal .teacher-icon-sidebar .share-app,
+  .student-portal .teacher-icon-sidebar .share-app {
     flex: 0 0 48px;
   }
 }

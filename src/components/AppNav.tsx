@@ -18,7 +18,7 @@ export function TeacherNav() {
   return (
     <aside className="sidebar teacher-icon-sidebar">
       <div className="brand compact-brand">
-        <div className="brand-mark">E</div>
+        <div className="brand-mark">L</div>
         <div>
           <strong>Lumina</strong>
           <span>Portal do professor</span>
@@ -39,7 +39,7 @@ export function TeacherNav() {
         <NavIcon href="/teacher/planner" label="Planos de aula" icon="planner" />
         <NavIcon href="/teacher/news" label="Noticias" icon="news" />
       </nav>
-      <LogoutButton />
+      <SidebarActions />
     </aside>
   );
 }
@@ -48,7 +48,7 @@ export function StudentNav() {
   return (
     <aside className="sidebar teacher-icon-sidebar">
       <div className="brand compact-brand">
-        <div className="brand-mark">E</div>
+        <div className="brand-mark">L</div>
         <div>
           <strong>Lumina</strong>
           <span>Portal do aluno</span>
@@ -65,8 +65,17 @@ export function StudentNav() {
         <NavIcon href="/student/materials" label="Materiais" icon="materials" />
         <NavIcon href="/student/settings" label="Perfil" icon="settings" />
       </nav>
-      <LogoutButton />
+      <SidebarActions />
     </aside>
+  );
+}
+
+function SidebarActions() {
+  return (
+    <div className="sidebar-actions">
+      <LogoutButton />
+      <ShareButton />
+    </div>
   );
 }
 
@@ -78,7 +87,44 @@ function LogoutButton() {
     router.push('/login');
   }
 
-  return <button className="btn logout" onClick={logout}>Sair</button>;
+  return (
+    <button className="btn logout sidebar-action-button" onClick={logout} title="Sair" aria-label="Sair">
+      <LogoutIcon />
+      <span>Sair</span>
+    </button>
+  );
+}
+
+function ShareButton() {
+  const [copied, setCopied] = useState(false);
+
+  async function share() {
+    const url = window.location.origin;
+    const data = {
+      title: 'Lumina',
+      text: 'Acesse o Lumina para professores e alunos.',
+      url,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(data);
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <button className="btn share-app sidebar-action-button" onClick={share} title={copied ? 'Link copiado' : 'Compartilhar'} aria-label={copied ? 'Link copiado' : 'Compartilhar'}>
+      <ShareIcon />
+      <span>{copied ? 'Copiado' : 'Compartilhar'}</span>
+    </button>
+  );
 }
 
 function NavIcon({ href, label, icon }: { href: string; label: string; icon: IconName }) {
@@ -87,6 +133,28 @@ function NavIcon({ href, label, icon }: { href: string; label: string; icon: Ico
       <Icon name={icon} />
       <span>{label}</span>
     </Link>
+  );
+}
+
+function LogoutIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M10 17l5-5-5-5" />
+      <path d="M15 12H3" />
+      <path d="M21 19V5a2 2 0 0 0-2-2h-5" />
+    </svg>
+  );
+}
+
+function ShareIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <path d="M8.6 10.7l6.8-4.4" />
+      <path d="M8.6 13.3l6.8 4.4" />
+    </svg>
   );
 }
 
