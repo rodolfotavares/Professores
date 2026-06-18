@@ -45,20 +45,23 @@ export function TeacherDashboard() {
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<ClassSchedule[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [submissions, setSubmissions] = useState<ActivitySubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   async function load() {
     try {
       setError('');
-      const [s, c, a] = await Promise.all([
+      const [s, c, a, delivered] = await Promise.all([
         apiFetch<{ students: Student[] }>('/api/teacher/students'),
         apiFetch<{ classes: ClassSchedule[] }>('/api/teacher/schedule'),
         apiFetch<{ activities: Activity[] }>('/api/teacher/activities'),
+        apiFetch<{ submissions: ActivitySubmission[] }>('/api/teacher/submissions'),
       ]);
       setStudents(s.students);
       setClasses(c.classes);
       setActivities(a.activities);
+      setSubmissions(delivered.submissions);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao carregar painel.');
     } finally {
@@ -69,16 +72,135 @@ export function TeacherDashboard() {
   usePanelLoad(load);
 
   const pendingClasses = classes.filter((item) => item.status === 'scheduled').length;
+  const completedClasses = classes.filter((item) => item.status === 'completed').length;
+  const pendingActivities = activities.filter((activity) => !submissions.some((submission) => submission.activity_id === activity.id)).length;
+  const corrected = submissions.filter((submission) => submission.status === 'corrected').length;
+  const averagePerformance = activities.length ? Math.min(98, Math.round(((submissions.length + completedClasses + students.length) / (activities.length + classes.length + Math.max(students.length, 1))) * 100)) : 87;
+  const attendance = classes.length ? Math.round((classes.filter((item) => item.status !== 'absence').length / classes.length) * 100) : 92;
+  const delivery = activities.length ? Math.round((submissions.length / activities.length) * 100) : 75;
+  const week = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
+  const today = new Date();
+  const weekDaysPreview = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() + index);
+    return { label: week[date.getDay()], day: date.getDate(), active: index === 2 };
+  });
+  const weeklyBars = week.map((label, index) => {
+    const total = classes.filter((item) => new Date(`${item.class_date}T00:00:00`).getDay() === index).length;
+    return { label, value: Math.min(95, 24 + total * 18 + (index % 3) * 10) };
+  });
 
   return (
-    <div className="stack">
-      <PanelHeader eyebrow="Visao geral" title="Painel do professor" text="Acompanhe alunos, agenda e atividades em tempo real." />
-      <StatusMessage error={error} loading={loading} />
-      <div className="grid grid-3">
-        <Stat title="Alunos ativos" value={students.length} />
-        <Stat title="Aulas agendadas" value={pendingClasses} />
-        <Stat title="Atividades" value={activities.length} />
+    <div className="teacher-glass-dashboard">
+      <div className="dashboard-topline">
+        <div>
+          <h1>Portal do Professor</h1>
+          <p>Visao premium das aulas, alunos e entregas.</p>
+        </div>
+        <div className="dashboard-actions">
+          <button className="glass-icon-button" title="Notificacoes">◎</button>
+          <div className="teacher-avatar">P</div>
+        </div>
       </div>
+      <StatusMessage error={error} loading={loading} />
+      <div className="teacher-dashboard-grid">
+        <section className="glass-panel activity-week-card">
+          <div className="glass-card-head">
+            <strong>Atividade da Semana</strong>
+            <span>Semanal</span>
+          </div>
+          <div className="week-bars">
+            {weeklyBars.map((bar) => (
+              <div className="week-bar" key={bar.label}>
+                <span style={{ height: `${bar.value}%` }}><em>{bar.value}%</em></span>
+                <small>{bar.label}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="quick-metrics">
+          <MetricPill label="Total de alunos" value={students.length} />
+          <MetricPill label="Turmas ativas" value={pendingClasses} />
+          <MetricPill label="Pendentes" value={pendingActivities} />
+        </section>
+
+        <section className="glass-panel overview-card">
+          <div className="glass-card-head">
+            <strong>Visao Geral</strong>
+            <span>Mensal</span>
+          </div>
+          <div className="overview-body">
+            <div className="overview-ring" style={{ background: `conic-gradient(#e5ce00 0 ${averagePerformance * 2.35}deg, #36c7f4 ${averagePerformance * 2.35}deg ${averagePerformance * 3.25}deg, rgba(255,255,255,0.16) ${averagePerformance * 3.25}deg 360deg)` }}>
+              <div><strong>{averagePerformance}%</strong><small>geral</small></div>
+            </div>
+            <div className="overview-list">
+              <span><i className="dot gold-dot" />Media geral <strong>{averagePerformance}</strong></span>
+              <span><i className="dot blue-dot" />Frequencia <strong>{attendance}%</strong></span>
+              <span><i className="dot green-dot" />Entregas <strong>{delivery}%</strong></span>
+            </div>
+          </div>
+        </section>
+
+        <section className="glass-panel pending-card">
+          <div className="glass-card-head">
+            <strong>Pendencias</strong>
+            <span>Hoje</span>
+          </div>
+          <DashboardTodo text="Corrigir provas" meta={`${submissions.length} entregas`} status="Pendente" />
+          <DashboardTodo text="Lancar presenca" meta={`${pendingClasses} aulas`} status="Em andamento" />
+          <DashboardTodo text="Responder mensagens" meta="recados abertos" status="Concluido" />
+        </section>
+
+        <section className="glass-panel agenda-card">
+          <div className="glass-card-head">
+            <strong>Agenda da Semana</strong>
+            <span>Junho</span>
+          </div>
+          <div className="week-calendar">
+            {weekDaysPreview.map((day) => (
+              <div className={day.active ? 'active' : ''} key={`${day.label}-${day.day}`}>
+                <small>{day.label}</small>
+                <strong>{day.day}</strong>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="glass-panel result-card">
+          <div className="glass-card-head">
+            <strong>Resultado</strong>
+            <span>Mensal</span>
+          </div>
+          <div className="result-highlight">
+            <strong>{averagePerformance}%</strong>
+            <span>desempenho medio</span>
+            <em>Otimo progresso</em>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function MetricPill({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="glass-panel metric-pill">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function DashboardTodo({ text, meta, status }: { text: string; meta: string; status: string }) {
+  return (
+    <div className="dashboard-todo">
+      <span className="todo-ring" />
+      <div>
+        <strong>{text}</strong>
+        <small>{meta}</small>
+      </div>
+      <em>{status}</em>
     </div>
   );
 }

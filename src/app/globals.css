@@ -1550,3 +1550,466 @@ select.input option {
     top: 0;
   }
 }
+
+.teacher-portal {
+  grid-template-columns: 104px minmax(0, 1fr);
+}
+
+.teacher-icon-sidebar {
+  width: 78px;
+  align-items: center;
+  padding: 14px 10px;
+}
+
+.teacher-icon-sidebar .compact-brand {
+  justify-content: center;
+  padding: 4px 0 10px;
+}
+
+.teacher-icon-sidebar .compact-brand > div:not(.brand-mark) {
+  display: none;
+}
+
+.teacher-icon-sidebar .brand-mark {
+  width: 44px;
+  height: 44px;
+}
+
+.compact-code {
+  max-width: 58px;
+  overflow: hidden;
+  padding: 8px 6px;
+  text-align: center;
+  font-size: 10px;
+}
+
+.icon-nav {
+  width: 100%;
+  justify-items: center;
+}
+
+.icon-nav a,
+.teacher-icon-sidebar .logout {
+  position: relative;
+  width: 48px;
+  min-height: 48px;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.icon-nav a span,
+.teacher-icon-sidebar .logout {
+  font-size: 0;
+}
+
+.icon-nav a:hover::after {
+  content: attr(title);
+  position: absolute;
+  left: 58px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(8, 20, 24, 0.86);
+  color: white;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: var(--shadow);
+}
+
+.teacher-glass-dashboard {
+  width: min(1120px, 100%);
+  min-height: 720px;
+  margin: 16px auto;
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 28px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.075));
+  box-shadow: 0 34px 100px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(22px);
+}
+
+.dashboard-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.dashboard-topline h1 {
+  color: white;
+  font-size: clamp(30px, 4vw, 42px);
+}
+
+.dashboard-topline p {
+  margin: 6px 0 0;
+  color: rgba(229, 241, 244, 0.68);
+  font-weight: 700;
+}
+
+.dashboard-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.glass-icon-button,
+.teacher-avatar {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  box-shadow: var(--shadow);
+}
+
+.teacher-avatar {
+  background: linear-gradient(145deg, rgba(229, 206, 0, 0.82), rgba(54, 199, 244, 0.68));
+  color: #061216;
+  font-weight: 900;
+}
+
+.teacher-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.12fr 0.9fr 1.05fr;
+  grid-auto-rows: minmax(142px, auto);
+  gap: 14px;
+}
+
+.glass-panel {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  padding: 18px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.065));
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(18px);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.glass-panel:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.24);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.24);
+}
+
+.glass-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.glass-card-head strong {
+  color: white;
+  font-size: 16px;
+}
+
+.glass-card-head span {
+  color: rgba(229, 241, 244, 0.55);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.activity-week-card {
+  min-height: 210px;
+}
+
+.week-bars {
+  height: 154px;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  align-items: end;
+  gap: 9px;
+}
+
+.week-bar {
+  height: 100%;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 8px;
+  justify-items: center;
+}
+
+.week-bar span {
+  width: 100%;
+  min-height: 22px;
+  align-self: end;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08));
+  overflow: hidden;
+}
+
+.week-bar:nth-child(3n) span {
+  background: linear-gradient(180deg, rgba(229, 206, 0, 0.78), rgba(255, 255, 255, 0.10));
+}
+
+.week-bar:nth-child(3n + 1) span {
+  background: linear-gradient(180deg, rgba(54, 199, 244, 0.66), rgba(255, 255, 255, 0.08));
+}
+
+.week-bar em {
+  margin-top: 18px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.week-bar small {
+  color: rgba(229, 241, 244, 0.58);
+  font-weight: 800;
+}
+
+.quick-metrics {
+  display: grid;
+  gap: 12px;
+}
+
+.metric-pill {
+  min-height: 62px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding: 14px 16px;
+}
+
+.metric-pill span {
+  color: rgba(229, 241, 244, 0.72);
+  font-weight: 750;
+}
+
+.metric-pill strong {
+  color: white;
+  font-size: 24px;
+}
+
+.overview-card {
+  grid-row: span 2;
+}
+
+.overview-body {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  align-items: center;
+  gap: 18px;
+}
+
+.overview-ring {
+  width: 150px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.11), 0 18px 46px rgba(0, 0, 0, 0.25);
+}
+
+.overview-ring > div {
+  width: 92px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  border-radius: 50%;
+  background: rgba(6, 18, 22, 0.66);
+}
+
+.overview-ring strong {
+  color: white;
+  font-size: 24px;
+}
+
+.overview-ring small {
+  color: rgba(229, 241, 244, 0.60);
+  font-weight: 800;
+}
+
+.overview-list {
+  display: grid;
+  gap: 14px;
+}
+
+.overview-list span {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  color: rgba(229, 241, 244, 0.70);
+  font-weight: 750;
+}
+
+.overview-list strong {
+  color: white;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.gold-dot {
+  background: #e5ce00;
+}
+
+.blue-dot {
+  background: #36c7f4;
+}
+
+.green-dot {
+  background: #38d67a;
+}
+
+.pending-card {
+  grid-column: span 2;
+}
+
+.dashboard-todo {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-todo:first-of-type {
+  border-top: 0;
+}
+
+.todo-ring {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid rgba(54, 199, 244, 0.75);
+  border-right-color: rgba(255, 255, 255, 0.18);
+}
+
+.dashboard-todo strong {
+  display: block;
+  color: white;
+}
+
+.dashboard-todo small {
+  color: rgba(229, 241, 244, 0.58);
+  font-weight: 750;
+}
+
+.dashboard-todo em {
+  min-width: 104px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(229, 206, 0, 0.18);
+  color: #e5ce00;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+  text-align: center;
+}
+
+.dashboard-todo:nth-of-type(3) em {
+  background: rgba(56, 214, 122, 0.18);
+  color: #38d67a;
+}
+
+.week-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.week-calendar div {
+  min-height: 66px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.week-calendar div.active {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(229, 206, 0, 0.44);
+}
+
+.week-calendar small {
+  color: rgba(229, 241, 244, 0.58);
+  font-weight: 800;
+}
+
+.week-calendar strong {
+  color: white;
+}
+
+.result-card {
+  min-height: 182px;
+}
+
+.result-highlight {
+  display: grid;
+  gap: 4px;
+}
+
+.result-highlight strong {
+  color: white;
+  font-size: 42px;
+  line-height: 1;
+}
+
+.result-highlight span {
+  color: rgba(229, 241, 244, 0.64);
+  font-weight: 750;
+}
+
+.result-highlight em {
+  width: fit-content;
+  margin-top: 10px;
+  padding: 9px 13px;
+  border-radius: 999px;
+  background: rgba(56, 214, 122, 0.18);
+  color: #38d67a;
+  font-style: normal;
+  font-weight: 900;
+}
+
+@media (max-width: 1100px) {
+  .teacher-dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .overview-card,
+  .pending-card {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .teacher-dashboard-grid,
+  .overview-body {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-glass-dashboard {
+    min-height: 0;
+    margin: 0;
+  }
+
+  .overview-ring {
+    margin: 0 auto;
+  }
+
+  .week-calendar {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
