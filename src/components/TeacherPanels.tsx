@@ -29,6 +29,18 @@ async function uploadFile(file: File) {
   return apiFetch<{ url: string }>('/api/upload', { method: 'POST', body });
 }
 
+function PanelHeader({ eyebrow, title, text }: { eyebrow: string; title: string; text: string }) {
+  return (
+    <div className="panel-header">
+      <div>
+        <span className="eyebrow">{eyebrow}</span>
+        <h1>{title}</h1>
+      </div>
+      <p>{text}</p>
+    </div>
+  );
+}
+
 export function TeacherDashboard() {
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<ClassSchedule[]>([]);
@@ -60,14 +72,12 @@ export function TeacherDashboard() {
 
   return (
     <div className="stack">
+      <PanelHeader eyebrow="Visao geral" title="Painel do professor" text="Acompanhe alunos, agenda e atividades em tempo real." />
       <StatusMessage error={error} loading={loading} />
       <div className="grid grid-3">
         <Stat title="Alunos ativos" value={students.length} />
         <Stat title="Aulas agendadas" value={pendingClasses} />
         <Stat title="Atividades" value={activities.length} />
-      </div>
-      <div className="panel-note">
-        Os dados atualizam automaticamente a cada poucos segundos. Se voce cadastrar um aluno pelo mesmo navegador, continue usando este painel para manter a sessao do professor.
       </div>
     </div>
   );
@@ -112,6 +122,7 @@ export function TeacherFinancePanel() {
 
   return (
     <div className="stack">
+      <PanelHeader eyebrow="Receita" title="Financeiro" text="Veja a previsao mensal por aluno." />
       <StatusMessage error={error} loading={loading} />
       <div className="grid grid-3">
         <div className="metric"><p className="muted">Previsao mensal</p><h2>{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2></div>
@@ -194,6 +205,7 @@ export function TeacherNewsPanel() {
 
   return (
     <div className="stack">
+      <PanelHeader eyebrow="Curadoria" title="Noticias" text="Busque assuntos recentes para enriquecer suas aulas." />
       <form className="card news-search" onSubmit={submit}>
         <div>
           <span className="eyebrow">Noticias por materia</span>
@@ -303,7 +315,9 @@ export function StudentsPanel() {
   const monthlyValue = (Number(form.classes_per_week || 0) * Number(form.price_per_class || 0) * 4).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
-    <div className="grid grid-2">
+    <div className="stack">
+      <PanelHeader eyebrow="Administracao" title="Alunos" text="Cadastre, edite agenda e acompanhe valores." />
+      <div className="grid grid-2">
       <form className="card stack" onSubmit={submit}>
         <div>
           <span className="eyebrow">Cadastro vinculado</span>
@@ -357,6 +371,7 @@ export function StudentsPanel() {
             </div>
           </div>
         ))}
+      </div>
       </div>
     </div>
   );
@@ -419,7 +434,9 @@ export function TeacherSchedulePanel() {
   }
 
   return (
-    <div className="grid grid-2">
+    <div className="stack">
+      <PanelHeader eyebrow="Calendario" title="Agenda" text="Organize aulas e atualize status rapidamente." />
+      <div className="grid grid-2">
       <form className="card stack" onSubmit={submit}>
         <h2>{editingClassId ? 'Editar aula' : 'Agendar aula'}</h2>
         <StatusMessage error={error} loading={false} />
@@ -452,6 +469,7 @@ export function TeacherSchedulePanel() {
             </div>
           </div>
         ))}
+      </div>
       </div>
     </div>
   );
@@ -511,7 +529,9 @@ export function TeacherActivitiesPanel() {
   }
 
   return (
-    <div className="grid grid-2">
+    <div className="stack">
+      <PanelHeader eyebrow="Tarefas" title="Atividades" text="Publique, receba arquivos e corrija entregas." />
+      <div className="grid grid-2">
       <form className="card stack" onSubmit={submit}>
         <h2>Nova atividade</h2>
         <StatusMessage error={error} loading={false} />
@@ -546,6 +566,7 @@ export function TeacherActivitiesPanel() {
             <span className="badge">{activity.due_date || 'Sem prazo'}</span>
           </div>
         ))}
+      </div>
       </div>
     </div>
   );
@@ -590,7 +611,9 @@ export function TeacherMessagesPanel() {
   }
 
   return (
-    <div className="grid grid-2">
+    <div className="stack">
+      <PanelHeader eyebrow="Comunicacao" title="Recados" text="Converse com cada aluno em um historico simples." />
+      <div className="grid grid-2">
       <div className="card stack">
         <h2>Conversa</h2>
         <StatusMessage error={error} loading={loading} />
@@ -603,6 +626,7 @@ export function TeacherMessagesPanel() {
       <div className="stack">
         {!loading && messages.length === 0 && <EmptyState title="Sem recados" text="As mensagens trocadas com o aluno aparecem aqui." />}
         {messages.map((message) => <div className="card" key={message.id}><span className="badge">{message.sender_role}</span><p>{message.text}</p></div>)}
+      </div>
       </div>
     </div>
   );
@@ -640,7 +664,9 @@ export function LessonPlannerPanel() {
   }
 
   return (
-    <div className="grid grid-2">
+    <div className="stack">
+      <PanelHeader eyebrow="Planejamento" title="Planos de aula" text="Monte uma estrutura objetiva para a proxima aula." />
+      <div className="grid grid-2">
       <form className="card stack" onSubmit={submit}>
         <div>
           <span className="eyebrow">Assistente do professor</span>
@@ -674,6 +700,7 @@ export function LessonPlannerPanel() {
             <div className="panel-note"><strong>Tarefa sugerida:</strong> {plan.homework}</div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

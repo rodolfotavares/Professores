@@ -19,6 +19,18 @@ async function uploadFile(file: File) {
   return apiFetch<{ url: string }>('/api/upload', { method: 'POST', body });
 }
 
+function PanelHeader({ eyebrow, title, text }: { eyebrow: string; title: string; text: string }) {
+  return (
+    <div className="panel-header">
+      <div>
+        <span className="eyebrow">{eyebrow}</span>
+        <h1>{title}</h1>
+      </div>
+      <p>{text}</p>
+    </div>
+  );
+}
+
 export function StudentDashboard() {
   const [student, setStudent] = useState<Student | null>(null);
   const [classes, setClasses] = useState<ClassSchedule[]>([]);
@@ -52,13 +64,13 @@ export function StudentDashboard() {
 
   return (
     <div className="stack">
+      <PanelHeader eyebrow="Inicio" title="Portal do aluno" text="Veja suas aulas, tarefas e recados em um lugar." />
       <StatusMessage error={error} loading={loading} />
       <div className="grid grid-3">
         <div className="metric"><p className="muted">Aluno</p><h2>{student?.full_name || '...'}</h2></div>
         <div className="metric"><p className="muted">Aulas</p><h2>{classes.length}</h2></div>
         <div className="metric"><p className="muted">Pendentes</p><h2>{pending.length}</h2></div>
       </div>
-      <div className="panel-note">Agenda, atividades e recados atualizam automaticamente.</div>
     </div>
   );
 }
@@ -89,6 +101,7 @@ export function StudentSchedulePanel() {
 
   return (
     <div className="stack">
+      <PanelHeader eyebrow="Calendario" title="Agenda" text="Confirme aulas e acompanhe seus proximos encontros." />
       <StatusMessage error={error} loading={loading} />
       {!loading && classes.length === 0 && <EmptyState title="Nenhuma aula agendada" text="Quando o professor criar aulas, elas aparecem aqui." />}
       {classes.map((item) => (
@@ -157,6 +170,7 @@ export function StudentActivitiesPanel() {
 
   return (
     <div className="stack">
+      <PanelHeader eyebrow="Tarefas" title="Atividades" text="Abra uma tarefa para responder e anexar arquivos." />
       <StatusMessage error={error} loading={loading} />
       <ActivityChart pending={activityStats.pending} completed={activityStats.completed} expired={activityStats.expired} />
       {!loading && activities.length === 0 && <EmptyState title="Nenhuma atividade" text="Quando o professor publicar atividades, elas aparecem aqui." />}
@@ -276,7 +290,9 @@ export function StudentMessagesPanel() {
   }
 
   return (
-    <div className="grid grid-2">
+    <div className="stack">
+      <PanelHeader eyebrow="Comunicacao" title="Recados" text="Envie mensagens e acompanhe respostas do professor." />
+      <div className="grid grid-2">
       <form className="card stack" onSubmit={send}>
         <h2>Enviar recado</h2>
         <StatusMessage error={error} loading={loading} />
@@ -286,6 +302,7 @@ export function StudentMessagesPanel() {
       <div className="stack">
         {!loading && messages.length === 0 && <EmptyState title="Sem recados" text="As mensagens do professor aparecem aqui." />}
         {messages.map((message) => <div className="card" key={message.id}><span className="badge">{message.sender_role}</span><p>{message.text}</p></div>)}
+      </div>
       </div>
     </div>
   );

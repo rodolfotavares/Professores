@@ -1071,6 +1071,95 @@ h2 {
   box-shadow: var(--shadow-strong);
 }
 
+.panel-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.42fr);
+  align-items: end;
+  gap: 18px;
+  padding: 4px 2px 10px;
+}
+
+.panel-header h1 {
+  margin-top: 4px;
+  color: var(--blue-strong);
+  font-size: clamp(30px, 4vw, 44px);
+  line-height: 1;
+}
+
+.panel-header p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.shell .card {
+  border: 1px solid rgba(220, 229, 239, 0.88);
+}
+
+.shell form.card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 249, 254, 0.94));
+}
+
+.shell form.card h2,
+.shell .card h2 {
+  color: var(--blue-strong);
+}
+
+.shell .list-item,
+.activity-task,
+.news-card,
+.finance-row {
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.shell .list-item:hover,
+.activity-task:hover,
+.news-card:hover {
+  border-color: rgba(49, 87, 200, 0.30);
+  transform: translateY(-2px);
+}
+
+.shell .list-item strong,
+.activity-task-head strong,
+.finance-row strong {
+  color: var(--blue-strong);
+  font-size: 16px;
+}
+
+.shell small,
+.finance-row small {
+  color: var(--muted);
+  font-weight: 750;
+}
+
+.label {
+  color: #53647c;
+}
+
+.panel-note {
+  border: 1px solid rgba(49, 87, 200, 0.12);
+  border-radius: 14px;
+}
+
+.clean-list li {
+  padding: 6px 0;
+}
+
+.news-search {
+  align-items: center;
+}
+
+.news-card {
+  min-height: 132px;
+}
+
+.message-bubble {
+  display: grid;
+  gap: 6px;
+}
+
 @media (max-width: 900px) {
   .marketing-page {
     align-items: start;
@@ -1078,6 +1167,10 @@ h2 {
   }
 
   .marketing-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-header {
     grid-template-columns: 1fr;
   }
 
