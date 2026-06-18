@@ -1,4 +1,4 @@
-const CACHE_NAME = 'eduassist-pro-v1';
+const CACHE_NAME = 'lumina-v1';
 const STATIC_ASSETS = [
   '/manifest.webmanifest',
   '/icons/icon-192.png',

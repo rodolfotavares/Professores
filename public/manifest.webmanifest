@@ -1,6 +1,6 @@
 {
-  "name": "EduAssist Pro",
-  "short_name": "EduAssist",
+  "name": "Lumina",
+  "short_name": "Lumina",
   "description": "Portal premium para professores e alunos acompanharem aulas, atividades, mensagens e agenda.",
   "start_url": "/login",
   "scope": "/",

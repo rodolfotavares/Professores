@@ -1,4 +1,4 @@
-# Professores - EduAssist Pro
+# Professores - Lumina
 
 App para professores e alunos, feito fora do Base44 com Next.js e Supabase.
 

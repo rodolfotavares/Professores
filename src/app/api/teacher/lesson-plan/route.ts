@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
         materials: [
           'Quadro ou folha de rascunho',
           'Lista curta de exercicios',
-          'Atividade de fixacao no EduAssist Pro',
+          'Atividade de fixacao no Lumina',
         ],
         homework: `Criar uma atividade de 5 questoes sobre ${body.topic}, misturando revisao e desafio.`,
       },

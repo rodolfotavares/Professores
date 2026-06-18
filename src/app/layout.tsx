@@ -3,13 +3,13 @@ import { PwaRegister } from '@/components/PwaRegister';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'EduAssist Pro',
+  title: 'Lumina',
   description: 'Gestao de aulas particulares com professor e aluno sincronizados',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'EduAssist Pro',
+    title: 'Lumina',
   },
   icons: {
     icon: [

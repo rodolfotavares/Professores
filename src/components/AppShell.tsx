@@ -28,7 +28,7 @@ const titles: Record<string, { title: string; eyebrow: string }> = {
 
 export function AppLayout({ children, area }: { children: React.ReactNode; area: 'teacher' | 'student' }) {
   const pathname = usePathname();
-  const current = titles[pathname] || { title: area === 'teacher' ? 'Portal do Professor' : 'Portal do Aluno', eyebrow: 'EduAssist Pro' };
+  const current = titles[pathname] || { title: area === 'teacher' ? 'Portal do Professor' : 'Portal do Aluno', eyebrow: 'Lumina' };
 
   return (
     <section className="app-glass-shell">

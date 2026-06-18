@@ -39,7 +39,7 @@ export function LoginForm() {
   return (
     <form className="card stack auth-card" onSubmit={submit}>
       <div className="auth-heading">
-        <span className="eyebrow">EduAssist Pro</span>
+        <span className="eyebrow">Lumina</span>
         <h1>Entrar</h1>
         <p>Acesse seu portal com e-mail e senha.</p>
       </div>

@@ -20,7 +20,7 @@ export function TeacherNav() {
       <div className="brand compact-brand">
         <div className="brand-mark">E</div>
         <div>
-          <strong>EduAssist Pro</strong>
+          <strong>Lumina</strong>
           <span>Portal do professor</span>
         </div>
       </div>
@@ -50,7 +50,7 @@ export function StudentNav() {
       <div className="brand compact-brand">
         <div className="brand-mark">E</div>
         <div>
-          <strong>EduAssist Pro</strong>
+          <strong>Lumina</strong>
           <span>Portal do aluno</span>
         </div>
       </div>

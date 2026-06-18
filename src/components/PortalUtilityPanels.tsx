@@ -17,7 +17,7 @@ function usePanelLoad(load: () => Promise<void>, interval = 15000) {
 function SectionIntro({ title, text }: { title: string; text: string }) {
   return (
     <div className="section-intro">
-      <span className="eyebrow">EduAssist Pro</span>
+      <span className="eyebrow">Lumina</span>
       <h2>{title}</h2>
       <p>{text}</p>
     </div>
