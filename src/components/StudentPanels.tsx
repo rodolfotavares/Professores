@@ -141,9 +141,21 @@ export function StudentActivitiesPanel() {
     }
   }
 
+  const activityStats = activities.reduce(
+    (stats, activity) => {
+      const submission = submissions.find((item) => item.activity_id === activity.id);
+      const expired = !submission && activity.due_date ? new Date() > new Date(`${activity.due_date}T23:59:59`) : false;
+      if (submission) return { ...stats, completed: stats.completed + 1 };
+      if (expired) return { ...stats, expired: stats.expired + 1 };
+      return { ...stats, pending: stats.pending + 1 };
+    },
+    { pending: 0, completed: 0, expired: 0 },
+  );
+
   return (
     <div className="stack">
       <StatusMessage error={error} loading={loading} />
+      <ActivityChart pending={activityStats.pending} completed={activityStats.completed} expired={activityStats.expired} />
       <textarea className="input textarea" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Resposta da atividade" />
       <label className="label">Anexar arquivo da resposta<input className="input" type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} /></label>
       {!loading && activities.length === 0 && <EmptyState title="Nenhuma atividade" text="Quando o professor publicar atividades, elas aparecem aqui." />}
@@ -162,6 +174,47 @@ export function StudentActivitiesPanel() {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function ActivityChart({ pending, completed, expired }: { pending: number; completed: number; expired: number }) {
+  const total = pending + completed + expired;
+  const completedDeg = total ? (completed / total) * 360 : 0;
+  const pendingDeg = total ? (pending / total) * 360 : 0;
+  const chartStyle = {
+    background: total
+      ? `conic-gradient(#084eb8 0 ${completedDeg}deg, #0d6efd ${completedDeg}deg ${completedDeg + pendingDeg}deg, #8bbcff ${completedDeg + pendingDeg}deg 360deg)`
+      : 'conic-gradient(#d7e4f7 0 360deg)',
+  };
+
+  return (
+    <div className="card activity-chart">
+      <div className="chart-donut" style={chartStyle}>
+        <div>
+          <strong>{total}</strong>
+          <span>tarefas</span>
+        </div>
+      </div>
+      <div className="chart-summary">
+        <span className="eyebrow">Resumo das atividades</span>
+        <h2>Progresso das tarefas</h2>
+        <div className="chart-legend">
+          <ChartLegend label="Concluidas" value={completed} tone="strong" />
+          <ChartLegend label="Pendentes" value={pending} tone="main" />
+          <ChartLegend label="Expiradas" value={expired} tone="soft" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChartLegend({ label, value, tone }: { label: string; value: number; tone: 'strong' | 'main' | 'soft' }) {
+  return (
+    <div className="chart-legend-item">
+      <span className={`chart-dot ${tone}`} />
+      <strong>{value}</strong>
+      <small>{label}</small>
     </div>
   );
 }
