@@ -238,6 +238,8 @@ function Stat({ title, value }: { title: string; value: number }) {
 
 export function TeacherFinancePanel() {
   const [students, setStudents] = useState<Student[]>([]);
+  const [paymentMonth, setPaymentMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [paymentStatus, setPaymentStatus] = useState<Record<string, 'paid' | 'unpaid'>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -255,13 +257,28 @@ export function TeacherFinancePanel() {
 
   usePanelLoad(load);
 
+  useEffect(() => {
+    const saved = window.localStorage.getItem(`lumina-payments-${paymentMonth}`);
+    setPaymentStatus(saved ? JSON.parse(saved) : {});
+  }, [paymentMonth]);
+
+  function updatePayment(studentId: string, status: 'paid' | 'unpaid') {
+    setPaymentStatus((current) => {
+      const next = { ...current, [studentId]: status };
+      window.localStorage.setItem(`lumina-payments-${paymentMonth}`, JSON.stringify(next));
+      return next;
+    });
+  }
+
   const rows = students.map((student) => {
     const weeklyClasses = student.classes_per_week || Math.ceil((student.classes_per_month || 0) / 4);
     const monthly = weeklyClasses * (student.price_per_class || 0) * 4;
-    return { ...student, weeklyClasses, monthly };
+    return { ...student, weeklyClasses, monthly, payment: paymentStatus[student.id] || 'unpaid' };
   });
   const total = rows.reduce((sum, student) => sum + student.monthly, 0);
   const active = rows.filter((student) => student.status === 'active').length;
+  const paidTotal = rows.filter((student) => student.payment === 'paid').reduce((sum, student) => sum + student.monthly, 0);
+  const unpaidTotal = Math.max(0, total - paidTotal);
   const max = Math.max(...rows.map((student) => student.monthly), 1);
 
   return (
@@ -274,6 +291,14 @@ export function TeacherFinancePanel() {
         <div className="metric"><p className="muted">Média por aluno</p><h2>{(active ? total / active : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2></div>
       </div>
       {!loading && rows.length === 0 && <EmptyState title="Sem previsão ainda" text="Cadastre alunos com aulas por semana e valor por aula." />}
+      <div className="grid grid-3">
+        <label className="metric payment-month-card">
+          <p className="muted">Mês de referência</p>
+          <input className="input" type="month" value={paymentMonth} onChange={(event) => setPaymentMonth(event.target.value)} />
+        </label>
+        <div className="metric"><p className="muted">Pagos no mês</p><h2>{paidTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2></div>
+        <div className="metric"><p className="muted">Não pagos</p><h2>{unpaidTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2></div>
+      </div>
       {rows.length > 0 && (
         <div className="grid grid-2">
           <div className="card finance-chart">
@@ -302,6 +327,10 @@ export function TeacherFinancePanel() {
                   </div>
                   <div className="bar-track"><span style={{ width: `${Math.max(6, (student.monthly / max) * 100)}%` }} /></div>
                   <small className="muted">{student.weeklyClasses} aulas/semana x {(student.price_per_class || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</small>
+                  <div className="payment-toggle" role="group" aria-label={`Pagamento de ${student.full_name}`}>
+                    <button className={student.payment === 'paid' ? 'selected paid' : ''} onClick={() => updatePayment(student.id, 'paid')}>Pago</button>
+                    <button className={student.payment === 'unpaid' ? 'selected unpaid' : ''} onClick={() => updatePayment(student.id, 'unpaid')}>Não pago</button>
+                  </div>
                 </div>
               ))}
             </div>

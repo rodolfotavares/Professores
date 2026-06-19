@@ -2840,6 +2840,53 @@ select.input option {
   gap: 10px;
 }
 
+.payment-month-card {
+  gap: 10px;
+}
+
+.payment-toggle,
+.language-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.payment-toggle button,
+.language-options button {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  padding: 8px 12px;
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  font-weight: 800;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.payment-toggle button:hover,
+.language-options button:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.payment-toggle button.selected.paid,
+.language-options button.selected {
+  color: #ffffff;
+  background: rgba(34, 197, 94, 0.28);
+  border-color: rgba(74, 222, 128, 0.55);
+}
+
+.payment-toggle button.selected.unpaid {
+  color: #ffffff;
+  background: rgba(234, 179, 8, 0.24);
+  border-color: rgba(250, 204, 21, 0.55);
+}
+
+.language-card {
+  min-height: auto;
+}
+
 @media (max-width: 640px) {
   .support-chat-form {
     grid-template-columns: 1fr;

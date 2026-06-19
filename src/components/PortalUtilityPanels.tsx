@@ -46,6 +46,32 @@ function statusLabel(status?: string) {
   return status ? labels[status] || status : '';
 }
 
+function LanguagePreferenceCard() {
+  const [language, setLanguage] = useState('pt-BR');
+
+  useEffect(() => {
+    setLanguage(window.localStorage.getItem('lumina-language') || 'pt-BR');
+  }, []);
+
+  function updateLanguage(nextLanguage: string) {
+    setLanguage(nextLanguage);
+    window.localStorage.setItem('lumina-language', nextLanguage);
+    document.documentElement.lang = nextLanguage === 'en-US' ? 'en' : 'pt-BR';
+  }
+
+  return (
+    <GlassCard className="portal-summary-card language-card">
+      <span className="eyebrow">Idioma</span>
+      <h2>{language === 'en-US' ? 'English' : 'Português'}</h2>
+      <p className="muted">Escolha o idioma de preferência do app neste dispositivo.</p>
+      <div className="language-options">
+        <button className={language === 'pt-BR' ? 'selected' : ''} onClick={() => updateLanguage('pt-BR')}>Português</button>
+        <button className={language === 'en-US' ? 'selected' : ''} onClick={() => updateLanguage('en-US')}>English</button>
+      </div>
+    </GlassCard>
+  );
+}
+
 const supportAnswers = [
   {
     keywords: ['aluno', 'vincular', 'codigo', 'código', 'cadastro'],
@@ -124,6 +150,9 @@ export function TeacherSupportPanel() {
             <button className="btn primary">Enviar</button>
           </form>
         </GlassCard>
+      </div>
+      <div className="grid grid-2">
+        <LanguagePreferenceCard />
       </div>
     </div>
   );
@@ -385,6 +414,9 @@ export function TeacherSettingsPanel() {
           <p className="muted">Use este código no cadastro do aluno para criar o vínculo automaticamente.</p>
         </GlassCard>
       </div>
+      <div className="grid grid-2">
+        <LanguagePreferenceCard />
+      </div>
     </div>
   );
 }
@@ -583,6 +615,9 @@ export function StudentSettingsPanel() {
           <p className="muted">Dias: {days}</p>
           <p className="muted">Horário: {student?.class_time || 'Não definido'}</p>
         </GlassCard>
+      </div>
+      <div className="grid grid-2">
+        <LanguagePreferenceCard />
       </div>
     </div>
   );
