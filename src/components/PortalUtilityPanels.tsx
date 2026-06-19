@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { GlassCard, MetricCard, StatusBadge } from '@/components/AppShell';
 import { EmptyState, StatusMessage } from '@/components/PanelState';
 import { apiFetch } from '@/lib/fetcher';
@@ -44,6 +44,89 @@ function statusLabel(status?: string) {
     corrected: 'Corrigida',
   };
   return status ? labels[status] || status : '';
+}
+
+const supportAnswers = [
+  {
+    keywords: ['aluno', 'vincular', 'codigo', 'código', 'cadastro'],
+    answer: 'Para vincular um aluno, o professor deve abrir Configurações, copiar o código do professor e pedir para o aluno usar esse código no cadastro.',
+  },
+  {
+    keywords: ['agenda', 'aula', 'horario', 'horário', 'presenca', 'presença'],
+    answer: 'A agenda nasce dos dias e horários cadastrados no aluno. O professor pode editar a agenda em Alunos ou Agenda, e o aluno visualiza os próximos encontros na aba Agenda.',
+  },
+  {
+    keywords: ['atividade', 'tarefa', 'corrigir', 'nota', 'feedback'],
+    answer: 'As atividades ficam na aba Atividades. Entregas novas aparecem em Para corrigir, atividades sem entrega ficam em Pendentes e avaliações concluídas ficam em Corrigidas.',
+  },
+  {
+    keywords: ['mensagem', 'recado', 'chat'],
+    answer: 'Use a aba Mensagens para conversar com cada aluno. Selecione o aluno, escreva o recado e envie.',
+  },
+  {
+    keywords: ['financeiro', 'pagamento', 'valor', 'mensalidade', 'ganho'],
+    answer: 'A previsão financeira usa o número de aulas por semana e o valor por aula definidos no cadastro do aluno.',
+  },
+  {
+    keywords: ['instalar', 'celular', 'android', 'iphone', 'pwa'],
+    answer: 'Abra a aba Tutorial para ver como instalar o Lumina na tela inicial do Android ou iPhone.',
+  },
+];
+
+function supportReply(question: string) {
+  const normalized = question.toLowerCase();
+  const match = supportAnswers.find((item) => item.keywords.some((keyword) => normalized.includes(keyword)));
+  if (match) return match.answer;
+  return 'Posso ajudar somente com funções do Lumina: alunos, agenda, atividades, notas, frequência, mensagens, financeiro, instalação e configurações.';
+}
+
+export function TeacherSupportPanel() {
+  const [messages, setMessages] = useState([
+    { role: 'assistant', text: 'Olá! Sou o assistente do Lumina. Posso ajudar com funções do app, como alunos, agenda, atividades, notas e mensagens.' },
+  ]);
+  const [question, setQuestion] = useState('');
+
+  function sendQuestion(event: FormEvent) {
+    event.preventDefault();
+    const text = question.trim();
+    if (!text) return;
+    setMessages((current) => [
+      ...current,
+      { role: 'user', text },
+      { role: 'assistant', text: supportReply(text) },
+    ]);
+    setQuestion('');
+  }
+
+  return (
+    <div className="stack portal-tab">
+      <SectionIntro title="Suporte" text="Contato direto e ajuda rápida sobre as funções do Lumina." />
+      <div className="grid grid-2">
+        <GlassCard className="support-contact-card">
+          <span className="eyebrow">WhatsApp</span>
+          <h2>Atendimento Lumina</h2>
+          <p className="muted">Fale com o suporte pelo WhatsApp para dúvidas sobre uso do app.</p>
+          <a className="btn primary" href="https://wa.me/14023667683" target="_blank">Chamar no WhatsApp</a>
+          <p className="support-phone">+1 (402) 366-7683</p>
+        </GlassCard>
+        <GlassCard className="support-chat-card">
+          <span className="eyebrow">Chat IA</span>
+          <h2>Ajuda sobre o app</h2>
+          <div className="support-chat-window">
+            {messages.map((message, index) => (
+              <div className={`support-message ${message.role}`} key={`${message.role}-${index}`}>
+                {message.text}
+              </div>
+            ))}
+          </div>
+          <form className="support-chat-form" onSubmit={sendQuestion}>
+            <input className="input" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Pergunte sobre uma função do Lumina" />
+            <button className="btn primary">Enviar</button>
+          </form>
+        </GlassCard>
+      </div>
+    </div>
+  );
 }
 
 export function TeacherClassesPanel() {

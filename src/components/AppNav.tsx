@@ -2,19 +2,10 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { apiFetch } from '@/lib/fetcher';
+import { useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 export function TeacherNav() {
-  const [profile, setProfile] = useState<{ full_name?: string; access_code?: string } | null>(null);
-
-  useEffect(() => {
-    apiFetch<{ profile: { full_name?: string; access_code?: string } }>('/api/teacher/profile')
-      .then((data) => setProfile(data.profile))
-      .catch(() => setProfile(null));
-  }, []);
-
   return (
     <aside className="sidebar teacher-icon-sidebar">
       <div className="brand compact-brand">
@@ -24,7 +15,6 @@ export function TeacherNav() {
           <span>Portal do professor</span>
         </div>
       </div>
-      {profile?.access_code && <div className="sidebar-code compact-code">{profile.access_code}</div>}
       <nav className="sidebar-nav icon-nav">
         <NavIcon href="/teacher" label="Início" icon="home" />
         <NavIcon href="/teacher/classes" label="Turmas" icon="classes" />
@@ -38,6 +28,7 @@ export function TeacherNav() {
         <NavIcon href="/teacher/settings" label="Configurações" icon="settings" />
         <NavIcon href="/teacher/planner" label="Planos de aula" icon="planner" />
         <NavIcon href="/teacher/news" label="Notícias" icon="news" />
+        <NavIcon href="/teacher/support" label="Suporte" icon="support" />
         <NavIcon href="/teacher/tutorial" label="Tutorial" icon="phone" />
       </nav>
       <SidebarActions />
@@ -158,7 +149,7 @@ function ShareIcon() {
   );
 }
 
-type IconName = 'home' | 'calendar' | 'users' | 'tasks' | 'chart' | 'settings' | 'planner' | 'news' | 'message' | 'classes' | 'grades' | 'frequency' | 'materials' | 'phone';
+type IconName = 'home' | 'calendar' | 'users' | 'tasks' | 'chart' | 'settings' | 'planner' | 'news' | 'message' | 'classes' | 'grades' | 'frequency' | 'materials' | 'phone' | 'support';
 
 function Icon({ name }: { name: IconName }) {
   const common = { width: 19, height: 19, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
@@ -175,5 +166,6 @@ function Icon({ name }: { name: IconName }) {
   if (name === 'news') return <svg {...common}><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13Z" /><path d="M8 8h8M8 12h8M8 16h5" /></svg>;
   if (name === 'materials') return <svg {...common}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M8 13h8M8 17h5" /></svg>;
   if (name === 'phone') return <svg {...common}><rect x="7" y="2" width="10" height="20" rx="2" /><path d="M11 18h2" /><path d="M10 6h4" /></svg>;
+  if (name === 'support') return <svg {...common}><path d="M4 12a8 8 0 0 1 16 0" /><path d="M4 12v3a2 2 0 0 0 2 2h1v-6H6a2 2 0 0 0-2 2Z" /><path d="M20 12v3a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2Z" /><path d="M14 19h2a4 4 0 0 0 4-4" /><path d="M9 19h3" /></svg>;
   return <svg {...common}><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z" /></svg>;
 }
