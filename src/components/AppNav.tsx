@@ -62,7 +62,6 @@ export function StudentNav() {
         <NavIcon href="/student/frequency" label="Frequência" icon="frequency" />
         <NavIcon href="/student/schedule" label="Agenda" icon="calendar" />
         <NavIcon href="/student/messages" label="Mensagens" icon="message" />
-        <NavIcon href="/student/materials" label="Materiais" icon="materials" />
         <NavIcon href="/student/settings" label="Perfil" icon="settings" />
         <NavIcon href="/student/tutorial" label="Tutorial" icon="phone" />
       </nav>

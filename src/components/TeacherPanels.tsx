@@ -704,6 +704,38 @@ export function TeacherActivitiesPanel() {
     }
   }
 
+  const correctedSubmissions = submissions.filter((submission) => submission.status === 'corrected');
+  const toCorrectSubmissions = submissions.filter((submission) => submission.status !== 'corrected');
+  const pendingActivities = activities.filter((activity) => !submissions.some((submission) => submission.activity_id === activity.id));
+
+  function renderSubmissionCard(submission: ActivitySubmission, editable: boolean) {
+    return (
+      <div className="card stack" key={submission.id}>
+        <div className="list-item">
+          <div>
+            <strong>{submission.activities?.title || 'Atividade'}</strong>
+            <p className="muted">{submission.students?.full_name || 'Aluno'} - {statusLabel(submission.status)}</p>
+          </div>
+          {submission.grade != null && <span className="badge">Nota {submission.grade}</span>}
+        </div>
+        <p>{submission.answer_text || 'Sem resposta em texto.'}</p>
+        {submission.answer_file_url && <a className="file-link" href={submission.answer_file_url} target="_blank">Arquivo entregue pelo aluno</a>}
+        {editable ? (
+          <>
+            <Input label="Nota" type="number" value={grades[submission.id] ?? (submission.grade != null ? String(submission.grade) : '10')} onChange={(value) => setGrades((current) => ({ ...current, [submission.id]: value }))} />
+            <label className="label">Feedback<textarea className="input textarea" value={feedbacks[submission.id] ?? submission.feedback ?? ''} onChange={(event) => setFeedbacks((current) => ({ ...current, [submission.id]: event.target.value }))} /></label>
+            <button className="btn primary" disabled={correctingId === submission.id} onClick={() => correct(submission.id)}>{correctingId === submission.id ? 'Corrigindo...' : 'Corrigir'}</button>
+          </>
+        ) : (
+          <div className="panel-note">
+            <strong>Correção enviada.</strong>
+            <p>{submission.feedback || 'Sem feedback registrado.'}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="stack">
       <PanelHeader eyebrow="Tarefas" title="Atividades" text="Publique, receba arquivos e corrija entregas." />
@@ -722,27 +754,41 @@ export function TeacherActivitiesPanel() {
       <div className="stack">
         <StatusMessage error="" loading={loading} />
         {!loading && activities.length === 0 && <EmptyState title="Nenhuma atividade" text="Crie uma atividade para todos os alunos ou para um aluno específico." />}
-        {submissions.map((submission) => (
-          <div className="card" key={submission.id}>
-            <strong>{submission.activities?.title}</strong>
-            <p className="muted">{submission.students?.full_name || 'Aluno'} - {statusLabel(submission.status)}</p>
-            <p>{submission.answer_text}</p>
-            {submission.answer_file_url && <a className="file-link" href={submission.answer_file_url} target="_blank">Arquivo entregue pelo aluno</a>}
-            <Input label="Nota" type="number" value={grades[submission.id] ?? (submission.grade != null ? String(submission.grade) : '10')} onChange={(value) => setGrades((current) => ({ ...current, [submission.id]: value }))} />
-            <label className="label">Feedback<textarea className="input textarea" value={feedbacks[submission.id] ?? submission.feedback ?? ''} onChange={(event) => setFeedbacks((current) => ({ ...current, [submission.id]: event.target.value }))} /></label>
-            <button className="btn primary" disabled={correctingId === submission.id} onClick={() => correct(submission.id)}>{correctingId === submission.id ? 'Corrigindo...' : 'Corrigir'}</button>
+        <section className="activity-review-section stack">
+          <div className="glass-card-head">
+            <strong>Para corrigir</strong>
+            <span>{toCorrectSubmissions.length} entrega{toCorrectSubmissions.length === 1 ? '' : 's'}</span>
           </div>
-        ))}
-        {activities.map((activity) => (
-          <div className="card list-item" key={activity.id}>
-            <div>
-              <strong>{activity.title}</strong>
-              <p className="muted">{activity.students?.full_name || 'Todos'} - {statusLabel(activity.status)}</p>
-              {activity.file_url && <a className="file-link" href={activity.file_url} target="_blank">Arquivo da atividade</a>}
+          {!loading && toCorrectSubmissions.length === 0 && <EmptyState title="Nada para corrigir" text="As novas entregas dos alunos aparecerão aqui." />}
+          {toCorrectSubmissions.map((submission) => renderSubmissionCard(submission, true))}
+        </section>
+
+        <section className="activity-review-section stack">
+          <div className="glass-card-head">
+            <strong>Pendentes</strong>
+            <span>{pendingActivities.length} atividade{pendingActivities.length === 1 ? '' : 's'}</span>
+          </div>
+          {!loading && pendingActivities.length === 0 && <EmptyState title="Sem atividades pendentes" text="Todas as atividades publicadas já receberam entrega." />}
+          {pendingActivities.map((activity) => (
+            <div className="card list-item" key={activity.id}>
+              <div>
+                <strong>{activity.title}</strong>
+                <p className="muted">{activity.students?.full_name || 'Todos'} - aguardando entrega</p>
+                {activity.file_url && <a className="file-link" href={activity.file_url} target="_blank">Arquivo da atividade</a>}
+              </div>
+              <span className="badge">{activity.due_date || 'Sem prazo'}</span>
             </div>
-            <span className="badge">{activity.due_date || 'Sem prazo'}</span>
+          ))}
+        </section>
+
+        <section className="activity-review-section stack">
+          <div className="glass-card-head">
+            <strong>Corrigidas</strong>
+            <span>{correctedSubmissions.length} entrega{correctedSubmissions.length === 1 ? '' : 's'}</span>
           </div>
-        ))}
+          {!loading && correctedSubmissions.length === 0 && <EmptyState title="Nenhuma atividade corrigida" text="As atividades corrigidas ficarão registradas aqui." />}
+          {correctedSubmissions.map((submission) => renderSubmissionCard(submission, false))}
+        </section>
       </div>
       </div>
     </div>
