@@ -54,10 +54,14 @@ function LanguagePreferenceCard() {
   }, []);
 
   function updateLanguage(nextLanguage: string) {
+    const currentLanguage = window.localStorage.getItem('lumina-language') || 'pt-BR';
     setLanguage(nextLanguage);
     window.localStorage.setItem('lumina-language', nextLanguage);
     document.documentElement.lang = nextLanguage === 'en-US' ? 'en' : 'pt-BR';
     window.dispatchEvent(new CustomEvent('lumina-language-change', { detail: nextLanguage }));
+    if (currentLanguage !== nextLanguage) {
+      window.setTimeout(() => window.location.reload(), 180);
+    }
   }
 
   return (
