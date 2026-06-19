@@ -1583,6 +1583,7 @@ select.input option {
   padding: 14px 10px;
   overflow: visible;
   z-index: 30;
+  gap: 12px;
 }
 
 .teacher-icon-sidebar .compact-brand {
@@ -1611,6 +1612,7 @@ select.input option {
   width: 100%;
   justify-items: center;
   overflow: visible;
+  align-content: start;
 }
 
 .icon-nav a,
@@ -2155,7 +2157,9 @@ select.input option {
 .teacher-portal .sidebar,
 .student-portal .sidebar {
   margin: 18px 0 18px 18px;
-  height: calc(100vh - 36px);
+  height: auto;
+  min-height: calc(100vh - 36px);
+  align-self: start;
   border: 1px solid rgba(255, 255, 255, 0.17);
   border-radius: 28px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06));
@@ -2458,6 +2462,7 @@ select.input option {
     top: 10px;
     width: auto;
     height: auto;
+    min-height: auto;
     margin: 10px;
     padding: 10px;
   }
@@ -2672,6 +2677,7 @@ select.input option {
   .student-portal .teacher-icon-sidebar {
     width: calc(100vw - 20px);
     max-width: calc(100vw - 20px);
+    height: auto;
     min-height: 86px;
     flex-direction: row;
     align-items: center;
