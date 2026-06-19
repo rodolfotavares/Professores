@@ -15,6 +15,7 @@ const titles: Record<string, { title: string; eyebrow: string }> = {
   '/teacher/settings': { title: 'Configuracoes', eyebrow: 'Conta' },
   '/teacher/planner': { title: 'Planos de aula', eyebrow: 'Planejamento' },
   '/teacher/news': { title: 'Noticias', eyebrow: 'Curadoria' },
+  '/teacher/tutorial': { title: 'Tutorial', eyebrow: 'Instalacao' },
   '/student': { title: 'Dashboard', eyebrow: 'Portal do Aluno' },
   '/student/classes': { title: 'Minhas aulas', eyebrow: 'Aulas' },
   '/student/activities': { title: 'Atividades', eyebrow: 'Tarefas' },
@@ -24,6 +25,7 @@ const titles: Record<string, { title: string; eyebrow: string }> = {
   '/student/messages': { title: 'Mensagens', eyebrow: 'Comunicacao' },
   '/student/materials': { title: 'Materiais', eyebrow: 'Arquivos' },
   '/student/settings': { title: 'Perfil', eyebrow: 'Configuracoes' },
+  '/student/tutorial': { title: 'Tutorial', eyebrow: 'Instalacao' },
 };
 
 export function AppLayout({ children, area }: { children: React.ReactNode; area: 'teacher' | 'student' }) {

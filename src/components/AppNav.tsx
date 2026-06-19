@@ -38,6 +38,7 @@ export function TeacherNav() {
         <NavIcon href="/teacher/settings" label="Configuracoes" icon="settings" />
         <NavIcon href="/teacher/planner" label="Planos de aula" icon="planner" />
         <NavIcon href="/teacher/news" label="Noticias" icon="news" />
+        <NavIcon href="/teacher/tutorial" label="Tutorial" icon="phone" />
       </nav>
       <SidebarActions />
     </aside>
@@ -64,6 +65,7 @@ export function StudentNav() {
         <NavIcon href="/student/messages" label="Mensagens" icon="message" />
         <NavIcon href="/student/materials" label="Materiais" icon="materials" />
         <NavIcon href="/student/settings" label="Perfil" icon="settings" />
+        <NavIcon href="/student/tutorial" label="Tutorial" icon="phone" />
       </nav>
       <SidebarActions />
     </aside>
@@ -158,7 +160,7 @@ function ShareIcon() {
   );
 }
 
-type IconName = 'home' | 'calendar' | 'users' | 'tasks' | 'chart' | 'settings' | 'planner' | 'news' | 'message' | 'classes' | 'grades' | 'frequency' | 'materials';
+type IconName = 'home' | 'calendar' | 'users' | 'tasks' | 'chart' | 'settings' | 'planner' | 'news' | 'message' | 'classes' | 'grades' | 'frequency' | 'materials' | 'phone';
 
 function Icon({ name }: { name: IconName }) {
   const common = { width: 19, height: 19, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
@@ -174,5 +176,6 @@ function Icon({ name }: { name: IconName }) {
   if (name === 'planner') return <svg {...common}><path d="M4 19.5V5a2 2 0 0 1 2-2h11a3 3 0 0 1 3 3v15H6a2 2 0 0 1-2-1.5Z" /><path d="M8 7h6" /><path d="M8 11h8" /><path d="M8 15h4" /><path d="M17 3v6h3" /></svg>;
   if (name === 'news') return <svg {...common}><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13Z" /><path d="M8 8h8M8 12h8M8 16h5" /></svg>;
   if (name === 'materials') return <svg {...common}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M8 13h8M8 17h5" /></svg>;
+  if (name === 'phone') return <svg {...common}><rect x="7" y="2" width="10" height="20" rx="2" /><path d="M11 18h2" /><path d="M10 6h4" /></svg>;
   return <svg {...common}><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z" /></svg>;
 }
