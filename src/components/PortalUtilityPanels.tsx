@@ -57,6 +57,7 @@ function LanguagePreferenceCard() {
     setLanguage(nextLanguage);
     window.localStorage.setItem('lumina-language', nextLanguage);
     document.documentElement.lang = nextLanguage === 'en-US' ? 'en' : 'pt-BR';
+    window.dispatchEvent(new CustomEvent('lumina-language-change', { detail: nextLanguage }));
   }
 
   return (

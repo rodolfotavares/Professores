@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { LanguageRuntime } from '@/components/LanguageRuntime';
 import { PwaRegister } from '@/components/PwaRegister';
 import './globals.css';
 
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR">
       <body>
         <PwaRegister />
+        <LanguageRuntime />
         {children}
       </body>
     </html>
