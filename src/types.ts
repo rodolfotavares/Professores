@@ -67,6 +67,9 @@ export type Message = {
   sender_id: string;
   sender_role: 'teacher' | 'student';
   text: string;
+  attachment_url: string | null;
+  attachment_name: string | null;
+  attachment_type: string | null;
   is_read: boolean;
   created_at: string;
 };

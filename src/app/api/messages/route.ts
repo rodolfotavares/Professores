@@ -5,7 +5,12 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 
 const schema = z.object({
   student_id: z.string().uuid(),
-  text: z.string().min(1),
+  text: z.string().optional(),
+  attachment_url: z.string().url().optional(),
+  attachment_name: z.string().optional(),
+  attachment_type: z.string().optional(),
+}).refine((value) => Boolean(value.text?.trim() || value.attachment_url), {
+  message: 'Envie uma mensagem ou um anexo.',
 });
 
 export async function GET(req: NextRequest) {
@@ -55,7 +60,10 @@ export async function POST(req: NextRequest) {
         student_id: student.id,
         sender_id: user.id,
         sender_role: isStudent ? 'student' : 'teacher',
-        text: body.text,
+        text: body.text?.trim() || '',
+        attachment_url: body.attachment_url || null,
+        attachment_name: body.attachment_name || null,
+        attachment_type: body.attachment_type || null,
       })
       .select('*')
       .single();

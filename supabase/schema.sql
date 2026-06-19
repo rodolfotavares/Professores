@@ -106,6 +106,9 @@ create table public.messages (
   sender_id uuid not null references public.profiles(id) on delete cascade,
   sender_role public.message_sender_role not null,
   text text not null,
+  attachment_url text,
+  attachment_name text,
+  attachment_type text,
   is_read boolean not null default false,
   created_at timestamptz not null default now()
 );

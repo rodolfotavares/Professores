@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '@/lib/fetcher';
 import { EmptyState, StatusMessage } from '@/components/PanelState';
+import { MessageThread } from '@/components/MessageThread';
 import type { Activity, ActivitySubmission, ClassSchedule, Message, Student } from '@/types';
 import { formatBrazilWhatsapp, isValidBrazilPhone, normalizeBrazilPhone } from '@/lib/validation';
 
@@ -834,7 +835,9 @@ export function TeacherMessagesPanel() {
   const [studentId, setStudentId] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
+  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
 
   async function load(nextStudentId = studentId) {
@@ -861,28 +864,51 @@ export function TeacherMessagesPanel() {
 
   async function send(event: FormEvent) {
     event.preventDefault();
-    if (!studentId || !text.trim()) return;
-    await apiFetch('/api/messages', { method: 'POST', body: JSON.stringify({ student_id: studentId, text }) });
-    setText('');
-    await load(studentId);
+    if (!studentId || (!text.trim() && !file)) return;
+    setSending(true);
+    setError('');
+    try {
+      const uploaded = file ? await uploadFile(file) : null;
+      await apiFetch('/api/messages', {
+        method: 'POST',
+        body: JSON.stringify({
+          student_id: studentId,
+          text,
+          attachment_url: uploaded?.url,
+          attachment_name: file?.name,
+          attachment_type: file?.type,
+        }),
+      });
+      setText('');
+      setFile(null);
+      await load(studentId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao enviar recado.');
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
     <div className="stack">
       <PanelHeader eyebrow="Comunicação" title="Recados" text="Converse com cada aluno em um histórico simples." />
       <div className="grid grid-2">
-      <div className="card stack">
+      <div className="card stack message-composer-card">
         <h2>Conversa</h2>
         <StatusMessage error={error} loading={loading} />
         <select className="input" value={studentId} onChange={(e) => load(e.target.value)}>{students.map((s) => <option key={s.id} value={s.id}>{s.full_name}</option>)}</select>
-        <form className="row" onSubmit={send}>
-          <input className="input grow" value={text} onChange={(e) => setText(e.target.value)} placeholder="Digite um recado" />
-          <button className="btn primary" disabled={!studentId}>Enviar</button>
+        <form className="message-compose-form" onSubmit={send}>
+          <textarea className="input textarea" value={text} onChange={(e) => setText(e.target.value)} placeholder="Digite um recado" />
+          <label className="message-file-picker">
+            <span>{file ? file.name : 'Foto, vídeo ou arquivo'}</span>
+            <input type="file" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+          </label>
+          <button className="btn primary" disabled={!studentId || sending}>{sending ? 'Enviando...' : 'Enviar'}</button>
         </form>
       </div>
       <div className="stack">
         {!loading && messages.length === 0 && <EmptyState title="Sem recados" text="As mensagens trocadas com o aluno aparecem aqui." />}
-        {messages.map((message) => <div className="card" key={message.id}><span className="badge">{message.sender_role}</span><p>{message.text}</p></div>)}
+        <MessageThread messages={messages} currentRole="teacher" />
       </div>
       </div>
     </div>
