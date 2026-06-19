@@ -4,6 +4,7 @@ import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser, supabaseBrowserConfigured } from '@/lib/supabase-browser';
 import { apiFetch } from '@/lib/fetcher';
+import { formatBrazilWhatsapp, isStrongPassword, isValidBrazilPhone, normalizeBrazilPhone, passwordRuleMessage } from '@/lib/validation';
 
 type RegisterMode = 'teacher' | 'student';
 
@@ -66,6 +67,7 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
     full_name: '',
     email: '',
     password: '',
+    confirm_password: '',
     whatsapp: '',
     subjects: '',
     access_code: '',
@@ -87,13 +89,23 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
     setSuccess('');
 
     try {
+      if (!isStrongPassword(form.password)) {
+        throw new Error(passwordRuleMessage);
+      }
+      if (form.password !== form.confirm_password) {
+        throw new Error('A confirmacao da senha precisa ser igual a senha.');
+      }
+      if (!isValidBrazilPhone(form.whatsapp)) {
+        throw new Error('Informe um WhatsApp brasileiro valido com DDD, usando 10 ou 11 digitos.');
+      }
+
       await supabaseBrowser.auth.signOut();
 
       const path = mode === 'teacher' ? '/api/auth/register-teacher' : '/api/auth/register-student';
       const result = await fetch(path, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, whatsapp: normalizeBrazilPhone(form.whatsapp) }),
       });
       const payload = await result.json();
       if (!result.ok) throw new Error(payload.error || 'Falha no cadastro.');
@@ -133,8 +145,10 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
       )}
       <label className="label">Nome completo<input className="input" value={form.full_name} onChange={(e) => set('full_name', e.target.value)} required /></label>
       <label className="label">E-mail<input className="input" type="email" value={form.email} onChange={(e) => set('email', e.target.value)} required /></label>
-      <label className="label">Senha<input className="input" type="password" value={form.password} onChange={(e) => set('password', e.target.value)} required minLength={6} /></label>
-      <label className="label">WhatsApp<input className="input" value={form.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} /></label>
+      <label className="label">Senha<input className="input" type="password" value={form.password} onChange={(e) => set('password', e.target.value)} required minLength={6} pattern="^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{6,}$" title={passwordRuleMessage} /></label>
+      <label className="label">Confirmar senha<input className="input" type="password" value={form.confirm_password} onChange={(e) => set('confirm_password', e.target.value)} required minLength={6} /></label>
+      <p className="muted auth-hint">{passwordRuleMessage}</p>
+      <label className="label">WhatsApp<input className="input" inputMode="numeric" autoComplete="tel" value={form.whatsapp} onChange={(e) => set('whatsapp', formatBrazilWhatsapp(e.target.value))} placeholder="(11) 99999-9999" /></label>
       {mode === 'teacher' && (
         <label className="label">Materias<input className="input" value={form.subjects} onChange={(e) => set('subjects', e.target.value)} /></label>
       )}

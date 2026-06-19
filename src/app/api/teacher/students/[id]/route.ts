@@ -4,11 +4,12 @@ import { apiError, getApiUser, json } from '@/lib/api-auth';
 import { parseDays } from '@/lib/codes';
 import { makeUpcomingClassDates } from '@/lib/schedule';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { isValidBrazilPhone, normalizeBrazilPhone } from '@/lib/validation';
 
 const schema = z.object({
   full_name: z.string().min(2).optional(),
   email: z.string().email().optional(),
-  whatsapp: z.string().optional(),
+  whatsapp: z.string().optional().refine(isValidBrazilPhone, 'Informe um WhatsApp brasileiro valido com DDD.'),
   subject: z.string().optional(),
   days_of_week: z.string().optional(),
   class_time: z.string().optional(),
@@ -31,7 +32,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     const update: Record<string, unknown> = {};
     if (body.full_name !== undefined) update.full_name = body.full_name;
     if (body.email !== undefined) update.email = body.email;
-    if (body.whatsapp !== undefined) update.whatsapp = body.whatsapp || null;
+    if (body.whatsapp !== undefined) update.whatsapp = body.whatsapp ? normalizeBrazilPhone(body.whatsapp) : null;
     if (body.subject !== undefined) update.subject = body.subject || null;
     if (daysOfWeek !== undefined) update.days_of_week = daysOfWeek;
     if (body.class_time !== undefined) update.class_time = body.class_time || null;

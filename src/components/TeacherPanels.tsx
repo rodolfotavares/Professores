@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '@/lib/fetcher';
 import { EmptyState, StatusMessage } from '@/components/PanelState';
 import type { Activity, ActivitySubmission, ClassSchedule, Message, Student } from '@/types';
+import { formatBrazilWhatsapp, isValidBrazilPhone, normalizeBrazilPhone } from '@/lib/validation';
 
 const weekDays = [
   { label: 'Dom', value: '0' },
@@ -388,13 +389,17 @@ export function StudentsPanel() {
     setSaving(true);
     setError('');
     try {
+      if (!isValidBrazilPhone(form.whatsapp)) {
+        throw new Error('Informe um WhatsApp brasileiro valido com DDD, usando 10 ou 11 digitos.');
+      }
+      const cleanForm = { ...form, whatsapp: normalizeBrazilPhone(form.whatsapp) };
       if (editingId) {
         await apiFetch(`/api/teacher/students/${editingId}`, {
           method: 'PATCH',
-          body: JSON.stringify({ ...form, classes_per_week: Number(form.classes_per_week || 0), price_per_class: Number(form.price_per_class || 0), duration_minutes: 60, regenerate_schedule: regenerateSchedule }),
+          body: JSON.stringify({ ...cleanForm, classes_per_week: Number(form.classes_per_week || 0), price_per_class: Number(form.price_per_class || 0), duration_minutes: 60, regenerate_schedule: regenerateSchedule }),
         });
       } else {
-        await apiFetch('/api/teacher/students', { method: 'POST', body: JSON.stringify({ ...form, classes_per_week: Number(form.classes_per_week || 0), price_per_class: Number(form.price_per_class || 0), duration_minutes: 60 }) });
+        await apiFetch('/api/teacher/students', { method: 'POST', body: JSON.stringify({ ...cleanForm, classes_per_week: Number(form.classes_per_week || 0), price_per_class: Number(form.price_per_class || 0), duration_minutes: 60 }) });
       }
       setForm(emptyForm);
       setEditingId('');
@@ -411,7 +416,7 @@ export function StudentsPanel() {
     setForm({
       full_name: student.full_name,
       email: student.email,
-      whatsapp: student.whatsapp || '',
+      whatsapp: formatBrazilWhatsapp(student.whatsapp || ''),
       subject: student.subject || '',
       days_of_week: student.days_of_week?.join(',') || '',
       class_time: student.class_time || '14:00',
@@ -448,7 +453,7 @@ export function StudentsPanel() {
         <StatusMessage error={error} loading={false} />
         <Input label="Nome" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
         <Input label="E-mail" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
-        <Input label="WhatsApp" value={form.whatsapp} onChange={(v) => setForm({ ...form, whatsapp: v })} />
+        <Input label="WhatsApp" value={form.whatsapp} onChange={(v) => setForm({ ...form, whatsapp: formatBrazilWhatsapp(v) })} inputMode="numeric" placeholder="(11) 99999-9999" required={false} />
         <Input label="Materia" value={form.subject} onChange={(v) => setForm({ ...form, subject: v })} />
         <label className="label">Dias das aulas</label>
         <div className="segmented">
@@ -828,6 +833,6 @@ export function LessonPlannerPanel() {
   );
 }
 
-function Input({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (value: string) => void; type?: string }) {
-  return <label className="label">{label}<input className="input" type={type} value={value} onChange={(e) => onChange(e.target.value)} required /></label>;
+function Input({ label, value, onChange, type = 'text', inputMode, placeholder, required = true }: { label: string; value: string; onChange: (value: string) => void; type?: string; inputMode?: 'numeric'; placeholder?: string; required?: boolean }) {
+  return <label className="label">{label}<input className="input" type={type} inputMode={inputMode} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} required={required} /></label>;
 }

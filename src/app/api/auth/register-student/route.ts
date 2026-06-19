@@ -2,12 +2,13 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { assertSupabaseAdminConfigured } from '@/lib/env';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { isStrongPassword, isValidBrazilPhone, normalizeBrazilPhone, passwordRuleMessage } from '@/lib/validation';
 
 const schema = z.object({
   full_name: z.string().min(2),
   email: z.string().email(),
-  password: z.string().min(6),
-  whatsapp: z.string().optional(),
+  password: z.string().refine(isStrongPassword, passwordRuleMessage),
+  whatsapp: z.string().optional().refine(isValidBrazilPhone, 'Informe um WhatsApp brasileiro valido com DDD.'),
   access_code: z.string().min(4),
 });
 
@@ -16,6 +17,7 @@ export async function POST(req: NextRequest) {
     assertSupabaseAdminConfigured();
     const body = schema.parse(await req.json());
     const code = body.access_code.toUpperCase().trim();
+    const whatsapp = body.whatsapp ? normalizeBrazilPhone(body.whatsapp) : null;
 
     const { data: teacher, error: teacherError } = await supabaseAdmin
       .from('teacher_profiles')
@@ -43,7 +45,7 @@ export async function POST(req: NextRequest) {
       id: userId,
       role: 'student',
       full_name: body.full_name,
-      whatsapp: body.whatsapp || null,
+      whatsapp,
     });
     if (profileError) throw profileError;
 
@@ -52,7 +54,7 @@ export async function POST(req: NextRequest) {
       user_id: userId,
       full_name: body.full_name,
       email: body.email,
-      whatsapp: body.whatsapp || null,
+      whatsapp,
       status: 'active',
     });
     if (studentError) throw studentError;

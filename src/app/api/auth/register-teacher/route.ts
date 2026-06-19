@@ -3,12 +3,13 @@ import { z } from 'zod';
 import { makeTeacherCode } from '@/lib/codes';
 import { assertSupabaseAdminConfigured } from '@/lib/env';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { isStrongPassword, isValidBrazilPhone, normalizeBrazilPhone, passwordRuleMessage } from '@/lib/validation';
 
 const schema = z.object({
   full_name: z.string().min(2),
   email: z.string().email(),
-  password: z.string().min(6),
-  whatsapp: z.string().optional(),
+  password: z.string().refine(isStrongPassword, passwordRuleMessage),
+  whatsapp: z.string().optional().refine(isValidBrazilPhone, 'Informe um WhatsApp brasileiro valido com DDD.'),
   subjects: z.string().optional(),
 });
 
@@ -16,6 +17,7 @@ export async function POST(req: NextRequest) {
   try {
     assertSupabaseAdminConfigured();
     const body = schema.parse(await req.json());
+    const whatsapp = body.whatsapp ? normalizeBrazilPhone(body.whatsapp) : null;
 
     const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: body.email,
@@ -34,7 +36,7 @@ export async function POST(req: NextRequest) {
       id: userId,
       role: 'teacher',
       full_name: body.full_name,
-      whatsapp: body.whatsapp || null,
+      whatsapp,
     });
 
     if (profileError) throw profileError;

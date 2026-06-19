@@ -4,11 +4,12 @@ import { apiError, getApiUser, json } from '@/lib/api-auth';
 import { parseDays } from '@/lib/codes';
 import { makeUpcomingClassDates } from '@/lib/schedule';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { isValidBrazilPhone, normalizeBrazilPhone } from '@/lib/validation';
 
 const schema = z.object({
   full_name: z.string().min(2),
   email: z.string().email(),
-  whatsapp: z.string().optional(),
+  whatsapp: z.string().optional().refine(isValidBrazilPhone, 'Informe um WhatsApp brasileiro valido com DDD.'),
   subject: z.string().optional(),
   days_of_week: z.string().optional(),
   class_time: z.string().optional(),
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
     const daysOfWeek = parseDays(body.days_of_week || '');
     const classTime = body.class_time || null;
     const durationMinutes = body.duration_minutes || 60;
+    const whatsapp = body.whatsapp ? normalizeBrazilPhone(body.whatsapp) : null;
 
     const { data: student, error } = await supabaseAdmin
       .from('students')
@@ -51,7 +53,7 @@ export async function POST(req: NextRequest) {
         teacher_id: user.id,
         full_name: body.full_name,
         email: body.email,
-        whatsapp: body.whatsapp || null,
+        whatsapp,
         subject: body.subject || null,
         days_of_week: daysOfWeek,
         class_time: classTime,
