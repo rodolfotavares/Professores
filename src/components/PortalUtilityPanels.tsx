@@ -129,6 +129,12 @@ export function TeacherGradesPanel() {
 
   const corrected = submissions.filter((item) => item.status === 'corrected');
   const average = corrected.length ? Math.round(corrected.reduce((sum, item) => sum + Number(item.grade || 0), 0) / corrected.length) : 0;
+  const byStudent = submissions.reduce<Record<string, ActivitySubmission[]>>((groups, submission) => {
+    const key = submission.student_id || 'sem-aluno';
+    groups[key] = groups[key] || [];
+    groups[key].push(submission);
+    return groups;
+  }, {});
 
   return (
     <div className="stack portal-tab">
@@ -140,17 +146,36 @@ export function TeacherGradesPanel() {
         <MetricCard title="Média" value={average || '-'} note="desempenho geral" />
       </div>
       {!loading && submissions.length === 0 && <EmptyState title="Nenhuma entrega ainda" text="As respostas enviadas pelos alunos aparecem aqui." />}
-      <GlassCard className="data-table-card">
-        <div className="data-table">
-          {submissions.map((submission) => (
-            <div className="data-row" key={submission.id}>
-              <span><strong>{submission.activities?.title || 'Atividade'}</strong><small>{submission.students?.full_name || 'Aluno'}</small></span>
-              <span>{submission.grade != null ? submission.grade : 'Aguardando'}</span>
-              <StatusBadge tone={statusTone(submission.status)}>{statusLabel(submission.status)}</StatusBadge>
-            </div>
-          ))}
-        </div>
-      </GlassCard>
+      <div className="student-insight-grid">
+        {Object.entries(byStudent).map(([studentId, studentSubmissions]) => {
+          const studentName = studentSubmissions[0]?.students?.full_name || 'Aluno';
+          const studentCorrected = studentSubmissions.filter((item) => item.status === 'corrected');
+          const studentAverage = studentCorrected.length
+            ? Math.round(studentCorrected.reduce((sum, item) => sum + Number(item.grade || 0), 0) / studentCorrected.length)
+            : null;
+          return (
+            <GlassCard className="student-grade-card" key={studentId}>
+              <div className="student-card-head">
+                <div className="student-avatar-mini">{studentName.slice(0, 1).toUpperCase()}</div>
+                <div>
+                  <strong>{studentName}</strong>
+                  <small>{studentSubmissions.length} atividade{studentSubmissions.length === 1 ? '' : 's'} entregue{studentSubmissions.length === 1 ? '' : 's'}</small>
+                </div>
+                <StatusBadge tone={studentAverage != null ? 'success' : 'warning'}>{studentAverage != null ? `Média ${studentAverage}` : 'Sem média'}</StatusBadge>
+              </div>
+              <div className="data-table compact-data-table">
+                {studentSubmissions.map((submission) => (
+                  <div className="data-row" key={submission.id}>
+                    <span><strong>{submission.activities?.title || 'Atividade'}</strong><small>{submission.feedback || 'Sem feedback ainda'}</small></span>
+                    <span>{submission.grade != null ? submission.grade : 'Aguardando'}</span>
+                    <StatusBadge tone={statusTone(submission.status)}>{statusLabel(submission.status)}</StatusBadge>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -177,6 +202,12 @@ export function TeacherFrequencyPanel() {
   const completed = classes.filter((item) => item.status === 'completed').length;
   const absences = classes.filter((item) => item.status === 'absence').length;
   const confirmed = classes.filter((item) => item.student_confirmed).length;
+  const byStudent = classes.reduce<Record<string, ClassSchedule[]>>((groups, item) => {
+    const key = item.student_id || 'sem-aluno';
+    groups[key] = groups[key] || [];
+    groups[key].push(item);
+    return groups;
+  }, {});
 
   return (
     <div className="stack portal-tab">
@@ -188,7 +219,39 @@ export function TeacherFrequencyPanel() {
         <MetricCard title="Faltas" value={absences} note="registradas na agenda" />
       </div>
       {!loading && classes.length === 0 && <EmptyState title="Sem frequencia ainda" text="A frequencia nasce da agenda de aulas." />}
-      <GlassCard className="timeline-card">
+      <div className="student-insight-grid">
+        {Object.entries(byStudent).map(([studentId, studentClasses]) => {
+          const studentName = studentClasses[0]?.students?.full_name || 'Aluno';
+          const studentDone = studentClasses.filter((item) => item.status === 'completed').length;
+          const studentAbsences = studentClasses.filter((item) => item.status === 'absence').length;
+          const studentConfirmed = studentClasses.filter((item) => item.student_confirmed).length;
+          return (
+            <GlassCard className="student-frequency-card" key={studentId}>
+              <div className="student-card-head">
+                <div className="student-avatar-mini">{studentName.slice(0, 1).toUpperCase()}</div>
+                <div>
+                  <strong>{studentName}</strong>
+                  <small>{studentDone} realizadas · {studentAbsences} faltas · {studentConfirmed} confirmadas</small>
+                </div>
+                <StatusBadge tone={studentAbsences > 0 ? 'warning' : 'success'}>{studentAbsences > 0 ? 'Atenção' : 'Em dia'}</StatusBadge>
+              </div>
+              <div className="timeline-card student-timeline">
+                {studentClasses.slice(0, 8).map((item) => (
+                  <div className="timeline-row" key={item.id}>
+                    <span />
+                    <div>
+                      <strong>{item.subject || 'Aula'}</strong>
+                      <small>{item.class_date} às {item.class_time}</small>
+                    </div>
+                    <StatusBadge tone={statusTone(item.status)}>{statusLabel(item.status)}</StatusBadge>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          );
+        })}
+      </div>
+      {false && <GlassCard className="timeline-card">
         {classes.slice(0, 12).map((item) => (
           <div className="timeline-row" key={item.id}>
             <span />
@@ -199,7 +262,7 @@ export function TeacherFrequencyPanel() {
             <StatusBadge tone={statusTone(item.status)}>{statusLabel(item.status)}</StatusBadge>
           </div>
         ))}
-      </GlassCard>
+      </GlassCard>}
     </div>
   );
 }

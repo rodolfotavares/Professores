@@ -28,11 +28,11 @@ export default function HomePage() {
           <div className="preview-grid">
             <div className="preview-stat">
               <small>Ganhos previstos</small>
-              <strong>R$ 4.820</strong>
+              <strong>Organizados</strong>
             </div>
             <div className="preview-stat">
               <small>Atividades</small>
-              <strong>18</strong>
+              <strong>Em dia</strong>
             </div>
             <div className="preview-card wide">
               <div className="mini-bar one" />
