@@ -19,17 +19,17 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
       .select('*')
       .eq('user_id', user.id)
       .single();
-    if (studentError || !student) return json({ error: 'Aluno nao encontrado.' }, { status: 404 });
+    if (studentError || !student) return json({ error: 'Aluno não encontrado.' }, { status: 404 });
 
     const { data: activity, error: activityError } = await supabaseAdmin
       .from('activities')
       .select('*')
       .eq('id', params.id)
       .single();
-    if (activityError || !activity) return json({ error: 'Atividade nao encontrada.' }, { status: 404 });
+    if (activityError || !activity) return json({ error: 'Atividade não encontrada.' }, { status: 404 });
 
     const isAllowed = activity.student_id === student.id || (!activity.student_id && activity.teacher_id === student.teacher_id);
-    if (!isAllowed) return json({ error: 'Atividade nao pertence ao aluno.' }, { status: 403 });
+    if (!isAllowed) return json({ error: 'Atividade não pertence ao aluno.' }, { status: 403 });
 
     const isLate = activity.due_date ? new Date() > new Date(`${activity.due_date}T23:59:59`) : false;
 

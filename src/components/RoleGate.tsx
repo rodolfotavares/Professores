@@ -10,7 +10,7 @@ type Role = 'teacher' | 'student' | 'admin';
 export function RoleGate({ expected, children }: { expected: Role; children: ReactNode }) {
   const router = useRouter();
   const [status, setStatus] = useState<'checking' | 'allowed' | 'blocked'>('checking');
-  const [message, setMessage] = useState('Verificando permissao...');
+  const [message, setMessage] = useState('Verificando permissão...');
 
   useEffect(() => {
     let active = true;
@@ -28,8 +28,8 @@ export function RoleGate({ expected, children }: { expected: Role; children: Rea
 
         setStatus('blocked');
         setMessage(profile.role === 'student'
-          ? 'Voce esta logado como aluno. Saia e entre com a conta do professor para usar esta area.'
-          : 'Voce esta logado como professor. Use a area do professor para gerenciar alunos e aulas.');
+          ? 'Você está logado como aluno. Saia e entre com a conta do professor para usar esta área.'
+          : 'Você está logado como professor. Use a área do professor para gerenciar alunos e aulas.');
 
         window.setTimeout(() => {
           router.replace(profile.role === 'student' ? '/student' : '/teacher');
@@ -37,7 +37,7 @@ export function RoleGate({ expected, children }: { expected: Role; children: Rea
       } catch {
         if (!active) return;
         setStatus('blocked');
-        setMessage('Entre com sua conta para acessar esta area.');
+        setMessage('Entre com sua conta para acessar esta área.');
         window.setTimeout(() => router.replace('/login'), 900);
       }
     }

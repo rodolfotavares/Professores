@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (createError || !created.user) {
-      return Response.json({ error: createError?.message || 'Erro ao criar usuario.' }, { status: 400 });
+      return Response.json({ error: createError?.message || 'Erro ao criar usuário.' }, { status: 400 });
     }
 
     const userId = created.user.id;

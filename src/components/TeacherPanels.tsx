@@ -30,6 +30,22 @@ async function uploadFile(file: File) {
   return apiFetch<{ url: string }>('/api/upload', { method: 'POST', body });
 }
 
+function statusLabel(status?: string) {
+  const labels: Record<string, string> = {
+    active: 'Ativo',
+    paused: 'Pausado',
+    inactive: 'Inativo',
+    scheduled: 'Agendada',
+    completed: 'Realizada',
+    cancelled: 'Cancelada',
+    absence: 'Falta',
+    pending: 'Pendente',
+    submitted: 'Enviada',
+    corrected: 'Corrigida',
+  };
+  return status ? labels[status] || status : '';
+}
+
 function PanelHeader({ eyebrow, title, text }: { eyebrow: string; title: string; text: string }) {
   return (
     <div className="panel-header">
@@ -96,10 +112,10 @@ export function TeacherDashboard() {
       <div className="dashboard-topline">
         <div>
           <h1>Resumo do Professor</h1>
-          <p>Visao premium das aulas, alunos e entregas.</p>
+          <p>Visão premium das aulas, alunos e entregas.</p>
         </div>
         <div className="dashboard-actions">
-          <button className="glass-icon-button" title="Notificacoes" aria-label="Notificacoes">o</button>
+          <button className="glass-icon-button" title="Notificações" aria-label="Notificações">o</button>
           <div className="teacher-avatar">P</div>
         </div>
       </div>
@@ -128,7 +144,7 @@ export function TeacherDashboard() {
 
         <section className="glass-panel overview-card">
           <div className="glass-card-head">
-            <strong>Visao Geral</strong>
+            <strong>Visão Geral</strong>
             <span>Mensal</span>
           </div>
           <div className="overview-body">
@@ -136,8 +152,8 @@ export function TeacherDashboard() {
               <div><strong>{averagePerformance}%</strong><small>geral</small></div>
             </div>
             <div className="overview-list">
-              <span><i className="dot gold-dot" />Media geral <strong>{averagePerformance}</strong></span>
-              <span><i className="dot blue-dot" />Frequencia <strong>{attendance}%</strong></span>
+              <span><i className="dot gold-dot" />Média geral <strong>{averagePerformance}</strong></span>
+              <span><i className="dot blue-dot" />Frequência <strong>{attendance}%</strong></span>
               <span><i className="dot green-dot" />Entregas <strong>{delivery}%</strong></span>
             </div>
           </div>
@@ -145,12 +161,12 @@ export function TeacherDashboard() {
 
         <section className="glass-panel pending-card">
           <div className="glass-card-head">
-            <strong>Pendencias</strong>
+            <strong>Pendências</strong>
             <span>Hoje</span>
           </div>
           <DashboardTodo text="Corrigir provas" meta={`${submissions.length} entregas`} status="Pendente" />
-          <DashboardTodo text="Lancar presenca" meta={`${pendingClasses} aulas`} status="Em andamento" />
-          <DashboardTodo text="Responder mensagens" meta="recados abertos" status="Concluido" />
+          <DashboardTodo text="Lançar presença" meta={`${pendingClasses} aulas`} status="Em andamento" />
+          <DashboardTodo text="Responder mensagens" meta="recados abertos" status="Concluído" />
         </section>
 
         <section className="glass-panel agenda-card">
@@ -175,8 +191,8 @@ export function TeacherDashboard() {
           </div>
           <div className="result-highlight">
             <strong>{averagePerformance}%</strong>
-            <span>desempenho medio</span>
-            <em>Otimo progresso</em>
+            <span>desempenho médio</span>
+            <em>Ótimo progresso</em>
           </div>
         </section>
       </div>
@@ -245,14 +261,14 @@ export function TeacherFinancePanel() {
 
   return (
     <div className="stack">
-      <PanelHeader eyebrow="Receita" title="Financeiro" text="Veja a previsao mensal por aluno." />
+      <PanelHeader eyebrow="Receita" title="Financeiro" text="Veja a previsão mensal por aluno." />
       <StatusMessage error={error} loading={loading} />
       <div className="grid grid-3">
-        <div className="metric"><p className="muted">Previsao mensal</p><h2>{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2></div>
+        <div className="metric"><p className="muted">Previsão mensal</p><h2>{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2></div>
         <div className="metric"><p className="muted">Alunos ativos</p><h2>{active}</h2></div>
-        <div className="metric"><p className="muted">Media por aluno</p><h2>{(active ? total / active : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2></div>
+        <div className="metric"><p className="muted">Média por aluno</p><h2>{(active ? total / active : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2></div>
       </div>
-      {!loading && rows.length === 0 && <EmptyState title="Sem previsao ainda" text="Cadastre alunos com aulas por semana e valor por aula." />}
+      {!loading && rows.length === 0 && <EmptyState title="Sem previsão ainda" text="Cadastre alunos com aulas por semana e valor por aula." />}
       {rows.length > 0 && (
         <div className="grid grid-2">
           <div className="card finance-chart">
@@ -263,14 +279,14 @@ export function TeacherFinancePanel() {
             <div className="finance-ring" style={{ background: `conic-gradient(#084eb8 0 360deg)` }}>
               <div>
                 <strong>{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong>
-                <span>por mes</span>
+                <span>por mês</span>
               </div>
             </div>
           </div>
           <div className="card stack">
             <div>
               <span className="eyebrow">Por aluno</span>
-              <h2>Distribuicao</h2>
+              <h2>Distribuição</h2>
             </div>
             <div className="bar-list">
               {rows.map((student) => (
@@ -299,7 +315,7 @@ type NewsArticle = {
 };
 
 export function TeacherNewsPanel() {
-  const [subject, setSubject] = useState('Matematica');
+  const [subject, setSubject] = useState('Matemática');
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -311,14 +327,14 @@ export function TeacherNewsPanel() {
       const data = await apiFetch<{ articles: NewsArticle[] }>(`/api/teacher/news?subject=${encodeURIComponent(nextSubject)}`);
       setArticles(data.articles);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao carregar noticias.');
+      setError(err instanceof Error ? err.message : 'Falha ao carregar notícias.');
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    load('Matematica');
+    load('Matemática');
   }, []);
 
   function submit(event: FormEvent) {
@@ -328,25 +344,25 @@ export function TeacherNewsPanel() {
 
   return (
     <div className="stack">
-      <PanelHeader eyebrow="Curadoria" title="Noticias" text="Busque assuntos recentes para enriquecer suas aulas." />
+      <PanelHeader eyebrow="Curadoria" title="Notícias" text="Busque assuntos recentes para enriquecer suas aulas." />
       <form className="card news-search" onSubmit={submit}>
         <div>
-          <span className="eyebrow">Noticias por materia</span>
-          <h2>Atualizacoes para preparar aulas</h2>
+          <span className="eyebrow">Notícias por matéria</span>
+          <h2>Atualizações para preparar aulas</h2>
         </div>
         <div className="row grow">
-          <input className="input grow" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Ex: matematica, biologia, portugues" />
+          <input className="input grow" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Ex.: matemática, biologia, português" />
           <button className="btn primary" disabled={loading}>{loading ? 'Buscando...' : 'Buscar'}</button>
         </div>
       </form>
       <StatusMessage error={error} loading={loading} />
-      {!loading && articles.length === 0 && <EmptyState title="Nenhuma noticia encontrada" text="Tente outra materia ou palavra-chave." />}
+      {!loading && articles.length === 0 && <EmptyState title="Nenhuma notícia encontrada" text="Tente outra matéria ou palavra-chave." />}
       <div className="news-grid">
         {articles.map((article) => (
           <a className="card news-card" href={article.link} target="_blank" key={`${article.title}-${article.published_at}`}>
             <span className="eyebrow">{article.source}</span>
             <h2>{article.title}</h2>
-            <p className="muted">{article.published_at ? new Date(article.published_at).toLocaleDateString('pt-BR') : 'Data nao informada'}</p>
+            <p className="muted">{article.published_at ? new Date(article.published_at).toLocaleDateString('pt-BR') : 'Data não informada'}</p>
           </a>
         ))}
       </div>
@@ -443,7 +459,7 @@ export function StudentsPanel() {
 
   return (
     <div className="stack">
-      <PanelHeader eyebrow="Administracao" title="Alunos" text="Cadastre, edite agenda e acompanhe valores." />
+      <PanelHeader eyebrow="Administração" title="Alunos" text="Cadastre, edite a agenda e acompanhe valores." />
       <div className="grid grid-2">
       <form className="card stack" onSubmit={submit}>
         <div>
@@ -454,7 +470,7 @@ export function StudentsPanel() {
         <Input label="Nome" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
         <Input label="E-mail" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
         <Input label="WhatsApp" value={form.whatsapp} onChange={(v) => setForm({ ...form, whatsapp: formatBrazilWhatsapp(v) })} inputMode="numeric" placeholder="(11) 99999-9999" required={false} />
-        <Input label="Materia" value={form.subject} onChange={(v) => setForm({ ...form, subject: v })} />
+        <Input label="Matéria" value={form.subject} onChange={(v) => setForm({ ...form, subject: v })} />
         <label className="label">Dias das aulas</label>
         <div className="segmented">
           {weekDays.map((day) => (
@@ -463,36 +479,36 @@ export function StudentsPanel() {
             </button>
           ))}
         </div>
-        <Input label="Horario" type="time" value={form.class_time} onChange={(v) => setForm({ ...form, class_time: v })} />
+        <Input label="Horário" type="time" value={form.class_time} onChange={(v) => setForm({ ...form, class_time: v })} />
         <div className="grid grid-2 compact-grid">
           <Input label="Aulas por semana" type="number" value={form.classes_per_week} onChange={(v) => setForm({ ...form, classes_per_week: v })} />
           <Input label="Valor por aula" type="number" value={form.price_per_class} onChange={(v) => setForm({ ...form, price_per_class: v })} />
         </div>
-        <div className="panel-note">Previsao mensal: <strong>{monthlyValue}</strong></div>
+        <div className="panel-note">Previsão mensal: <strong>{monthlyValue}</strong></div>
         {editingId && (
           <label className="check-row">
             <input type="checkbox" checked={regenerateSchedule} onChange={(event) => setRegenerateSchedule(event.target.checked)} />
-            Recriar aulas futuras com estes dias e horario
+            Recriar aulas futuras com estes dias e horário
           </label>
         )}
         <div className="row">
-          <button className="btn primary" disabled={saving}>{saving ? 'Salvando...' : editingId ? 'Salvar alteracoes' : 'Salvar e gerar agenda'}</button>
-          {editingId && <button type="button" className="btn" onClick={cancelEdit}>Cancelar edicao</button>}
+          <button className="btn primary" disabled={saving}>{saving ? 'Salvando...' : editingId ? 'Salvar alterações' : 'Salvar e gerar agenda'}</button>
+          {editingId && <button type="button" className="btn" onClick={cancelEdit}>Cancelar edição</button>}
         </div>
       </form>
       <div className="stack">
         <StatusMessage error="" loading={loading} />
-        {!loading && students.length === 0 && <EmptyState title="Nenhum aluno ainda" text="Cadastre ou peça para o aluno usar o codigo do professor." />}
+        {!loading && students.length === 0 && <EmptyState title="Nenhum aluno ainda" text="Cadastre ou peça para o aluno usar o código do professor." />}
         {students.map((student) => (
           <div className="card list-item" key={student.id}>
             <div>
               <strong>{student.full_name}</strong>
-              <p className="muted">{student.email} - {student.subject || 'Sem materia'}</p>
-              <small>{student.class_time ? `Aulas as ${student.class_time}` : 'Horario nao definido'}</small>
+              <p className="muted">{student.email} - {student.subject || 'Sem matéria'}</p>
+              <small>{student.class_time ? `Aulas às ${student.class_time}` : 'Horário não definido'}</small>
               <p className="muted">{student.classes_per_week || 0} aulas/semana - {Number(student.price_per_class || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} por aula - mensal: {Number((student.classes_per_week || 0) * (student.price_per_class || 0) * 4).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
             </div>
             <div className="row">
-              <span className="badge">{student.status}</span>
+              <span className="badge">{statusLabel(student.status)}</span>
               <button className="btn small" onClick={() => editStudent(student)}>Editar</button>
               <button className="btn small danger" onClick={() => deleteStudent(student)}>Excluir</button>
             </div>
@@ -569,7 +585,7 @@ export function TeacherSchedulePanel() {
         <StatusMessage error={error} loading={false} />
         <label className="label">Aluno<select className="input" value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })}>{students.map((s) => <option value={s.id} key={s.id}>{s.full_name}</option>)}</select></label>
         <Input label="Data" type="date" value={form.class_date} onChange={(v) => setForm({ ...form, class_date: v })} />
-        <Input label="Horario" type="time" value={form.class_time} onChange={(v) => setForm({ ...form, class_time: v })} />
+        <Input label="Horário" type="time" value={form.class_time} onChange={(v) => setForm({ ...form, class_time: v })} />
         <div className="row">
           <button className="btn primary" disabled={!students.length}>{editingClassId ? 'Salvar aula' : 'Agendar'}</button>
           {editingClassId && <button type="button" className="btn" onClick={() => setEditingClassId('')}>Cancelar</button>}
@@ -583,7 +599,7 @@ export function TeacherSchedulePanel() {
             <div className="list-item">
               <div>
                 <strong>{item.students?.full_name || item.student_id}</strong>
-                <p className="muted">{item.class_date} as {item.class_time} - {item.status}</p>
+                <p className="muted">{item.class_date} às {item.class_time} - {statusLabel(item.status)}</p>
               </div>
               {item.student_confirmed && <span className="badge">Confirmada</span>}
             </div>
@@ -608,7 +624,9 @@ export function TeacherActivitiesPanel() {
   const [submissions, setSubmissions] = useState<ActivitySubmission[]>([]);
   const [form, setForm] = useState({ title: '', description: '', subject: '', student_id: '', due_date: '' });
   const [file, setFile] = useState<File | null>(null);
-  const [grade, setGrade] = useState('10');
+  const [grades, setGrades] = useState<Record<string, string>>({});
+  const [feedbacks, setFeedbacks] = useState<Record<string, string>>({});
+  const [correctingId, setCorrectingId] = useState('');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -624,6 +642,20 @@ export function TeacherActivitiesPanel() {
       setStudents(s.students);
       setActivities(a.activities);
       setSubmissions(delivered.submissions);
+      setGrades((current) => {
+        const next = { ...current };
+        delivered.submissions.forEach((submission) => {
+          if (next[submission.id] === undefined) next[submission.id] = submission.grade != null ? String(submission.grade) : '10';
+        });
+        return next;
+      });
+      setFeedbacks((current) => {
+        const next = { ...current };
+        delivered.submissions.forEach((submission) => {
+          if (next[submission.id] === undefined) next[submission.id] = submission.feedback || 'Corrigida pelo professor.';
+        });
+        return next;
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao carregar atividades.');
     } finally {
@@ -651,8 +683,25 @@ export function TeacherActivitiesPanel() {
   }
 
   async function correct(id: string) {
-    await apiFetch(`/api/teacher/submissions/${id}/correct`, { method: 'PATCH', body: JSON.stringify({ grade: Number(grade), feedback: 'Corrigida pelo professor' }) });
-    await load();
+    const gradeValue = Number(grades[id] ?? '10');
+    if (Number.isNaN(gradeValue) || gradeValue < 0 || gradeValue > 10) {
+      setError('A nota precisa estar entre 0 e 10.');
+      return;
+    }
+
+    setCorrectingId(id);
+    setError('');
+    try {
+      await apiFetch(`/api/teacher/submissions/${id}/correct`, {
+        method: 'PATCH',
+        body: JSON.stringify({ grade: gradeValue, feedback: feedbacks[id] || 'Corrigida pelo professor.' }),
+      });
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao corrigir atividade.');
+    } finally {
+      setCorrectingId('');
+    }
   }
 
   return (
@@ -662,9 +711,9 @@ export function TeacherActivitiesPanel() {
       <form className="card stack" onSubmit={submit}>
         <h2>Nova atividade</h2>
         <StatusMessage error={error} loading={false} />
-        <Input label="Titulo" value={form.title} onChange={(v) => setForm({ ...form, title: v })} />
-        <label className="label">Descricao<textarea className="input textarea" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
-        <Input label="Materia" value={form.subject} onChange={(v) => setForm({ ...form, subject: v })} />
+        <Input label="Título" value={form.title} onChange={(v) => setForm({ ...form, title: v })} />
+        <label className="label">Descrição<textarea className="input textarea" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
+        <Input label="Matéria" value={form.subject} onChange={(v) => setForm({ ...form, subject: v })} />
         <label className="label">Aluno<select className="input" value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })}><option value="">Todos</option>{students.map((s) => <option value={s.id} key={s.id}>{s.full_name}</option>)}</select></label>
         <Input label="Prazo" type="date" value={form.due_date} onChange={(v) => setForm({ ...form, due_date: v })} />
         <label className="label">Arquivo da atividade<input className="input" type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} /></label>
@@ -672,22 +721,23 @@ export function TeacherActivitiesPanel() {
       </form>
       <div className="stack">
         <StatusMessage error="" loading={loading} />
-        {!loading && activities.length === 0 && <EmptyState title="Nenhuma atividade" text="Crie uma atividade para todos os alunos ou para um aluno especifico." />}
+        {!loading && activities.length === 0 && <EmptyState title="Nenhuma atividade" text="Crie uma atividade para todos os alunos ou para um aluno específico." />}
         {submissions.map((submission) => (
           <div className="card" key={submission.id}>
             <strong>{submission.activities?.title}</strong>
-            <p className="muted">{submission.students?.full_name || 'Aluno'} - {submission.status}</p>
+            <p className="muted">{submission.students?.full_name || 'Aluno'} - {statusLabel(submission.status)}</p>
             <p>{submission.answer_text}</p>
             {submission.answer_file_url && <a className="file-link" href={submission.answer_file_url} target="_blank">Arquivo entregue pelo aluno</a>}
-            <Input label="Nota" value={grade} onChange={setGrade} />
-            <button className="btn primary" onClick={() => correct(submission.id)}>Corrigir</button>
+            <Input label="Nota" type="number" value={grades[submission.id] ?? (submission.grade != null ? String(submission.grade) : '10')} onChange={(value) => setGrades((current) => ({ ...current, [submission.id]: value }))} />
+            <label className="label">Feedback<textarea className="input textarea" value={feedbacks[submission.id] ?? submission.feedback ?? ''} onChange={(event) => setFeedbacks((current) => ({ ...current, [submission.id]: event.target.value }))} /></label>
+            <button className="btn primary" disabled={correctingId === submission.id} onClick={() => correct(submission.id)}>{correctingId === submission.id ? 'Corrigindo...' : 'Corrigir'}</button>
           </div>
         ))}
         {activities.map((activity) => (
           <div className="card list-item" key={activity.id}>
             <div>
               <strong>{activity.title}</strong>
-              <p className="muted">{activity.students?.full_name || 'Todos'} - {activity.status}</p>
+              <p className="muted">{activity.students?.full_name || 'Todos'} - {statusLabel(activity.status)}</p>
               {activity.file_url && <a className="file-link" href={activity.file_url} target="_blank">Arquivo da atividade</a>}
             </div>
             <span className="badge">{activity.due_date || 'Sem prazo'}</span>
@@ -739,7 +789,7 @@ export function TeacherMessagesPanel() {
 
   return (
     <div className="stack">
-      <PanelHeader eyebrow="Comunicacao" title="Recados" text="Converse com cada aluno em um historico simples." />
+      <PanelHeader eyebrow="Comunicação" title="Recados" text="Converse com cada aluno em um histórico simples." />
       <div className="grid grid-2">
       <div className="card stack">
         <h2>Conversa</h2>
@@ -792,7 +842,7 @@ export function LessonPlannerPanel() {
 
   return (
     <div className="stack">
-      <PanelHeader eyebrow="Planejamento" title="Planos de aula" text="Monte uma estrutura objetiva para a proxima aula." />
+      <PanelHeader eyebrow="Planejamento" title="Planos de aula" text="Monte uma estrutura objetiva para a próxima aula." />
       <div className="grid grid-2">
       <form className="card stack" onSubmit={submit}>
         <div>
@@ -800,7 +850,7 @@ export function LessonPlannerPanel() {
           <h2>Planejar aula</h2>
         </div>
         <StatusMessage error={error} loading={false} />
-        <Input label="Materia" value={form.subject} onChange={(v) => setForm({ ...form, subject: v })} />
+        <Input label="Matéria" value={form.subject} onChange={(v) => setForm({ ...form, subject: v })} />
         <Input label="Tema da aula" value={form.topic} onChange={(v) => setForm({ ...form, topic: v })} />
         <Input label="Nivel do aluno" value={form.level} onChange={(v) => setForm({ ...form, level: v })} />
         <Input label="Duracao" value={form.duration} onChange={(v) => setForm({ ...form, duration: v })} />

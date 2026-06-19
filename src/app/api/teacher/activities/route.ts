@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         .eq('id', body.student_id)
         .eq('teacher_id', user.id)
         .single();
-      if (studentError || !student) return json({ error: 'Aluno nao encontrado.' }, { status: 404 });
+      if (studentError || !student) return json({ error: 'Aluno não encontrado.' }, { status: 404 });
       studentUserId = student.user_id;
     }
 

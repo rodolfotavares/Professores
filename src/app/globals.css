@@ -2776,3 +2776,91 @@ select.input option {
 .install-note-card {
   min-height: auto;
 }
+
+.student-agenda {
+  display: grid;
+  gap: 16px;
+}
+
+.agenda-day-group {
+  display: grid;
+  gap: 14px;
+}
+
+.agenda-day-title,
+.agenda-class-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.agenda-day-title {
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  text-transform: capitalize;
+}
+
+.agenda-day-title span {
+  color: #f8fbff;
+  font-weight: 800;
+}
+
+.agenda-day-title small,
+.agenda-class-info p {
+  color: rgba(232, 241, 255, 0.7);
+}
+
+.agenda-class-row {
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.agenda-date-pill {
+  display: grid;
+  place-items: center;
+  min-width: 58px;
+  min-height: 58px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(37, 99, 235, 0.38), rgba(6, 182, 212, 0.2));
+  border: 1px solid rgba(125, 185, 255, 0.32);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.agenda-date-pill strong {
+  color: #ffffff;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.agenda-date-pill span {
+  color: rgba(232, 241, 255, 0.78);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.agenda-class-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.agenda-class-info strong {
+  display: block;
+  color: #ffffff;
+}
+
+@media (max-width: 640px) {
+  .agenda-class-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .agenda-class-row .btn,
+  .agenda-class-row .badge {
+    width: 100%;
+    justify-content: center;
+  }
+}

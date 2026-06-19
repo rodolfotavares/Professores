@@ -26,18 +26,18 @@ export function TeacherNav() {
       </div>
       {profile?.access_code && <div className="sidebar-code compact-code">{profile.access_code}</div>}
       <nav className="sidebar-nav icon-nav">
-        <NavIcon href="/teacher" label="Home" icon="home" />
+        <NavIcon href="/teacher" label="Início" icon="home" />
         <NavIcon href="/teacher/classes" label="Turmas" icon="classes" />
         <NavIcon href="/teacher/students" label="Alunos" icon="users" />
         <NavIcon href="/teacher/activities" label="Atividades" icon="tasks" />
         <NavIcon href="/teacher/grades" label="Notas" icon="grades" />
-        <NavIcon href="/teacher/frequency" label="Frequencia" icon="frequency" />
+        <NavIcon href="/teacher/frequency" label="Frequência" icon="frequency" />
         <NavIcon href="/teacher/schedule" label="Agenda" icon="calendar" />
-        <NavIcon href="/teacher/finance" label="Relatorios" icon="chart" />
+        <NavIcon href="/teacher/finance" label="Relatórios" icon="chart" />
         <NavIcon href="/teacher/messages" label="Mensagens" icon="message" />
-        <NavIcon href="/teacher/settings" label="Configuracoes" icon="settings" />
+        <NavIcon href="/teacher/settings" label="Configurações" icon="settings" />
         <NavIcon href="/teacher/planner" label="Planos de aula" icon="planner" />
-        <NavIcon href="/teacher/news" label="Noticias" icon="news" />
+        <NavIcon href="/teacher/news" label="Notícias" icon="news" />
         <NavIcon href="/teacher/tutorial" label="Tutorial" icon="phone" />
       </nav>
       <SidebarActions />
@@ -56,12 +56,11 @@ export function StudentNav() {
         </div>
       </div>
       <nav className="sidebar-nav icon-nav">
-        <NavIcon href="/student" label="Dashboard" icon="home" />
-        <NavIcon href="/student/classes" label="Minhas aulas" icon="classes" />
+        <NavIcon href="/student" label="Início" icon="home" />
         <NavIcon href="/student/activities" label="Atividades" icon="tasks" />
         <NavIcon href="/student/grades" label="Notas" icon="grades" />
-        <NavIcon href="/student/frequency" label="Frequencia" icon="frequency" />
-        <NavIcon href="/student/schedule" label="Calendario" icon="calendar" />
+        <NavIcon href="/student/frequency" label="Frequência" icon="frequency" />
+        <NavIcon href="/student/schedule" label="Agenda" icon="calendar" />
         <NavIcon href="/student/messages" label="Mensagens" icon="message" />
         <NavIcon href="/student/materials" label="Materiais" icon="materials" />
         <NavIcon href="/student/settings" label="Perfil" icon="settings" />

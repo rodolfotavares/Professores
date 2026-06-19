@@ -13,7 +13,7 @@ const schema = z.object({
 export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const user = await getApiUser(req);
-    if (user.role !== 'teacher' && user.role !== 'admin') return json({ error: 'Sem permissao.' }, { status: 403 });
+    if (user.role !== 'teacher' && user.role !== 'admin') return json({ error: 'Sem permissão.' }, { status: 403 });
 
     const params = await context.params;
     const body = schema.parse(await req.json());
@@ -42,7 +42,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
 export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const user = await getApiUser(req);
-    if (user.role !== 'teacher' && user.role !== 'admin') return json({ error: 'Sem permissao.' }, { status: 403 });
+    if (user.role !== 'teacher' && user.role !== 'admin') return json({ error: 'Sem permissão.' }, { status: 403 });
 
     const params = await context.params;
     const { error } = await supabaseAdmin

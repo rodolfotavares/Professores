@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   try {
     const user = await getApiUser(req);
     if (user.role !== 'teacher' && user.role !== 'admin') {
-      return json({ error: 'Sem permissao.' }, { status: 403 });
+      return json({ error: 'Sem permissão.' }, { status: 403 });
     }
 
     const { data, error } = await supabaseAdmin

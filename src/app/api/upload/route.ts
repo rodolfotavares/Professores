@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     const file = form.get('file');
 
     if (!(file instanceof File)) {
-      return json({ error: 'Arquivo nao enviado.' }, { status: 400 });
+      return json({ error: 'Arquivo não enviado.' }, { status: 400 });
     }
 
     await supabaseAdmin.storage.createBucket(bucket, { public: true }).catch(() => null);

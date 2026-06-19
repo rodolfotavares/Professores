@@ -3,29 +3,29 @@
 import { usePathname } from 'next/navigation';
 
 const titles: Record<string, { title: string; eyebrow: string }> = {
-  '/teacher': { title: 'Dashboard', eyebrow: 'Portal do Professor' },
-  '/teacher/classes': { title: 'Turmas', eyebrow: 'Organizacao' },
-  '/teacher/students': { title: 'Alunos', eyebrow: 'Administracao' },
+  '/teacher': { title: 'Painel', eyebrow: 'Portal do Professor' },
+  '/teacher/classes': { title: 'Turmas', eyebrow: 'Organização' },
+  '/teacher/students': { title: 'Alunos', eyebrow: 'Administração' },
   '/teacher/activities': { title: 'Atividades', eyebrow: 'Tarefas' },
-  '/teacher/grades': { title: 'Notas', eyebrow: 'Avaliacao' },
-  '/teacher/frequency': { title: 'Frequencia', eyebrow: 'Presenca' },
-  '/teacher/schedule': { title: 'Agenda', eyebrow: 'Calendario' },
-  '/teacher/finance': { title: 'Relatorios', eyebrow: 'Resultados' },
-  '/teacher/messages': { title: 'Mensagens', eyebrow: 'Comunicacao' },
-  '/teacher/settings': { title: 'Configuracoes', eyebrow: 'Conta' },
+  '/teacher/grades': { title: 'Notas', eyebrow: 'Avaliação' },
+  '/teacher/frequency': { title: 'Frequência', eyebrow: 'Presença' },
+  '/teacher/schedule': { title: 'Agenda', eyebrow: 'Calendário' },
+  '/teacher/finance': { title: 'Relatórios', eyebrow: 'Resultados' },
+  '/teacher/messages': { title: 'Mensagens', eyebrow: 'Comunicação' },
+  '/teacher/settings': { title: 'Configurações', eyebrow: 'Conta' },
   '/teacher/planner': { title: 'Planos de aula', eyebrow: 'Planejamento' },
-  '/teacher/news': { title: 'Noticias', eyebrow: 'Curadoria' },
-  '/teacher/tutorial': { title: 'Tutorial', eyebrow: 'Instalacao' },
-  '/student': { title: 'Dashboard', eyebrow: 'Portal do Aluno' },
+  '/teacher/news': { title: 'Notícias', eyebrow: 'Curadoria' },
+  '/teacher/tutorial': { title: 'Tutorial', eyebrow: 'Instalação' },
+  '/student': { title: 'Painel', eyebrow: 'Portal do Aluno' },
   '/student/classes': { title: 'Minhas aulas', eyebrow: 'Aulas' },
   '/student/activities': { title: 'Atividades', eyebrow: 'Tarefas' },
   '/student/grades': { title: 'Notas', eyebrow: 'Desempenho' },
-  '/student/frequency': { title: 'Frequencia', eyebrow: 'Presenca' },
-  '/student/schedule': { title: 'Calendario', eyebrow: 'Agenda' },
-  '/student/messages': { title: 'Mensagens', eyebrow: 'Comunicacao' },
+  '/student/frequency': { title: 'Frequência', eyebrow: 'Presença' },
+  '/student/schedule': { title: 'Agenda', eyebrow: 'Calendário' },
+  '/student/messages': { title: 'Mensagens', eyebrow: 'Comunicação' },
   '/student/materials': { title: 'Materiais', eyebrow: 'Arquivos' },
-  '/student/settings': { title: 'Perfil', eyebrow: 'Configuracoes' },
-  '/student/tutorial': { title: 'Tutorial', eyebrow: 'Instalacao' },
+  '/student/settings': { title: 'Perfil', eyebrow: 'Configurações' },
+  '/student/tutorial': { title: 'Tutorial', eyebrow: 'Instalação' },
 };
 
 export function AppLayout({ children, area }: { children: React.ReactNode; area: 'teacher' | 'student' }) {
@@ -40,7 +40,7 @@ export function AppLayout({ children, area }: { children: React.ReactNode; area:
           <h1>{current.title}</h1>
         </div>
         <div className="app-header-actions">
-          <button className="glass-icon-button" title="Notificacoes" aria-label="Notificacoes">o</button>
+          <button className="glass-icon-button" title="Notificações" aria-label="Notificações">o</button>
           <div className="teacher-avatar">{area === 'teacher' ? 'P' : 'A'}</div>
         </div>
       </header>

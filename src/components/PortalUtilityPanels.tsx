@@ -30,6 +30,22 @@ function statusTone(status?: string) {
   return 'default';
 }
 
+function statusLabel(status?: string) {
+  const labels: Record<string, string> = {
+    active: 'Ativo',
+    paused: 'Pausado',
+    inactive: 'Inativo',
+    scheduled: 'Agendada',
+    completed: 'Realizada',
+    cancelled: 'Cancelada',
+    absence: 'Falta',
+    pending: 'Pendente',
+    submitted: 'Enviada',
+    corrected: 'Corrigida',
+  };
+  return status ? labels[status] || status : '';
+}
+
 export function TeacherClassesPanel() {
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<ClassSchedule[]>([]);
@@ -54,22 +70,22 @@ export function TeacherClassesPanel() {
 
   usePanelLoad(load);
 
-  const subjects = Array.from(new Set(students.map((student) => student.subject || 'Sem materia')));
+  const subjects = Array.from(new Set(students.map((student) => student.subject || 'Sem matéria')));
   const scheduled = classes.filter((item) => item.status === 'scheduled').length;
 
   return (
     <div className="stack portal-tab">
-      <SectionIntro title="Turmas" text="Organizacao visual das materias, alunos ativos e proximas aulas." />
+      <SectionIntro title="Turmas" text="Organização visual das matérias, alunos ativos e próximas aulas." />
       <StatusMessage error={error} loading={loading} />
       <div className="grid grid-3">
-        <MetricCard title="Materias" value={subjects.length} note="turmas em acompanhamento" />
+        <MetricCard title="Matérias" value={subjects.length} note="turmas em acompanhamento" />
         <MetricCard title="Alunos ativos" value={students.filter((student) => student.status === 'active').length} note="com agenda vinculada" />
         <MetricCard title="Aulas futuras" value={scheduled} note="pendentes na agenda" />
       </div>
       {!loading && students.length === 0 && <EmptyState title="Nenhuma turma formada" text="Cadastre alunos para montar suas turmas automaticamente." />}
       <div className="portal-card-grid">
         {subjects.map((subject) => {
-          const group = students.filter((student) => (student.subject || 'Sem materia') === subject);
+          const group = students.filter((student) => (student.subject || 'Sem matéria') === subject);
           return (
             <GlassCard className="portal-summary-card" key={subject}>
               <div className="glass-card-head">
@@ -80,7 +96,7 @@ export function TeacherClassesPanel() {
                 {group.map((student) => (
                   <span key={student.id}>
                     <strong>{student.full_name}</strong>
-                    <small>{student.classes_per_week || 0} aulas/semana - {student.class_time || 'sem horario'}</small>
+                    <small>{student.classes_per_week || 0} aulas/semana - {student.class_time || 'sem horário'}</small>
                   </span>
                 ))}
               </div>
@@ -116,12 +132,12 @@ export function TeacherGradesPanel() {
 
   return (
     <div className="stack portal-tab">
-      <SectionIntro title="Notas" text="Acompanhe entregas corrigidas, pendentes e desempenho medio." />
+      <SectionIntro title="Notas" text="Acompanhe entregas corrigidas, pendentes e desempenho médio." />
       <StatusMessage error={error} loading={loading} />
       <div className="grid grid-3">
         <MetricCard title="Entregas" value={submissions.length} note="recebidas dos alunos" />
-        <MetricCard title="Corrigidas" value={corrected.length} note="com nota lancada" />
-        <MetricCard title="Media" value={average || '-'} note="desempenho geral" />
+        <MetricCard title="Corrigidas" value={corrected.length} note="com nota lançada" />
+        <MetricCard title="Média" value={average || '-'} note="desempenho geral" />
       </div>
       {!loading && submissions.length === 0 && <EmptyState title="Nenhuma entrega ainda" text="As respostas enviadas pelos alunos aparecem aqui." />}
       <GlassCard className="data-table-card">
@@ -130,7 +146,7 @@ export function TeacherGradesPanel() {
             <div className="data-row" key={submission.id}>
               <span><strong>{submission.activities?.title || 'Atividade'}</strong><small>{submission.students?.full_name || 'Aluno'}</small></span>
               <span>{submission.grade != null ? submission.grade : 'Aguardando'}</span>
-              <StatusBadge tone={statusTone(submission.status)}>{submission.status}</StatusBadge>
+              <StatusBadge tone={statusTone(submission.status)}>{statusLabel(submission.status)}</StatusBadge>
             </div>
           ))}
         </div>
@@ -164,11 +180,11 @@ export function TeacherFrequencyPanel() {
 
   return (
     <div className="stack portal-tab">
-      <SectionIntro title="Frequencia" text="Controle presencas, faltas e confirmacoes de aula." />
+      <SectionIntro title="Frequência" text="Controle presenças, faltas e confirmações de aula." />
       <StatusMessage error={error} loading={loading} />
       <div className="grid grid-3">
-        <MetricCard title="Aulas realizadas" value={completed} note="marcadas como concluidas" />
-        <MetricCard title="Confirmacoes" value={confirmed} note="confirmadas por alunos" />
+        <MetricCard title="Aulas realizadas" value={completed} note="marcadas como concluídas" />
+        <MetricCard title="Confirmações" value={confirmed} note="confirmadas por alunos" />
         <MetricCard title="Faltas" value={absences} note="registradas na agenda" />
       </div>
       {!loading && classes.length === 0 && <EmptyState title="Sem frequencia ainda" text="A frequencia nasce da agenda de aulas." />}
@@ -178,9 +194,9 @@ export function TeacherFrequencyPanel() {
             <span />
             <div>
               <strong>{item.students?.full_name || 'Aluno'}</strong>
-              <small>{item.class_date} as {item.class_time}</small>
+              <small>{item.class_date} às {item.class_time}</small>
             </div>
-            <StatusBadge tone={statusTone(item.status)}>{item.status}</StatusBadge>
+            <StatusBadge tone={statusTone(item.status)}>{statusLabel(item.status)}</StatusBadge>
           </div>
         ))}
       </GlassCard>
@@ -209,18 +225,18 @@ export function TeacherSettingsPanel() {
 
   return (
     <div className="stack portal-tab">
-      <SectionIntro title="Configuracoes" text="Dados essenciais da conta e codigo para vincular alunos." />
+      <SectionIntro title="Configurações" text="Dados essenciais da conta e código para vincular alunos." />
       <StatusMessage error={error} loading={loading} />
       <div className="grid grid-2">
         <GlassCard className="portal-summary-card">
           <span className="eyebrow">Professor</span>
           <h2>{profile?.full_name || 'Professor'}</h2>
-          <p className="muted">Seu portal esta conectado ao Supabase e sincroniza alunos, agenda, atividades e mensagens.</p>
+          <p className="muted">Seu portal está conectado ao Supabase e sincroniza alunos, agenda, atividades e mensagens.</p>
         </GlassCard>
         <GlassCard className="portal-summary-card access-code-card">
-          <span className="eyebrow">Codigo do professor</span>
+          <span className="eyebrow">Código do professor</span>
           <h2>{profile?.access_code || '...'}</h2>
-          <p className="muted">Use este codigo no cadastro do aluno para criar o vinculo automaticamente.</p>
+          <p className="muted">Use este código no cadastro do aluno para criar o vínculo automaticamente.</p>
         </GlassCard>
       </div>
     </div>
@@ -261,14 +277,14 @@ function StudentScheduleSummary({ mode }: { mode: 'classes' | 'frequency' }) {
   return (
     <div className="stack portal-tab">
       <SectionIntro
-        title={mode === 'classes' ? 'Minhas aulas' : 'Frequencia'}
-        text={mode === 'classes' ? 'Veja suas proximas aulas e materias.' : 'Acompanhe presencas e confirmacoes.'}
+        title={mode === 'classes' ? 'Minhas aulas' : 'Frequência'}
+        text={mode === 'classes' ? 'Veja suas próximas aulas e matérias.' : 'Acompanhe presenças e confirmações.'}
       />
       <StatusMessage error={error} loading={loading} />
       <div className="grid grid-3">
-        <MetricCard title="Agendadas" value={scheduled} note="proximos encontros" />
-        <MetricCard title="Confirmadas" value={confirmed} note="confirmadas por voce" />
-        <MetricCard title="Realizadas" value={completed} note="concluidas" />
+        <MetricCard title="Agendadas" value={scheduled} note="próximos encontros" />
+        <MetricCard title="Confirmadas" value={confirmed} note="confirmadas por você" />
+        <MetricCard title="Realizadas" value={completed} note="concluídas" />
       </div>
       {!loading && classes.length === 0 && <EmptyState title="Nenhuma aula encontrada" text="Quando o professor organizar sua agenda, ela aparece aqui." />}
       <GlassCard className="timeline-card">
@@ -277,9 +293,9 @@ function StudentScheduleSummary({ mode }: { mode: 'classes' | 'frequency' }) {
             <span />
             <div>
               <strong>{item.subject || 'Aula'}</strong>
-              <small>{item.class_date} as {item.class_time}</small>
+              <small>{item.class_date} às {item.class_time}</small>
             </div>
-            <StatusBadge tone={statusTone(item.status)}>{item.status}</StatusBadge>
+            <StatusBadge tone={statusTone(item.status)}>{statusLabel(item.status)}</StatusBadge>
           </div>
         ))}
       </GlassCard>
@@ -313,21 +329,21 @@ export function StudentGradesPanel() {
 
   return (
     <div className="stack portal-tab">
-      <SectionIntro title="Notas" text="Veja notas, feedbacks e atividades ainda aguardando correcao." />
+      <SectionIntro title="Notas" text="Veja notas, feedbacks e atividades ainda aguardando correção." />
       <StatusMessage error={error} loading={loading} />
       <div className="grid grid-3">
         <MetricCard title="Atividades" value={activities.length} note="publicadas" />
         <MetricCard title="Corrigidas" value={corrected.length} note="com feedback" />
-        <MetricCard title="Media" value={average || '-'} note="resultado atual" />
+        <MetricCard title="Média" value={average || '-'} note="resultado atual" />
       </div>
-      {!loading && submissions.length === 0 && <EmptyState title="Sem notas ainda" text="Entregue atividades para receber correcoes do professor." />}
+      {!loading && submissions.length === 0 && <EmptyState title="Sem notas ainda" text="Entregue atividades para receber correções do professor." />}
       <GlassCard className="data-table-card">
         <div className="data-table">
           {submissions.map((submission) => (
             <div className="data-row" key={submission.id}>
               <span><strong>{submission.activities?.title || 'Atividade'}</strong><small>{submission.feedback || 'Sem feedback ainda'}</small></span>
               <span>{submission.grade != null ? submission.grade : 'Aguardando'}</span>
-              <StatusBadge tone={statusTone(submission.status)}>{submission.status}</StatusBadge>
+              <StatusBadge tone={statusTone(submission.status)}>{statusLabel(submission.status)}</StatusBadge>
             </div>
           ))}
         </div>
@@ -362,8 +378,8 @@ export function StudentMaterialsPanel() {
       <SectionIntro title="Materiais" text="Arquivos enviados pelo professor ficam reunidos aqui." />
       <StatusMessage error={error} loading={loading} />
       <div className="grid grid-3">
-        <MetricCard title="Arquivos" value={files.length} note="disponiveis" />
-        <MetricCard title="Materias" value={new Set(activities.map((activity) => activity.subject || 'Geral')).size} note="com conteudo" />
+        <MetricCard title="Arquivos" value={files.length} note="disponíveis" />
+        <MetricCard title="Matérias" value={new Set(activities.map((activity) => activity.subject || 'Geral')).size} note="com conteúdo" />
         <MetricCard title="Atividades" value={activities.length} note="vinculadas" />
       </div>
       {!loading && files.length === 0 && <EmptyState title="Nenhum material ainda" text="Quando o professor anexar arquivos, eles aparecem aqui." />}
@@ -402,24 +418,24 @@ export function StudentSettingsPanel() {
 
   usePanelLoad(load, 30000);
 
-  const days = useMemo(() => (student?.days_of_week || []).join(', ') || 'Nao definido', [student]);
+  const days = useMemo(() => (student?.days_of_week || []).join(', ') || 'Não definido', [student]);
 
   return (
     <div className="stack portal-tab">
-      <SectionIntro title="Perfil" text="Informacoes do seu cadastro e vinculo com o professor." />
+      <SectionIntro title="Perfil" text="Informações do seu cadastro e vínculo com o professor." />
       <StatusMessage error={error} loading={loading} />
       <div className="grid grid-2">
         <GlassCard className="portal-summary-card">
           <span className="eyebrow">Aluno</span>
           <h2>{student?.full_name || 'Aluno'}</h2>
-          <p className="muted">{student?.email || 'E-mail nao informado'}</p>
-          <StatusBadge tone={statusTone(student?.status)}>{student?.status || 'ativo'}</StatusBadge>
+          <p className="muted">{student?.email || 'E-mail não informado'}</p>
+          <StatusBadge tone={statusTone(student?.status)}>{statusLabel(student?.status) || 'Ativo'}</StatusBadge>
         </GlassCard>
         <GlassCard className="portal-summary-card">
           <span className="eyebrow">Aulas</span>
-          <h2>{student?.subject || 'Materia nao definida'}</h2>
+          <h2>{student?.subject || 'Matéria não definida'}</h2>
           <p className="muted">Dias: {days}</p>
-          <p className="muted">Horario: {student?.class_time || 'Nao definido'}</p>
+          <p className="muted">Horário: {student?.class_time || 'Não definido'}</p>
         </GlassCard>
       </div>
     </div>

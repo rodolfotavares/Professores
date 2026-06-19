@@ -21,7 +21,7 @@ const schema = z.object({
 export async function GET(req: NextRequest) {
   try {
     const user = await getApiUser(req);
-    if (user.role !== 'teacher' && user.role !== 'admin') return json({ error: 'Sem permissao.' }, { status: 403 });
+    if (user.role !== 'teacher' && user.role !== 'admin') return json({ error: 'Sem permissão.' }, { status: 403 });
 
     const { data, error } = await supabaseAdmin
       .from('students')
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user = await getApiUser(req);
-    if (user.role !== 'teacher' && user.role !== 'admin') return json({ error: 'Sem permissao.' }, { status: 403 });
+    if (user.role !== 'teacher' && user.role !== 'admin') return json({ error: 'Sem permissão.' }, { status: 403 });
 
     const body = schema.parse(await req.json());
     const daysOfWeek = parseDays(body.days_of_week || '');

@@ -31,6 +31,36 @@ function PanelHeader({ eyebrow, title, text }: { eyebrow: string; title: string;
   );
 }
 
+function statusLabel(status?: string) {
+  const labels: Record<string, string> = {
+    scheduled: 'Agendada',
+    completed: 'Realizada',
+    cancelled: 'Cancelada',
+    absence: 'Falta',
+    pending: 'Pendente',
+    submitted: 'Enviada',
+    corrected: 'Corrigida',
+    active: 'Ativo',
+    paused: 'Pausado',
+    inactive: 'Inativo',
+  };
+  return status ? labels[status] || status : '';
+}
+
+function formatDate(date?: string) {
+  if (!date) return 'Data não definida';
+  return new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(new Date(`${date}T00:00:00`));
+}
+
+function shortDateParts(date?: string) {
+  if (!date) return { day: '--', month: '---' };
+  const parsed = new Date(`${date}T00:00:00`);
+  return {
+    day: new Intl.DateTimeFormat('pt-BR', { day: '2-digit' }).format(parsed),
+    month: new Intl.DateTimeFormat('pt-BR', { month: 'short' }).format(parsed).replace('.', ''),
+  };
+}
+
 export function StudentDashboard() {
   const [student, setStudent] = useState<Student | null>(null);
   const [classes, setClasses] = useState<ClassSchedule[]>([]);
@@ -64,7 +94,7 @@ export function StudentDashboard() {
 
   return (
     <div className="stack">
-      <PanelHeader eyebrow="Inicio" title="Portal do aluno" text="Veja suas aulas, tarefas e recados em um lugar." />
+      <PanelHeader eyebrow="Início" title="Portal do Aluno" text="Veja suas aulas, tarefas e recados em um só lugar." />
       <StatusMessage error={error} loading={loading} />
       <div className="grid grid-3">
         <div className="metric"><p className="muted">Aluno</p><h2>{student?.full_name || '...'}</h2></div>
@@ -94,6 +124,17 @@ export function StudentSchedulePanel() {
 
   usePanelLoad(load);
 
+  const sortedClasses = [...classes].sort((a, b) => `${a.class_date} ${a.class_time}`.localeCompare(`${b.class_date} ${b.class_time}`));
+  const nextClass = sortedClasses.find((item) => item.status === 'scheduled') || sortedClasses[0];
+  const confirmed = classes.filter((item) => item.student_confirmed).length;
+  const scheduled = classes.filter((item) => item.status === 'scheduled').length;
+  const groupedClasses = sortedClasses.reduce<Record<string, ClassSchedule[]>>((groups, item) => {
+    const key = item.class_date || 'sem-data';
+    groups[key] = groups[key] || [];
+    groups[key].push(item);
+    return groups;
+  }, {});
+
   async function confirm(id: string) {
     await apiFetch(`/api/student/schedule/${id}/confirm`, { method: 'PATCH' });
     await load();
@@ -101,15 +142,40 @@ export function StudentSchedulePanel() {
 
   return (
     <div className="stack">
-      <PanelHeader eyebrow="Calendario" title="Agenda" text="Confirme aulas e acompanhe seus proximos encontros." />
+      <PanelHeader eyebrow="Calendário" title="Agenda" text="Veja exatamente quando suas aulas acontecerão." />
       <StatusMessage error={error} loading={loading} />
+      <div className="grid grid-3">
+        <div className="metric"><p className="muted">Aulas agendadas</p><h2>{scheduled}</h2></div>
+        <div className="metric"><p className="muted">Confirmadas</p><h2>{confirmed}</h2></div>
+        <div className="metric"><p className="muted">Próxima aula</p><h2>{nextClass?.class_time || '--:--'}</h2></div>
+      </div>
       {!loading && classes.length === 0 && <EmptyState title="Nenhuma aula agendada" text="Quando o professor criar aulas, elas aparecem aqui." />}
-      {classes.map((item) => (
-        <div className="card list-item" key={item.id}>
-          <div><strong>{item.subject || 'Aula'}</strong><p className="muted">{item.class_date} as {item.class_time} - {item.status}</p></div>
-          {item.student_confirmed ? <span className="badge">Confirmada</span> : <button className="btn student" onClick={() => confirm(item.id)}>Confirmar</button>}
-        </div>
-      ))}
+      <div className="student-agenda">
+        {Object.entries(groupedClasses).map(([date, items]) => (
+          <section className="agenda-day-group card" key={date}>
+            <div className="agenda-day-title">
+              <span>{formatDate(date)}</span>
+              <small>{items.length} aula{items.length > 1 ? 's' : ''}</small>
+            </div>
+            {items.map((item) => {
+              const parts = shortDateParts(item.class_date);
+              return (
+                <div className="agenda-class-row" key={item.id}>
+                  <div className="agenda-date-pill">
+                    <strong>{parts.day}</strong>
+                    <span>{parts.month}</span>
+                  </div>
+                  <div className="agenda-class-info">
+                    <strong>{item.subject || 'Aula'}</strong>
+                    <p>{item.class_time || 'Horário não definido'} · {statusLabel(item.status)}</p>
+                  </div>
+                  {item.student_confirmed ? <span className="badge">Confirmada</span> : <button className="btn student" onClick={() => confirm(item.id)}>Confirmar presença</button>}
+                </div>
+              );
+            })}
+          </section>
+        ))}
+      </div>
     </div>
   );
 }
@@ -186,7 +252,7 @@ export function StudentActivitiesPanel() {
                 <small>{activity.subject || 'Atividade'} {activity.due_date ? `- prazo ${activity.due_date}` : '- sem prazo'}</small>
               </span>
               <span className="row">
-                <span className="badge">{submission ? submission.status : expired ? 'expirada' : 'pendente'}</span>
+                <span className="badge">{submission ? statusLabel(submission.status) : expired ? 'Expirada' : 'Pendente'}</span>
                 <span className="activity-chevron">{expanded ? 'Fechar' : 'Abrir'}</span>
               </span>
             </button>
@@ -239,7 +305,7 @@ function ActivityChart({ pending, completed, expired }: { pending: number; compl
         <span className="eyebrow">Resumo das atividades</span>
         <h2>Progresso das tarefas</h2>
         <div className="chart-legend">
-          <ChartLegend label="Concluidas" value={completed} tone="strong" />
+          <ChartLegend label="Concluídas" value={completed} tone="strong" />
           <ChartLegend label="Pendentes" value={pending} tone="main" />
           <ChartLegend label="Expiradas" value={expired} tone="soft" />
         </div>
@@ -291,7 +357,7 @@ export function StudentMessagesPanel() {
 
   return (
     <div className="stack">
-      <PanelHeader eyebrow="Comunicacao" title="Recados" text="Envie mensagens e acompanhe respostas do professor." />
+      <PanelHeader eyebrow="Comunicação" title="Recados" text="Envie mensagens e acompanhe respostas do professor." />
       <div className="grid grid-2">
       <form className="card stack" onSubmit={send}>
         <h2>Enviar recado</h2>

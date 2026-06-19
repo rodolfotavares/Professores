@@ -13,7 +13,7 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const user = await getApiUser(req);
-    if (user.role !== 'teacher' && user.role !== 'admin') return json({ error: 'Sem permissao.' }, { status: 403 });
+    if (user.role !== 'teacher' && user.role !== 'admin') return json({ error: 'Sem permissão.' }, { status: 403 });
 
     const body = schema.parse(await req.json());
     const duration = body.duration || '60 minutos';
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
           `Acolhimento e diagnostico rapido sobre ${body.topic}.`,
           `Explicacao guiada com exemplos graduais de ${body.subject}.`,
           'Resolucao acompanhada de 2 a 3 exercicios.',
-          'Pratica independente com correcao comentada.',
+          'Prática independente com correção comentada.',
           'Fechamento com resumo e tarefa curta para consolidacao.',
         ],
         materials: [
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
           'Lista curta de exercicios',
           'Atividade de fixacao no Lumina',
         ],
-        homework: `Criar uma atividade de 5 questoes sobre ${body.topic}, misturando revisao e desafio.`,
+        homework: `Criar uma atividade de 5 questões sobre ${body.topic}, misturando revisão e desafio.`,
       },
     });
   } catch (error) {

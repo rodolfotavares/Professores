@@ -19,7 +19,7 @@ export function LoginForm() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!supabaseBrowserConfigured) {
-      setError('Supabase nao configurado. Configure as variaveis de ambiente antes de usar login.');
+      setError('Supabase não configurado. Configure as variáveis de ambiente antes de usar login.');
       return;
     }
     setLoading(true);
@@ -71,7 +71,7 @@ export function ForgotPasswordForm() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!supabaseBrowserConfigured) {
-      setError('Supabase nao configurado. Configure as variaveis de ambiente antes de recuperar senha.');
+      setError('Supabase não configurado. Configure as variáveis de ambiente antes de recuperar senha.');
       return;
     }
 
@@ -85,7 +85,7 @@ export function ForgotPasswordForm() {
       if (resetError) throw resetError;
       setSuccess('Enviamos um e-mail com o link para redefinir sua senha. Verifique tambem a caixa de spam.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nao foi possivel enviar o e-mail de recuperacao.');
+      setError(err instanceof Error ? err.message : 'Não foi possível enviar o e-mail de recuperação.');
     } finally {
       setLoading(false);
     }
@@ -118,7 +118,7 @@ export function ResetPasswordForm() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!supabaseBrowserConfigured) {
-      setError('Supabase nao configurado. Configure as variaveis de ambiente antes de alterar senha.');
+      setError('Supabase não configurado. Configure as variáveis de ambiente antes de alterar senha.');
       return;
     }
 
@@ -135,7 +135,7 @@ export function ResetPasswordForm() {
       setSuccess('Senha alterada com sucesso. Voce ja pode entrar com a nova senha.');
       window.setTimeout(() => router.push('/login'), 1200);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nao foi possivel alterar a senha.');
+      setError(err instanceof Error ? err.message : 'Não foi possível alterar a senha.');
     } finally {
       setLoading(false);
     }
@@ -178,7 +178,7 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!supabaseBrowserConfigured) {
-      setError('Supabase nao configurado. Configure as variaveis de ambiente antes de cadastrar usuarios.');
+      setError('Supabase não configurado. Configure as variáveis de ambiente antes de cadastrar usuários.');
       return;
     }
     setLoading(true);
@@ -208,20 +208,20 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
       if (!result.ok) throw new Error(payload.error || 'Falha no cadastro.');
 
       if (mode === 'teacher') {
-        setSuccess(`Professor criado. Codigo de acesso: ${payload.access_code}`);
+        setSuccess(`Professor criado. Código de acesso: ${payload.access_code}`);
       } else {
         setSuccess('Aluno criado e vinculado ao professor.');
       }
 
       const { error: signInError } = await supabaseBrowser.auth.signInWithPassword({ email: form.email, password: form.password });
-      if (signInError) throw new Error('Conta criada, mas nao foi possivel entrar automaticamente. Tente fazer login.');
+      if (signInError) throw new Error('Conta criada, mas não foi possível entrar automaticamente. Tente fazer login.');
 
       const { profile } = await apiFetch<{ profile: { role: string } }>('/api/me');
       if (profile.role !== mode) {
         await supabaseBrowser.auth.signOut();
         throw new Error(mode === 'student'
-          ? 'Cadastro criado, mas o perfil nao foi reconhecido como aluno. Entre em contato com o suporte.'
-          : 'Cadastro criado, mas o perfil nao foi reconhecido como professor. Entre em contato com o suporte.');
+          ? 'Cadastro criado, mas o perfil não foi reconhecido como aluno. Entre em contato com o suporte.'
+          : 'Cadastro criado, mas o perfil não foi reconhecido como professor. Entre em contato com o suporte.');
       }
 
       router.push(mode === 'teacher' ? '/teacher' : '/student');
@@ -238,7 +238,7 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
       {error && <p className="error">{error}</p>}
       {success && <p className="success">{success}</p>}
       {mode === 'student' && (
-        <label className="label">Codigo do professor<input className="input" value={form.access_code} onChange={(e) => set('access_code', e.target.value.toUpperCase())} required /></label>
+        <label className="label">Código do professor<input className="input" value={form.access_code} onChange={(e) => set('access_code', e.target.value.toUpperCase())} required /></label>
       )}
       <label className="label">Nome completo<input className="input" value={form.full_name} onChange={(e) => set('full_name', e.target.value)} required /></label>
       <label className="label">E-mail<input className="input" type="email" value={form.email} onChange={(e) => set('email', e.target.value)} required /></label>
@@ -247,7 +247,7 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
       <p className="muted auth-hint">{passwordRuleMessage}</p>
       <label className="label">WhatsApp<input className="input" inputMode="numeric" autoComplete="tel" value={form.whatsapp} onChange={(e) => set('whatsapp', formatBrazilWhatsapp(e.target.value))} placeholder="(11) 99999-9999" /></label>
       {mode === 'teacher' && (
-        <label className="label">Materias<input className="input" value={form.subjects} onChange={(e) => set('subjects', e.target.value)} /></label>
+        <label className="label">Matérias<input className="input" value={form.subjects} onChange={(e) => set('subjects', e.target.value)} /></label>
       )}
       <button className={mode === 'teacher' ? 'btn primary' : 'btn student'} disabled={loading}>{loading ? 'Criando...' : 'Criar conta'}</button>
     </form>

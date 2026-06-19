@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (teacherError || !teacher) {
-      return Response.json({ error: 'Codigo do professor invalido.' }, { status: 400 });
+      return Response.json({ error: 'Código do professor inválido.' }, { status: 400 });
     }
 
     const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (createError || !created.user) {
-      return Response.json({ error: createError?.message || 'Erro ao criar usuario.' }, { status: 400 });
+      return Response.json({ error: createError?.message || 'Erro ao criar usuário.' }, { status: 400 });
     }
 
     const userId = created.user.id;

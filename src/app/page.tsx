@@ -16,7 +16,7 @@ export default function HomePage() {
           <div className="trust-strip">
             <span>Agenda sincronizada</span>
             <span>Entregas com arquivo</span>
-            <span>Previsao financeira</span>
+            <span>Previsão financeira</span>
           </div>
         </div>
         <div className="product-preview" aria-label="Previa visual do painel Lumina">
