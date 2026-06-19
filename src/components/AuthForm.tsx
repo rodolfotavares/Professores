@@ -53,10 +53,107 @@ export function LoginForm() {
         </span>
       </label>
       <button className="btn primary" disabled={loading}>{loading ? 'Entrando...' : 'Entrar'}</button>
+      <a className="forgot-link" href="/forgot-password">Esqueci minha senha</a>
       <div className="row auth-links">
         <a href="/register/teacher">Criar professor</a>
         <a href="/register/student">Criar aluno</a>
       </div>
+    </form>
+  );
+}
+
+export function ForgotPasswordForm() {
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!supabaseBrowserConfigured) {
+      setError('Supabase nao configurado. Configure as variaveis de ambiente antes de recuperar senha.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const redirectTo = `${window.location.origin}/reset-password`;
+      const { error: resetError } = await supabaseBrowser.auth.resetPasswordForEmail(email, { redirectTo });
+      if (resetError) throw resetError;
+      setSuccess('Enviamos um e-mail com o link para redefinir sua senha. Verifique tambem a caixa de spam.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Nao foi possivel enviar o e-mail de recuperacao.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form className="card stack auth-card" onSubmit={submit}>
+      <div className="auth-heading">
+        <span className="eyebrow">Lumina</span>
+        <h1>Recuperar senha</h1>
+        <p>Informe seu e-mail para receber o link de recuperacao.</p>
+      </div>
+      {error && <p className="error">{error}</p>}
+      {success && <p className="success">{success}</p>}
+      <label className="label">E-mail<input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
+      <button className="btn primary" disabled={loading}>{loading ? 'Enviando...' : 'Enviar e-mail'}</button>
+      <a className="forgot-link" href="/login">Voltar para o login</a>
+    </form>
+  );
+}
+
+export function ResetPasswordForm() {
+  const router = useRouter();
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!supabaseBrowserConfigured) {
+      setError('Supabase nao configurado. Configure as variaveis de ambiente antes de alterar senha.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      if (!isStrongPassword(password)) throw new Error(passwordRuleMessage);
+      if (password !== confirmPassword) throw new Error('A confirmacao da senha precisa ser igual a senha.');
+
+      const { error: updateError } = await supabaseBrowser.auth.updateUser({ password });
+      if (updateError) throw updateError;
+      setSuccess('Senha alterada com sucesso. Voce ja pode entrar com a nova senha.');
+      window.setTimeout(() => router.push('/login'), 1200);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Nao foi possivel alterar a senha.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form className="card stack auth-card" onSubmit={submit}>
+      <div className="auth-heading">
+        <span className="eyebrow">Lumina</span>
+        <h1>Nova senha</h1>
+        <p>Digite e confirme sua nova senha.</p>
+      </div>
+      {error && <p className="error">{error}</p>}
+      {success && <p className="success">{success}</p>}
+      <label className="label">Nova senha<input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} pattern="^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{6,}$" title={passwordRuleMessage} /></label>
+      <label className="label">Confirmar nova senha<input className="input" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={6} /></label>
+      <p className="muted auth-hint">{passwordRuleMessage}</p>
+      <button className="btn primary" disabled={loading}>{loading ? 'Salvando...' : 'Alterar senha'}</button>
     </form>
   );
 }
