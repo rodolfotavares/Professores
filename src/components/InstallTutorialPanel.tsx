@@ -18,6 +18,16 @@ const iphoneSteps = [
   'Depois disso, abra o Lumina pelo icone criado na tela inicial.',
 ];
 
+const studentLoginSteps = [
+  'O professor abre Configuracoes e copia o Codigo do professor.',
+  'O professor envia esse codigo para o aluno pelo WhatsApp ou informa durante a aula.',
+  'O aluno abre o Lumina e toca em Sou aluno ou Cadastro de aluno.',
+  'O aluno preenche nome, e-mail, WhatsApp, senha e confirma a senha.',
+  'No campo Codigo do professor, o aluno cola o codigo recebido.',
+  'Depois do cadastro, o aluno entra pelo Login usando o e-mail e a senha criados.',
+  'Se o aluno entrar no portal errado, oriente-o a sair e fazer login novamente com a conta correta.',
+];
+
 export function InstallTutorialPanel() {
   return (
     <div className="stack portal-tab">
@@ -31,6 +41,8 @@ export function InstallTutorialPanel() {
         <TutorialCard title="Android" subtitle="Chrome" steps={androidSteps} />
         <TutorialCard title="iPhone" subtitle="Safari" steps={iphoneSteps} />
       </div>
+
+      <TutorialCard title="Como ajudar o aluno a entrar" subtitle="Login do aluno" steps={studentLoginSteps} />
 
       <GlassCard className="portal-summary-card install-note-card">
         <div className="glass-card-head">
