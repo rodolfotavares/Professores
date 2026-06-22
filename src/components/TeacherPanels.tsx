@@ -242,6 +242,7 @@ export function TeacherFinancePanel() {
   const [students, setStudents] = useState<Student[]>([]);
   const [paymentMonth, setPaymentMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [paymentStatus, setPaymentStatus] = useState<Record<string, 'paid' | 'unpaid'>>({});
+  const [checkoutLoadingId, setCheckoutLoadingId] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -309,6 +310,22 @@ export function TeacherFinancePanel() {
     return `https://wa.me/${phone || ''}?text=${encodeURIComponent(message)}`;
   }
 
+  async function createMercadoPagoCheckout(student: typeof rows[number]) {
+    setCheckoutLoadingId(student.id);
+    setError('');
+    try {
+      const data = await apiFetch<{ init_point: string; sandbox_init_point?: string }>('/api/payments/mercadopago/preference', {
+        method: 'POST',
+        body: JSON.stringify({ student_id: student.id, month_reference: paymentMonth }),
+      });
+      window.open(data.init_point || data.sandbox_init_point, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao gerar pagamento.');
+    } finally {
+      setCheckoutLoadingId('');
+    }
+  }
+
   return (
     <div className="stack">
       <PanelHeader eyebrow="Receita" title="Financeiro" text="Veja a previsão mensal por aluno." />
@@ -360,6 +377,9 @@ export function TeacherFinancePanel() {
                     <button className={student.payment === 'unpaid' ? 'selected unpaid' : ''} onClick={() => updatePayment(student.id, 'unpaid')}>Não pago</button>
                   </div>
                   <div className="billing-actions">
+                    <button className="btn primary" onClick={() => createMercadoPagoCheckout(student)} disabled={checkoutLoadingId === student.id}>
+                      {checkoutLoadingId === student.id ? 'Gerando...' : 'Pagar com Mercado Pago'}
+                    </button>
                     <button className="btn" onClick={() => downloadReceipt(student)}>Baixar recibo</button>
                     <a className="btn" href={whatsappCharge(student)} target="_blank">Cobrar no WhatsApp</a>
                   </div>
