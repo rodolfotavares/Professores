@@ -12,7 +12,7 @@ const titles: Record<string, { title: string; eyebrow: string }> = {
   '/teacher/grades': { title: 'Notas', eyebrow: 'Avaliação' },
   '/teacher/frequency': { title: 'Frequência', eyebrow: 'Presença' },
   '/teacher/schedule': { title: 'Agenda', eyebrow: 'Calendário' },
-  '/teacher/finance': { title: 'Relatórios', eyebrow: 'Resultados' },
+  '/teacher/finance': { title: 'Financeiro', eyebrow: 'Receita' },
   '/teacher/messages': { title: 'Mensagens', eyebrow: 'Comunicação' },
   '/teacher/settings': { title: 'Configurações', eyebrow: 'Conta' },
   '/teacher/planner': { title: 'Planos de aula', eyebrow: 'Planejamento' },

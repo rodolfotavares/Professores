@@ -23,7 +23,7 @@ export function TeacherNav() {
         <NavIcon href="/teacher/grades" label="Notas" icon="grades" />
         <NavIcon href="/teacher/frequency" label="Frequência" icon="frequency" />
         <NavIcon href="/teacher/schedule" label="Agenda" icon="calendar" />
-        <NavIcon href="/teacher/finance" label="Relatórios" icon="chart" />
+        <NavIcon href="/teacher/finance" label="Financeiro" icon="chart" />
         <NavIcon href="/teacher/messages" label="Mensagens" icon="message" />
         <NavIcon href="/teacher/settings" label="Configurações" icon="settings" />
         <NavIcon href="/teacher/planner" label="Planos de aula" icon="planner" />
