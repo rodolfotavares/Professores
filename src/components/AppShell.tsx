@@ -32,7 +32,7 @@ const titles: Record<string, { title: string; eyebrow: string }> = {
 
 export function AppLayout({ children, area }: { children: React.ReactNode; area: 'teacher' | 'student' }) {
   const pathname = usePathname();
-  const current = titles[pathname] || { title: area === 'teacher' ? 'Portal do Professor' : 'Portal do Aluno', eyebrow: 'Lumina' };
+  const current = titles[pathname] || { title: area === 'teacher' ? 'Portal do Professor' : 'Portal do Aluno', eyebrow: 'LuminaAI' };
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Array<{ id: string; title: string; message: string; type: string; link: string }>>([]);
 

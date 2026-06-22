@@ -3,25 +3,25 @@
 import { GlassCard } from '@/components/AppShell';
 
 const androidSteps = [
-  'Abra o Lumina no Chrome do Android.',
+  'Abra o LuminaAI no Chrome do Android.',
   'Toque nos tres pontinhos no canto superior direito.',
   'Escolha Instalar app ou Adicionar a tela inicial.',
   'Confirme em Instalar.',
-  'Depois disso, abra o Lumina pelo icone criado na tela inicial.',
+  'Depois disso, abra o LuminaAI pelo icone criado na tela inicial.',
 ];
 
 const iphoneSteps = [
-  'Abra o Lumina no Safari do iPhone.',
+  'Abra o LuminaAI no Safari do iPhone.',
   'Toque no botao Compartilhar, o icone de um quadrado com uma seta para cima.',
   'Role as opcoes e toque em Adicionar a Tela de Inicio.',
-  'Confira o nome Lumina e toque em Adicionar.',
-  'Depois disso, abra o Lumina pelo icone criado na tela inicial.',
+  'Confira o nome LuminaAI e toque em Adicionar.',
+  'Depois disso, abra o LuminaAI pelo icone criado na tela inicial.',
 ];
 
 const studentLoginSteps = [
   'O professor abre Configuracoes e copia o Codigo do professor.',
   'O professor envia esse codigo para o aluno pelo WhatsApp ou informa durante a aula.',
-  'O aluno abre o Lumina e toca em Sou aluno ou Cadastro de aluno.',
+  'O aluno abre o LuminaAI e toca em Sou aluno ou Cadastro de aluno.',
   'O aluno preenche nome, e-mail, WhatsApp, senha e confirma a senha.',
   'No campo Codigo do professor, o aluno cola o codigo recebido.',
   'Depois do cadastro, o aluno entra pelo Login usando o e-mail e a senha criados.',
@@ -32,9 +32,9 @@ export function InstallTutorialPanel() {
   return (
     <div className="stack portal-tab">
       <div className="section-intro">
-        <span className="eyebrow">Lumina</span>
+        <span className="eyebrow">LuminaAI</span>
         <h2>Instalar na tela inicial</h2>
-        <p>Use este guia para transformar o Lumina em um app no celular, sem precisar baixar pela loja.</p>
+        <p>Use este guia para transformar o LuminaAI em um app no celular, sem precisar baixar pela loja.</p>
       </div>
 
       <div className="grid grid-2">
@@ -50,7 +50,7 @@ export function InstallTutorialPanel() {
           <span>PWA</span>
         </div>
         <p className="muted">
-          No iPhone, use o Safari. No Android, use o Chrome. Depois de instalado, o Lumina abre em tela cheia,
+          No iPhone, use o Safari. No Android, use o Chrome. Depois de instalado, o LuminaAI abre em tela cheia,
           como um aplicativo comum, mantendo login, agenda, atividades e mensagens sincronizados.
         </p>
       </GlassCard>

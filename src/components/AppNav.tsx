@@ -11,7 +11,7 @@ export function TeacherNav() {
       <div className="brand compact-brand">
         <div className="brand-mark">L</div>
         <div>
-          <strong>Lumina</strong>
+          <strong>LuminaAI</strong>
           <span>Portal do professor</span>
         </div>
       </div>
@@ -42,7 +42,7 @@ export function StudentNav() {
       <div className="brand compact-brand">
         <div className="brand-mark">L</div>
         <div>
-          <strong>Lumina</strong>
+          <strong>LuminaAI</strong>
           <span>Portal do aluno</span>
         </div>
       </div>
@@ -92,8 +92,8 @@ function ShareButton() {
   async function share() {
     const url = window.location.origin;
     const data = {
-      title: 'Lumina',
-      text: 'Acesse o Lumina para professores e alunos.',
+      title: 'LuminaAI',
+      text: 'Acesse o LuminaAI para professores e alunos.',
       url,
     };
 

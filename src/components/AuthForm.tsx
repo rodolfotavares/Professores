@@ -40,7 +40,7 @@ export function LoginForm() {
   return (
     <form className="card stack auth-card" onSubmit={submit}>
       <div className="auth-heading">
-        <span className="eyebrow">Lumina</span>
+        <span className="eyebrow">LuminaAI</span>
         <h1>Entrar</h1>
         <p>Acesse seu portal com e-mail e senha.</p>
       </div>
@@ -94,7 +94,7 @@ export function ForgotPasswordForm() {
   return (
     <form className="card stack auth-card" onSubmit={submit}>
       <div className="auth-heading">
-        <span className="eyebrow">Lumina</span>
+        <span className="eyebrow">LuminaAI</span>
         <h1>Recuperar senha</h1>
         <p>Informe seu e-mail para receber o link de recuperacao.</p>
       </div>
@@ -144,7 +144,7 @@ export function ResetPasswordForm() {
   return (
     <form className="card stack auth-card" onSubmit={submit}>
       <div className="auth-heading">
-        <span className="eyebrow">Lumina</span>
+        <span className="eyebrow">LuminaAI</span>
         <h1>Nova senha</h1>
         <p>Digite e confirme sua nova senha.</p>
       </div>

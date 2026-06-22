@@ -6,7 +6,7 @@ export default function HomePage() {
       <section className="marketing-hero">
         <div className="hero-copy">
           <span className="eyebrow">Gestao para aulas particulares</span>
-          <h1>Lumina</h1>
+          <h1>LuminaAI</h1>
           <p>Um portal elegante para organizar alunos, agenda, tarefas, pagamentos previstos e comunicacao em um so lugar.</p>
           <div className="row hero-actions">
             <Link className="btn primary" href="/login">Entrar</Link>
@@ -19,7 +19,7 @@ export default function HomePage() {
             <span>Previsão financeira</span>
           </div>
         </div>
-        <div className="product-preview" aria-label="Previa visual do painel Lumina">
+        <div className="product-preview" aria-label="Previa visual do painel LuminaAI">
           <div className="preview-topbar">
             <span />
             <strong>Painel do professor</strong>

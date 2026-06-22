@@ -17,7 +17,7 @@ function usePanelLoad(load: () => Promise<void>, interval = 15000) {
 function SectionIntro({ title, text }: { title: string; text: string }) {
   return (
     <div className="section-intro">
-      <span className="eyebrow">Lumina</span>
+      <span className="eyebrow">LuminaAI</span>
       <h2>{title}</h2>
       <p>{text}</p>
     </div>
@@ -100,7 +100,7 @@ const supportAnswers = [
   },
   {
     keywords: ['instalar', 'celular', 'android', 'iphone', 'pwa'],
-    answer: 'Abra a aba Tutorial para ver como instalar o Lumina na tela inicial do Android ou iPhone.',
+    answer: 'Abra a aba Tutorial para ver como instalar o LuminaAI na tela inicial do Android ou iPhone.',
   },
 ];
 
@@ -108,12 +108,12 @@ function supportReply(question: string) {
   const normalized = question.toLowerCase();
   const match = supportAnswers.find((item) => item.keywords.some((keyword) => normalized.includes(keyword)));
   if (match) return match.answer;
-  return 'Posso ajudar somente com funções do Lumina: alunos, agenda, atividades, notas, frequência, mensagens, financeiro, instalação e configurações.';
+  return 'Posso ajudar somente com funções do LuminaAI: alunos, agenda, atividades, notas, frequência, mensagens, financeiro, instalação e configurações.';
 }
 
 export function TeacherSupportPanel() {
   const [messages, setMessages] = useState([
-    { role: 'assistant', text: 'Olá! Sou o assistente do Lumina. Posso ajudar com funções do app, como alunos, agenda, atividades, notas e mensagens.' },
+    { role: 'assistant', text: 'Olá! Sou o assistente do LuminaAI. Posso ajudar com funções do app, como alunos, agenda, atividades, notas e mensagens.' },
   ]);
   const [question, setQuestion] = useState('');
 
@@ -131,11 +131,11 @@ export function TeacherSupportPanel() {
 
   return (
     <div className="stack portal-tab">
-      <SectionIntro title="Suporte" text="Contato direto e ajuda rápida sobre as funções do Lumina." />
+      <SectionIntro title="Suporte" text="Contato direto e ajuda rápida sobre as funções do LuminaAI." />
       <div className="grid grid-2">
         <GlassCard className="support-contact-card">
           <span className="eyebrow">WhatsApp</span>
-          <h2>Atendimento Lumina</h2>
+          <h2>Atendimento LuminaAI</h2>
           <p className="muted">Fale com o suporte pelo WhatsApp para dúvidas sobre uso do app.</p>
           <a className="btn primary" href="https://wa.me/14023667683" target="_blank">Chamar no WhatsApp</a>
           <p className="support-phone">+1 (402) 366-7683</p>
@@ -151,7 +151,7 @@ export function TeacherSupportPanel() {
             ))}
           </div>
           <form className="support-chat-form" onSubmit={sendQuestion}>
-            <input className="input" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Pergunte sobre uma função do Lumina" />
+            <input className="input" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Pergunte sobre uma função do LuminaAI" />
             <button className="btn primary">Enviar</button>
           </form>
         </GlassCard>

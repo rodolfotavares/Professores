@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
         materials: [
           'Quadro ou folha de rascunho',
           'Lista curta de exercicios',
-          'Atividade de fixacao no Lumina',
+          'Atividade de fixacao no LuminaAI',
         ],
         homework: `Criar uma atividade de 5 questões sobre ${body.topic}, misturando revisão e desafio.`,
       },

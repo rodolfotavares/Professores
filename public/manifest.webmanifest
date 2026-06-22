@@ -1,6 +1,6 @@
 {
-  "name": "Lumina",
-  "short_name": "Lumina",
+  "name": "LuminaAI",
+  "short_name": "LuminaAI",
   "description": "Portal premium para professores e alunos acompanharem aulas, atividades, mensagens e agenda.",
   "start_url": "/login",
   "scope": "/",

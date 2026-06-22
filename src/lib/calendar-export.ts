@@ -30,10 +30,10 @@ export function downloadScheduleIcs(classes: ClassSchedule[], filename: string, 
     const studentName = item.students?.full_name || 'Aluno';
     const subject = item.subject || 'Aula particular';
     const summary = `${subject} - ${studentName}`;
-    const description = `Aula registrada no Lumina. Status: ${item.status}.`;
+    const description = `Aula registrada no LuminaAI. Status: ${item.status}.`;
     return [
       'BEGIN:VEVENT',
-      `UID:${item.id}@lumina`,
+      `UID:${item.id}@luminaai`,
       `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
       `DTSTART:${toIcsDate(item.class_date, item.class_time)}`,
       `DTEND:${addMinutes(item.class_date, item.class_time, item.duration_minutes || 60)}`,
@@ -51,9 +51,9 @@ export function downloadScheduleIcs(classes: ClassSchedule[], filename: string, 
   const calendar = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Lumina//Agenda//PT-BR',
+    'PRODID:-//LuminaAI//Agenda//PT-BR',
     'CALSCALE:GREGORIAN',
-    `X-WR-CALNAME:${escapeIcs(`Lumina - ${ownerLabel}`)}`,
+    `X-WR-CALNAME:${escapeIcs(`LuminaAI - ${ownerLabel}`)}`,
     ...events,
     'END:VCALENDAR',
   ].join('\r\n');
@@ -75,7 +75,7 @@ export function requestReminderPermission() {
   Notification.requestPermission().then((permission) => {
     window.localStorage.setItem('lumina-reminders-enabled', permission === 'granted' ? 'yes' : 'no');
     if (permission === 'granted') {
-      new Notification('Lumina', { body: 'Lembretes ativados neste dispositivo.' });
+      new Notification('LuminaAI', { body: 'Lembretes ativados neste dispositivo.' });
     }
   });
 }

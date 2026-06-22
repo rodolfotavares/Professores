@@ -4,13 +4,13 @@ import { PwaRegister } from '@/components/PwaRegister';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Lumina',
+  title: 'LuminaAI',
   description: 'Gestao de aulas particulares com professor e aluno sincronizados',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Lumina',
+    title: 'LuminaAI',
   },
   icons: {
     icon: [

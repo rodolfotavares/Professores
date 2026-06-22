@@ -1,4 +1,4 @@
-# Professores - Lumina
+# Professores - LuminaAI
 
 App para professores e alunos, feito fora do Base44 com Next.js e Supabase.
 

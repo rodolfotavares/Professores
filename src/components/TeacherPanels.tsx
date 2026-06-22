@@ -285,7 +285,7 @@ export function TeacherFinancePanel() {
 
   function downloadReceipt(student: typeof rows[number]) {
     const content = [
-      'Lumina - Recibo de mensalidade',
+      'LuminaAI - Recibo de mensalidade',
       `Aluno: ${student.full_name}`,
       `Mes: ${paymentMonth}`,
       `Aulas por semana: ${student.weeklyClasses}`,
@@ -305,7 +305,7 @@ export function TeacherFinancePanel() {
 
   function whatsappCharge(student: typeof rows[number]) {
     const phone = (student.whatsapp || '').replace(/\D/g, '');
-    const message = `Ola, ${student.full_name}! Sua mensalidade Lumina de ${paymentMonth} ficou em ${student.monthly.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}.`;
+    const message = `Ola, ${student.full_name}! Sua mensalidade LuminaAI de ${paymentMonth} ficou em ${student.monthly.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}.`;
     return `https://wa.me/${phone || ''}?text=${encodeURIComponent(message)}`;
   }
 
