@@ -2,19 +2,29 @@ import { supabaseAdmin } from './supabase-admin';
 
 const apiBase = 'https://api.mercadopago.com';
 
-export function assertMercadoPagoConfigured() {
-  if (!process.env.MERCADO_PAGO_ACCESS_TOKEN) {
+function cleanMercadoPagoValue(value?: string) {
+  return (value || '').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+}
+
+function getMercadoPagoAccessToken() {
+  const token = cleanMercadoPagoValue(process.env.MERCADO_PAGO_ACCESS_TOKEN);
+  if (!token) {
     throw new Response(JSON.stringify({ error: 'Mercado Pago nao configurado.' }), { status: 500 });
   }
+  return token;
+}
+
+export function assertMercadoPagoConfigured() {
+  getMercadoPagoAccessToken();
 }
 
 async function mercadoPagoFetch<T>(path: string, init: RequestInit = {}) {
-  assertMercadoPagoConfigured();
+  const accessToken = getMercadoPagoAccessToken();
 
   const response = await fetch(`${apiBase}${path}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
       ...(init.headers || {}),
     },
