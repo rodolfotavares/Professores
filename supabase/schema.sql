@@ -127,6 +127,18 @@ create table public.payments (
   created_at timestamptz not null default now()
 );
 
+create table public.app_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  teacher_id uuid not null references public.profiles(id) on delete cascade,
+  month_reference text not null,
+  amount numeric(10,2) not null default 39.90,
+  status text not null default 'pending',
+  mercado_pago_payment_id text,
+  paid_at timestamptz,
+  created_at timestamptz not null default now(),
+  unique(teacher_id, month_reference)
+);
+
 create table public.notifications (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -153,6 +165,7 @@ alter table public.activities enable row level security;
 alter table public.activity_submissions enable row level security;
 alter table public.messages enable row level security;
 alter table public.payments enable row level security;
+alter table public.app_subscriptions enable row level security;
 alter table public.notifications enable row level security;
 
 create policy "profiles own read" on public.profiles for select using (auth.uid() = id);
@@ -165,4 +178,5 @@ create policy "activities teacher or student read" on public.activities for sele
 create policy "submissions teacher or student read" on public.activity_submissions for select using (auth.uid() = teacher_id or auth.uid() = student_user_id);
 create policy "messages teacher or sender read" on public.messages for select using (auth.uid() = teacher_id or auth.uid() = sender_id);
 create policy "payments teacher or student read" on public.payments for select using (auth.uid() = teacher_id or auth.uid() = student_user_id);
+create policy "app subscriptions teacher read" on public.app_subscriptions for select using (auth.uid() = teacher_id);
 create policy "notifications own read" on public.notifications for select using (auth.uid() = user_id);

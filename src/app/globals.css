@@ -685,6 +685,29 @@ button:disabled {
   gap: 10px;
 }
 
+.app-subscription-card {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(250, 204, 21, 0.24);
+  box-shadow:
+    0 24px 60px rgba(2, 6, 23, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.app-subscription-card::before {
+  content: "";
+  position: absolute;
+  inset: auto -15% -55% 45%;
+  height: 220px;
+  background: radial-gradient(circle, rgba(250, 204, 21, 0.26), transparent 68%);
+  pointer-events: none;
+}
+
+.app-subscription-card > * {
+  position: relative;
+  z-index: 1;
+}
+
 .bar-track {
   height: 12px;
   overflow: hidden;

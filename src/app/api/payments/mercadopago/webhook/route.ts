@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { apiError, json } from '@/lib/api-auth';
-import { getMercadoPagoPayment, upsertPaymentRecord } from '@/lib/mercadopago';
+import { getMercadoPagoPayment, upsertAppSubscription, upsertPaymentRecord } from '@/lib/mercadopago';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 function paymentStatus(status: string) {
@@ -26,7 +26,24 @@ export async function POST(req: NextRequest) {
     if (!paymentId) return json({ ok: true });
 
     const payment = await getMercadoPagoPayment(paymentId);
-    const [teacherId, studentId, monthReference] = String(payment.external_reference || '').split('|');
+    const referenceParts = String(payment.external_reference || '').split('|');
+    if (referenceParts[0] === 'app') {
+      const [, teacherId, monthReference] = referenceParts;
+      if (!teacherId || !monthReference) return json({ ok: true });
+
+      await upsertAppSubscription({
+        teacherId,
+        monthReference,
+        amount: payment.transaction_amount || 39.9,
+        status: paymentStatus(payment.status),
+        mercadoPagoPaymentId: String(payment.id),
+        paidAt: payment.status === 'approved' ? new Date().toISOString() : null,
+      });
+
+      return json({ ok: true });
+    }
+
+    const [teacherId, studentId, monthReference] = referenceParts;
     if (!teacherId || !studentId || !monthReference) return json({ ok: true });
 
     const { data: student } = await supabaseAdmin

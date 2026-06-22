@@ -117,3 +117,38 @@ export async function upsertPaymentRecord(input: {
   if (error) throw error;
   return data.id;
 }
+
+export async function upsertAppSubscription(input: {
+  teacherId: string;
+  monthReference: string;
+  amount: number;
+  status: string;
+  mercadoPagoPaymentId?: string | null;
+  paidAt?: string | null;
+}) {
+  const { data: existing } = await supabaseAdmin
+    .from('app_subscriptions')
+    .select('id')
+    .eq('teacher_id', input.teacherId)
+    .eq('month_reference', input.monthReference)
+    .maybeSingle();
+
+  const payload = {
+    teacher_id: input.teacherId,
+    month_reference: input.monthReference,
+    amount: input.amount,
+    status: input.status,
+    mercado_pago_payment_id: input.mercadoPagoPaymentId || null,
+    paid_at: input.paidAt || null,
+  };
+
+  if (existing?.id) {
+    const { error } = await supabaseAdmin.from('app_subscriptions').update(payload).eq('id', existing.id);
+    if (error) throw error;
+    return existing.id;
+  }
+
+  const { data, error } = await supabaseAdmin.from('app_subscriptions').insert(payload).select('id').single();
+  if (error) throw error;
+  return data.id;
+}

@@ -1,18 +1,13 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { apiError, getApiUser, json } from '@/lib/api-auth';
-import { createMercadoPagoPreference, upsertPaymentRecord } from '@/lib/mercadopago';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { createMercadoPagoPreference, upsertAppSubscription } from '@/lib/mercadopago';
 
 const schema = z.object({
-  student_id: z.string().uuid(),
-  month_reference: z.string().min(4),
+  month_reference: z.string().min(4).optional(),
 });
 
-function monthlyAmount(student: { classes_per_week: number | null; classes_per_month: number | null; price_per_class: number | null }) {
-  const weeklyClasses = student.classes_per_week || Math.ceil((student.classes_per_month || 0) / 4) || 1;
-  return weeklyClasses * (student.price_per_class || 0) * 4;
-}
+const appMonthlyPrice = 39.9;
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,34 +17,20 @@ export async function POST(req: NextRequest) {
     }
 
     const body = schema.parse(await req.json());
-    const { data: student, error } = await supabaseAdmin
-      .from('students')
-      .select('*')
-      .eq('id', body.student_id)
-      .eq('teacher_id', user.id)
-      .single();
+    const monthReference = body.month_reference || new Date().toISOString().slice(0, 7);
 
-    if (error || !student) return json({ error: 'Aluno nao encontrado.' }, { status: 404 });
-
-    const amount = monthlyAmount(student);
-    if (!amount || amount <= 0) {
-      return json({ error: 'Configure o valor por aula e aulas por semana antes de cobrar.' }, { status: 400 });
-    }
-
-    const externalReference = [user.id, student.id, body.month_reference].join('|');
-    await upsertPaymentRecord({
+    const externalReference = ['app', user.id, monthReference].join('|');
+    await upsertAppSubscription({
       teacherId: user.id,
-      studentId: student.id,
-      studentUserId: student.user_id,
-      monthReference: body.month_reference,
-      amount,
+      monthReference,
+      amount: appMonthlyPrice,
       status: 'pending',
     });
 
     const preference = await createMercadoPagoPreference({
-      title: `Mensalidade LuminaAI - ${student.full_name}`,
-      amount,
-      payerEmail: student.email,
+      title: `Assinatura LuminaAI - ${monthReference}`,
+      amount: appMonthlyPrice,
+      payerEmail: user.email,
       externalReference,
       notificationUrl: `${req.nextUrl.origin}/api/payments/mercadopago/webhook`,
       backUrl: `${req.nextUrl.origin}/teacher/finance`,

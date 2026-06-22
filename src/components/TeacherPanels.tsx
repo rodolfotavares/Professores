@@ -242,15 +242,20 @@ export function TeacherFinancePanel() {
   const [students, setStudents] = useState<Student[]>([]);
   const [paymentMonth, setPaymentMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [paymentStatus, setPaymentStatus] = useState<Record<string, 'paid' | 'unpaid'>>({});
-  const [checkoutLoadingId, setCheckoutLoadingId] = useState('');
+  const [subscription, setSubscription] = useState<{ month_reference: string; amount: number; status: string; paid_at: string | null } | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   async function load() {
     try {
       setError('');
-      const data = await apiFetch<{ students: Student[] }>('/api/teacher/students');
-      setStudents(data.students);
+      const [studentsData, subscriptionData] = await Promise.all([
+        apiFetch<{ students: Student[] }>('/api/teacher/students'),
+        apiFetch<{ subscription: { month_reference: string; amount: number; status: string; paid_at: string | null } }>(`/api/teacher/subscription?month=${paymentMonth}`),
+      ]);
+      setStudents(studentsData.students);
+      setSubscription(subscriptionData.subscription);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao carregar financeiro.');
     } finally {
@@ -259,6 +264,10 @@ export function TeacherFinancePanel() {
   }
 
   usePanelLoad(load);
+
+  useEffect(() => {
+    load();
+  }, [paymentMonth]);
 
   useEffect(() => {
     const saved = window.localStorage.getItem(`lumina-payments-${paymentMonth}`);
@@ -310,19 +319,19 @@ export function TeacherFinancePanel() {
     return `https://wa.me/${phone || ''}?text=${encodeURIComponent(message)}`;
   }
 
-  async function createMercadoPagoCheckout(student: typeof rows[number]) {
-    setCheckoutLoadingId(student.id);
+  async function createMercadoPagoCheckout() {
+    setCheckoutLoading(true);
     setError('');
     try {
       const data = await apiFetch<{ init_point: string; sandbox_init_point?: string }>('/api/payments/mercadopago/preference', {
         method: 'POST',
-        body: JSON.stringify({ student_id: student.id, month_reference: paymentMonth }),
+        body: JSON.stringify({ month_reference: paymentMonth }),
       });
       window.open(data.init_point || data.sandbox_init_point, '_blank', 'noopener,noreferrer');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao gerar pagamento.');
     } finally {
-      setCheckoutLoadingId('');
+      setCheckoutLoading(false);
     }
   }
 
@@ -330,6 +339,26 @@ export function TeacherFinancePanel() {
     <div className="stack">
       <PanelHeader eyebrow="Receita" title="Financeiro" text="Veja a previsão mensal por aluno." />
       <StatusMessage error={error} loading={loading} />
+      <div className="card stack app-subscription-card">
+        <div className="glass-card-head">
+          <div>
+            <span className="eyebrow">Assinatura do app</span>
+            <h2>LuminaAI Pro</h2>
+          </div>
+          <span className={`badge ${subscription?.status === 'paid' ? 'status-success' : 'status-warning'}`}>
+            {subscription?.status === 'paid' ? 'Pago' : 'Pendente'}
+          </span>
+        </div>
+        <p className="muted">O professor paga apenas pelo uso do LuminaAI. Os alunos nao pagam assinatura do app.</p>
+        <div className="grid grid-3">
+          <div className="metric"><p className="muted">Mensalidade</p><h2>R$ 39,90</h2></div>
+          <div className="metric"><p className="muted">Mes</p><h2>{paymentMonth}</h2></div>
+          <div className="metric"><p className="muted">Status</p><h2>{subscription?.status === 'paid' ? 'Ativa' : 'Pendente'}</h2></div>
+        </div>
+        <button className="btn primary" onClick={createMercadoPagoCheckout} disabled={checkoutLoading || subscription?.status === 'paid'}>
+          {checkoutLoading ? 'Gerando...' : subscription?.status === 'paid' ? 'Assinatura paga' : 'Pagar R$ 39,90'}
+        </button>
+      </div>
       <div className="grid grid-3">
         <div className="metric"><p className="muted">Previsão mensal</p><h2>{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h2></div>
         <div className="metric"><p className="muted">Alunos ativos</p><h2>{active}</h2></div>
@@ -377,9 +406,6 @@ export function TeacherFinancePanel() {
                     <button className={student.payment === 'unpaid' ? 'selected unpaid' : ''} onClick={() => updatePayment(student.id, 'unpaid')}>Não pago</button>
                   </div>
                   <div className="billing-actions">
-                    <button className="btn primary" onClick={() => createMercadoPagoCheckout(student)} disabled={checkoutLoadingId === student.id}>
-                      {checkoutLoadingId === student.id ? 'Gerando...' : 'Pagar com Mercado Pago'}
-                    </button>
                     <button className="btn" onClick={() => downloadReceipt(student)}>Baixar recibo</button>
                     <a className="btn" href={whatsappCharge(student)} target="_blank">Cobrar no WhatsApp</a>
                   </div>
