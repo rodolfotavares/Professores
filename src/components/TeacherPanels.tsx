@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '@/lib/fetcher';
 import { EmptyState, StatusMessage } from '@/components/PanelState';
 import { MessageThread } from '@/components/MessageThread';
+import { downloadScheduleIcs, requestReminderPermission } from '@/lib/calendar-export';
 import type { Activity, ActivitySubmission, ClassSchedule, Message, Student } from '@/types';
 import { formatBrazilWhatsapp, isValidBrazilPhone, normalizeBrazilPhone } from '@/lib/validation';
 
@@ -282,6 +283,32 @@ export function TeacherFinancePanel() {
   const unpaidTotal = Math.max(0, total - paidTotal);
   const max = Math.max(...rows.map((student) => student.monthly), 1);
 
+  function downloadReceipt(student: typeof rows[number]) {
+    const content = [
+      'Lumina - Recibo de mensalidade',
+      `Aluno: ${student.full_name}`,
+      `Mes: ${paymentMonth}`,
+      `Aulas por semana: ${student.weeklyClasses}`,
+      `Valor por aula: ${(student.price_per_class || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
+      `Total mensal: ${student.monthly.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
+      `Status: ${student.payment === 'paid' ? 'Pago' : 'Nao pago'}`,
+      `Emitido em: ${new Date().toLocaleString('pt-BR')}`,
+    ].join('\n');
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `recibo-${student.full_name.replace(/\s+/g, '-').toLowerCase()}-${paymentMonth}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function whatsappCharge(student: typeof rows[number]) {
+    const phone = (student.whatsapp || '').replace(/\D/g, '');
+    const message = `Ola, ${student.full_name}! Sua mensalidade Lumina de ${paymentMonth} ficou em ${student.monthly.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}.`;
+    return `https://wa.me/${phone || ''}?text=${encodeURIComponent(message)}`;
+  }
+
   return (
     <div className="stack">
       <PanelHeader eyebrow="Receita" title="Financeiro" text="Veja a previsão mensal por aluno." />
@@ -331,6 +358,10 @@ export function TeacherFinancePanel() {
                   <div className="payment-toggle" role="group" aria-label={`Pagamento de ${student.full_name}`}>
                     <button className={student.payment === 'paid' ? 'selected paid' : ''} onClick={() => updatePayment(student.id, 'paid')}>Pago</button>
                     <button className={student.payment === 'unpaid' ? 'selected unpaid' : ''} onClick={() => updatePayment(student.id, 'unpaid')}>Não pago</button>
+                  </div>
+                  <div className="billing-actions">
+                    <button className="btn" onClick={() => downloadReceipt(student)}>Baixar recibo</button>
+                    <a className="btn" href={whatsappCharge(student)} target="_blank">Cobrar no WhatsApp</a>
                   </div>
                 </div>
               ))}
@@ -614,6 +645,10 @@ export function TeacherSchedulePanel() {
   return (
     <div className="stack">
       <PanelHeader eyebrow="Calendario" title="Agenda" text="Organize aulas e atualize status rapidamente." />
+      <div className="row">
+        <button className="btn" onClick={() => downloadScheduleIcs(classes, 'agenda-lumina-professor.ics', 'Professor')}>Exportar agenda</button>
+        <button className="btn" onClick={requestReminderPermission}>Ativar lembretes</button>
+      </div>
       <div className="grid grid-2">
       <form className="card stack" onSubmit={submit}>
         <h2>{editingClassId ? 'Editar aula' : 'Agendar aula'}</h2>

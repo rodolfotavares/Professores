@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/fetcher';
 import { EmptyState, StatusMessage } from '@/components/PanelState';
 import { MessageThread } from '@/components/MessageThread';
+import { downloadScheduleIcs, requestReminderPermission } from '@/lib/calendar-export';
 import type { Activity, ActivitySubmission, ClassSchedule, Message, Student } from '@/types';
 
 function usePanelLoad(load: () => Promise<void>, interval = 15000) {
@@ -145,6 +146,10 @@ export function StudentSchedulePanel() {
     <div className="stack">
       <PanelHeader eyebrow="Calendário" title="Agenda" text="Veja exatamente quando suas aulas acontecerão." />
       <StatusMessage error={error} loading={loading} />
+      <div className="row">
+        <button className="btn student" onClick={() => downloadScheduleIcs(classes, 'agenda-lumina-aluno.ics', 'Aluno')}>Exportar agenda</button>
+        <button className="btn student" onClick={requestReminderPermission}>Ativar lembretes</button>
+      </div>
       <div className="grid grid-3">
         <div className="metric"><p className="muted">Aulas agendadas</p><h2>{scheduled}</h2></div>
         <div className="metric"><p className="muted">Confirmadas</p><h2>{confirmed}</h2></div>
