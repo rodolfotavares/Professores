@@ -9,6 +9,48 @@ export type ApiUser = {
   full_name?: string;
 };
 
+export function currentSubscriptionMonth() {
+  return new Date().toISOString().slice(0, 7);
+}
+
+export async function getTeacherSubscriptionStatus(teacherId: string, monthReference = currentSubscriptionMonth()) {
+  const { data } = await supabaseAdmin
+    .from('app_subscriptions')
+    .select('status, paid_at, month_reference, amount')
+    .eq('teacher_id', teacherId)
+    .eq('month_reference', monthReference)
+    .maybeSingle();
+
+  return data || {
+    status: 'pending',
+    paid_at: null,
+    month_reference: monthReference,
+    amount: 39.9,
+  };
+}
+
+function canTeacherUseApi(pathname: string) {
+  return [
+    '/api/me',
+    '/api/teacher/subscription',
+    '/api/payments/mercadopago/preference',
+    '/api/payments/mercadopago/webhook',
+  ].some((path) => pathname.startsWith(path));
+}
+
+async function assertTeacherSubscription(req: NextRequest, user: ApiUser) {
+  if (user.role !== 'teacher') return;
+  if (canTeacherUseApi(req.nextUrl.pathname)) return;
+
+  const subscription = await getTeacherSubscriptionStatus(user.id);
+  if (subscription.status !== 'paid') {
+    throw new Response(JSON.stringify({
+      error: 'Sua assinatura mensal do LuminaAI esta pendente. Acesse Financeiro e pague a mensalidade para liberar o app.',
+      code: 'SUBSCRIPTION_REQUIRED',
+    }), { status: 402 });
+  }
+}
+
 export async function getApiUser(req: NextRequest): Promise<ApiUser> {
   assertSupabaseAdminConfigured();
 
@@ -34,12 +76,15 @@ export async function getApiUser(req: NextRequest): Promise<ApiUser> {
     throw new Response(JSON.stringify({ error: 'Perfil nao encontrado.' }), { status: 403 });
   }
 
-  return {
+  const user = {
     id: data.user.id,
     email: data.user.email || undefined,
     role: profile.role,
     full_name: profile.full_name,
   };
+
+  await assertTeacherSubscription(req, user);
+  return user;
 }
 
 export function json(data: unknown, init?: ResponseInit) {

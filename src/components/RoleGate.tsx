@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/fetcher';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
@@ -9,6 +9,7 @@ type Role = 'teacher' | 'student' | 'admin';
 
 export function RoleGate({ expected, children }: { expected: Role; children: ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [status, setStatus] = useState<'checking' | 'allowed' | 'blocked'>('checking');
   const [message, setMessage] = useState('Verificando permissão...');
 
@@ -17,11 +18,21 @@ export function RoleGate({ expected, children }: { expected: Role; children: Rea
 
     async function checkRole() {
       try {
-        const { profile } = await apiFetch<{ profile: { role: Role } }>('/api/me');
+        const { profile } = await apiFetch<{ profile: { role: Role; subscription?: { status: string } | null } }>('/api/me');
         if (!active) return;
 
         const allowed = profile.role === expected || profile.role === 'admin';
         if (allowed) {
+          const subscriptionPending = expected === 'teacher'
+            && profile.role === 'teacher'
+            && profile.subscription?.status !== 'paid';
+          if (subscriptionPending && pathname !== '/teacher/finance') {
+            setStatus('blocked');
+            setMessage('Sua assinatura mensal do LuminaAI esta pendente. Acesse Financeiro e pague a mensalidade para liberar o app.');
+            window.setTimeout(() => router.replace('/teacher/finance'), 900);
+            return;
+          }
+
           setStatus('allowed');
           return;
         }
@@ -46,7 +57,7 @@ export function RoleGate({ expected, children }: { expected: Role; children: Rea
     return () => {
       active = false;
     };
-  }, [expected, router]);
+  }, [expected, pathname, router]);
 
   async function logout() {
     await supabaseBrowser.auth.signOut();

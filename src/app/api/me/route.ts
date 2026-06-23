@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { apiError, getApiUser, json } from '@/lib/api-auth';
+import { apiError, getApiUser, getTeacherSubscriptionStatus, json } from '@/lib/api-auth';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function GET(req: NextRequest) {
@@ -12,7 +12,11 @@ export async function GET(req: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    return json({ profile });
+    const subscription = profile?.role === 'teacher'
+      ? await getTeacherSubscriptionStatus(user.id)
+      : null;
+
+    return json({ profile: subscription ? { ...profile, subscription } : profile });
   } catch (error) {
     return apiError(error);
   }

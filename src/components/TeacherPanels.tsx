@@ -250,12 +250,18 @@ export function TeacherFinancePanel() {
   async function load() {
     try {
       setError('');
-      const [studentsData, subscriptionData] = await Promise.all([
-        apiFetch<{ students: Student[] }>('/api/teacher/students'),
-        apiFetch<{ subscription: { month_reference: string; amount: number; status: string; paid_at: string | null } }>(`/api/teacher/subscription?month=${paymentMonth}`),
-      ]);
-      setStudents(studentsData.students);
+      const subscriptionData = await apiFetch<{ subscription: { month_reference: string; amount: number; status: string; paid_at: string | null } }>(`/api/teacher/subscription?month=${paymentMonth}`);
       setSubscription(subscriptionData.subscription);
+
+      try {
+        const studentsData = await apiFetch<{ students: Student[] }>('/api/teacher/students');
+        setStudents(studentsData.students);
+      } catch (err) {
+        setStudents([]);
+        if (subscriptionData.subscription.status === 'paid') {
+          throw err;
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao carregar financeiro.');
     } finally {
