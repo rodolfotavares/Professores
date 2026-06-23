@@ -516,6 +516,7 @@ export function StudentsPanel() {
   const emptyForm = { full_name: '', email: '', whatsapp: '', subject: '', days_of_week: '1,3', class_time: '14:00', classes_per_week: '2', price_per_class: '100' };
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState('');
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [regenerateSchedule, setRegenerateSchedule] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -560,6 +561,7 @@ export function StudentsPanel() {
       }
       setForm(emptyForm);
       setEditingId('');
+      setIsFormOpen(false);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao salvar aluno.');
@@ -570,6 +572,7 @@ export function StudentsPanel() {
 
   function editStudent(student: Student) {
     setEditingId(student.id);
+    setIsFormOpen(true);
     setForm({
       full_name: student.full_name,
       email: student.email,
@@ -593,6 +596,7 @@ export function StudentsPanel() {
   function cancelEdit() {
     setEditingId('');
     setForm(emptyForm);
+    setIsFormOpen(false);
   }
 
   const selectedDays = useMemo(() => form.days_of_week.split(',').filter(Boolean), [form.days_of_week]);
@@ -601,8 +605,26 @@ export function StudentsPanel() {
   return (
     <div className="stack">
       <PanelHeader eyebrow="Administração" title="Alunos" text="Cadastre, edite a agenda e acompanhe valores." />
-      <div className="grid grid-2">
-      <form className="card stack" onSubmit={submit}>
+      <div className="panel-toolbar">
+        <div>
+          <span className="eyebrow">Gestão de alunos</span>
+          <h2>{students.length} aluno{students.length === 1 ? '' : 's'} cadastrado{students.length === 1 ? '' : 's'}</h2>
+        </div>
+        <button
+          type="button"
+          className="btn primary"
+          onClick={() => {
+            setEditingId('');
+            setForm(emptyForm);
+            setRegenerateSchedule(true);
+            setIsFormOpen((current) => (editingId ? true : !current));
+          }}
+        >
+          {isFormOpen && !editingId ? 'Fechar cadastro' : 'Novo aluno'}
+        </button>
+      </div>
+      {isFormOpen && (
+      <form className="card stack collapsible-form" onSubmit={submit}>
         <div>
           <span className="eyebrow">Cadastro vinculado</span>
           <h2>{editingId ? 'Editar aluno' : 'Novo aluno'}</h2>
@@ -635,8 +657,10 @@ export function StudentsPanel() {
         <div className="row">
           <button className="btn primary" disabled={saving}>{saving ? 'Salvando...' : editingId ? 'Salvar alterações' : 'Salvar e gerar agenda'}</button>
           {editingId && <button type="button" className="btn" onClick={cancelEdit}>Cancelar edição</button>}
+          {!editingId && <button type="button" className="btn" onClick={() => setIsFormOpen(false)}>Cancelar</button>}
         </div>
       </form>
+      )}
       <div className="stack">
         <StatusMessage error="" loading={loading} />
         {!loading && students.length === 0 && <EmptyState title="Nenhum aluno ainda" text="Cadastre ou peça para o aluno usar o código do professor." />}
@@ -655,7 +679,6 @@ export function StudentsPanel() {
             </div>
           </div>
         ))}
-      </div>
       </div>
     </div>
   );
@@ -822,6 +845,7 @@ export function TeacherActivitiesPanel() {
   const [submissions, setSubmissions] = useState<ActivitySubmission[]>([]);
   const [form, setForm] = useState({ title: '', description: '', subject: '', student_id: '', due_date: '' });
   const [file, setFile] = useState<File | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [grades, setGrades] = useState<Record<string, string>>({});
   const [feedbacks, setFeedbacks] = useState<Record<string, string>>({});
   const [correctingId, setCorrectingId] = useState('');
@@ -872,6 +896,7 @@ export function TeacherActivitiesPanel() {
       await apiFetch('/api/teacher/activities', { method: 'POST', body: JSON.stringify({ ...form, points: 10, student_id: form.student_id || undefined, file_url: uploaded?.url }) });
       setForm({ title: '', description: '', subject: '', student_id: '', due_date: '' });
       setFile(null);
+      setIsFormOpen(false);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao criar atividade.');
@@ -937,8 +962,17 @@ export function TeacherActivitiesPanel() {
   return (
     <div className="stack">
       <PanelHeader eyebrow="Tarefas" title="Atividades" text="Publique, receba arquivos e corrija entregas." />
-      <div className="grid grid-2">
-      <form className="card stack" onSubmit={submit}>
+      <div className="panel-toolbar">
+        <div>
+          <span className="eyebrow">Central de atividades</span>
+          <h2>{activities.length} atividade{activities.length === 1 ? '' : 's'} publicada{activities.length === 1 ? '' : 's'}</h2>
+        </div>
+        <button type="button" className="btn primary" onClick={() => setIsFormOpen((current) => !current)}>
+          {isFormOpen ? 'Fechar criação' : 'Nova atividade'}
+        </button>
+      </div>
+      {isFormOpen && (
+      <form className="card stack collapsible-form" onSubmit={submit}>
         <h2>Nova atividade</h2>
         <StatusMessage error={error} loading={false} />
         <Input label="Título" value={form.title} onChange={(v) => setForm({ ...form, title: v })} />
@@ -947,8 +981,22 @@ export function TeacherActivitiesPanel() {
         <label className="label">Aluno<select className="input" value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })}><option value="">Todos</option>{students.map((s) => <option value={s.id} key={s.id}>{s.full_name}</option>)}</select></label>
         <Input label="Prazo" type="date" value={form.due_date} onChange={(v) => setForm({ ...form, due_date: v })} />
         <label className="label">Arquivo da atividade<input className="input" type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} /></label>
-        <button className="btn primary" disabled={saving}>{saving ? 'Enviando...' : 'Criar'}</button>
+        <div className="row">
+          <button className="btn primary" disabled={saving}>{saving ? 'Enviando...' : 'Criar'}</button>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              setForm({ title: '', description: '', subject: '', student_id: '', due_date: '' });
+              setFile(null);
+              setIsFormOpen(false);
+            }}
+          >
+            Cancelar
+          </button>
+        </div>
       </form>
+      )}
       <div className="stack">
         <StatusMessage error="" loading={loading} />
         {!loading && activities.length === 0 && <EmptyState title="Nenhuma atividade" text="Crie uma atividade para todos os alunos ou para um aluno específico." />}
@@ -987,7 +1035,6 @@ export function TeacherActivitiesPanel() {
           {!loading && correctedSubmissions.length === 0 && <EmptyState title="Nenhuma atividade corrigida" text="As atividades corrigidas ficarão registradas aqui." />}
           {correctedSubmissions.map((submission) => renderSubmissionCard(submission, false))}
         </section>
-      </div>
       </div>
     </div>
   );
