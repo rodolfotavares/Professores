@@ -644,8 +644,10 @@ export function StudentsPanel() {
 export function TeacherSchedulePanel() {
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<ClassSchedule[]>([]);
+  const [googleStatus, setGoogleStatus] = useState<{ connected: boolean; google_email: string | null } | null>(null);
   const [form, setForm] = useState({ student_id: '', class_date: new Date().toISOString().slice(0, 10), class_time: '14:00' });
   const [editingClassId, setEditingClassId] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -659,6 +661,9 @@ export function TeacherSchedulePanel() {
       setStudents(s.students);
       setClasses(c.classes);
       if (!form.student_id && s.students[0]) setForm((current) => ({ ...current, student_id: s.students[0].id }));
+      apiFetch<{ connected: boolean; google_email: string | null }>('/api/google/calendar/status')
+        .then(setGoogleStatus)
+        .catch(() => setGoogleStatus(null));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao carregar agenda.');
     } finally {
@@ -667,6 +672,38 @@ export function TeacherSchedulePanel() {
   }
 
   usePanelLoad(load);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const google = params.get('google');
+    if (google === 'connected') setError('Google Agenda conectado com sucesso.');
+    if (google === 'error') setError('Nao foi possivel conectar o Google Agenda.');
+  }, []);
+
+  async function connectGoogleCalendar() {
+    setGoogleLoading(true);
+    setError('');
+    try {
+      const data = await apiFetch<{ url: string }>('/api/google/calendar/auth');
+      window.location.href = data.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao iniciar conexao com Google Agenda.');
+      setGoogleLoading(false);
+    }
+  }
+
+  async function syncGoogleCalendar() {
+    setGoogleLoading(true);
+    setError('');
+    try {
+      const data = await apiFetch<{ synced: number }>('/api/google/calendar/sync', { method: 'POST' });
+      setError(`${data.synced} aula${data.synced === 1 ? '' : 's'} sincronizada${data.synced === 1 ? '' : 's'} com Google Agenda.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao sincronizar Google Agenda.');
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -703,6 +740,22 @@ export function TeacherSchedulePanel() {
       <div className="row">
         <button className="btn" onClick={() => downloadScheduleIcs(classes, 'agenda-lumina-professor.ics', 'Professor')}>Exportar agenda</button>
         <button className="btn" onClick={requestReminderPermission}>Ativar lembretes</button>
+      </div>
+      <div className="card stack">
+        <div className="glass-card-head">
+          <div>
+            <span className="eyebrow">Google Agenda</span>
+            <h2>{googleStatus?.connected ? 'Conta conectada' : 'Sincronizacao externa'}</h2>
+          </div>
+          <span className={`badge ${googleStatus?.connected ? 'status-success' : 'status-warning'}`}>
+            {googleStatus?.connected ? 'Conectado' : 'Nao conectado'}
+          </span>
+        </div>
+        <p className="muted">{googleStatus?.connected ? `Conectado em ${googleStatus.google_email || 'Google Agenda'}.` : 'Conecte sua conta Google para enviar as aulas agendadas para o calendario do professor.'}</p>
+        <div className="row">
+          <button className="btn" onClick={connectGoogleCalendar} disabled={googleLoading}>{googleStatus?.connected ? 'Reconectar Google Agenda' : 'Conectar Google Agenda'}</button>
+          <button className="btn primary" onClick={syncGoogleCalendar} disabled={googleLoading || !googleStatus?.connected}>{googleLoading ? 'Sincronizando...' : 'Sincronizar aulas'}</button>
+        </div>
       </div>
       <div className="grid grid-2">
       <form className="card stack" onSubmit={submit}>

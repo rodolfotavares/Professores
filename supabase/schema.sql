@@ -140,6 +140,31 @@ create table public.app_subscriptions (
   unique(teacher_id, month_reference)
 );
 
+create table public.google_oauth_states (
+  state text primary key,
+  teacher_id uuid not null references public.profiles(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+create table public.google_calendar_connections (
+  id uuid primary key default gen_random_uuid(),
+  teacher_id uuid not null unique references public.profiles(id) on delete cascade,
+  google_email text,
+  access_token text not null,
+  refresh_token text,
+  expires_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.google_calendar_events (
+  id uuid primary key default gen_random_uuid(),
+  teacher_id uuid not null references public.profiles(id) on delete cascade,
+  class_schedule_id uuid not null unique references public.class_schedules(id) on delete cascade,
+  google_event_id text not null,
+  synced_at timestamptz not null default now()
+);
+
 create table public.notifications (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -167,6 +192,9 @@ alter table public.activity_submissions enable row level security;
 alter table public.messages enable row level security;
 alter table public.payments enable row level security;
 alter table public.app_subscriptions enable row level security;
+alter table public.google_oauth_states enable row level security;
+alter table public.google_calendar_connections enable row level security;
+alter table public.google_calendar_events enable row level security;
 alter table public.notifications enable row level security;
 
 create policy "profiles own read" on public.profiles for select using (auth.uid() = id);
@@ -180,4 +208,6 @@ create policy "submissions teacher or student read" on public.activity_submissio
 create policy "messages teacher or sender read" on public.messages for select using (auth.uid() = teacher_id or auth.uid() = sender_id);
 create policy "payments teacher or student read" on public.payments for select using (auth.uid() = teacher_id or auth.uid() = student_user_id);
 create policy "app subscriptions teacher read" on public.app_subscriptions for select using (auth.uid() = teacher_id);
+create policy "google connections teacher read" on public.google_calendar_connections for select using (auth.uid() = teacher_id);
+create policy "google events teacher read" on public.google_calendar_events for select using (auth.uid() = teacher_id);
 create policy "notifications own read" on public.notifications for select using (auth.uid() = user_id);

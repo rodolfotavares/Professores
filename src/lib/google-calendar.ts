@@ -1,0 +1,222 @@
+import { randomBytes } from 'crypto';
+import { supabaseAdmin } from './supabase-admin';
+
+const authBase = 'https://accounts.google.com/o/oauth2/v2/auth';
+const tokenUrl = 'https://oauth2.googleapis.com/token';
+const calendarBase = 'https://www.googleapis.com/calendar/v3';
+const userInfoUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
+const scopes = [
+  'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/userinfo.email',
+];
+
+function cleanEnv(value?: string) {
+  return (value || '').normalize('NFKC').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+}
+
+export function googleRedirectUri(origin: string) {
+  return `${origin}/api/google/calendar/callback`;
+}
+
+export function getGoogleCredentials() {
+  const clientId = cleanEnv(process.env.GOOGLE_CLIENT_ID);
+  const clientSecret = cleanEnv(process.env.GOOGLE_CLIENT_SECRET);
+  if (!clientId || !clientSecret) {
+    throw new Response(JSON.stringify({ error: 'Google Agenda nao configurado.' }), { status: 500 });
+  }
+  return { clientId, clientSecret };
+}
+
+export async function createGoogleAuthUrl(teacherId: string, origin: string) {
+  const { clientId } = getGoogleCredentials();
+  const state = randomBytes(24).toString('hex');
+
+  await supabaseAdmin.from('google_oauth_states').insert({
+    state,
+    teacher_id: teacherId,
+  });
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: googleRedirectUri(origin),
+    response_type: 'code',
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: scopes.join(' '),
+    state,
+  });
+
+  return `${authBase}?${params.toString()}`;
+}
+
+async function googleTokenRequest(body: Record<string, string>) {
+  const response = await fetch(tokenUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(body),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.error_description || payload.error || 'Falha ao conectar com Google Agenda.');
+  }
+  return payload as {
+    access_token: string;
+    refresh_token?: string;
+    expires_in?: number;
+  };
+}
+
+export async function exchangeGoogleCode(code: string, origin: string) {
+  const { clientId, clientSecret } = getGoogleCredentials();
+  return googleTokenRequest({
+    code,
+    client_id: clientId,
+    client_secret: clientSecret,
+    redirect_uri: googleRedirectUri(origin),
+    grant_type: 'authorization_code',
+  });
+}
+
+async function refreshGoogleToken(refreshToken: string) {
+  const { clientId, clientSecret } = getGoogleCredentials();
+  return googleTokenRequest({
+    refresh_token: refreshToken,
+    client_id: clientId,
+    client_secret: clientSecret,
+    grant_type: 'refresh_token',
+  });
+}
+
+export async function getGoogleEmail(accessToken: string) {
+  const response = await fetch(userInfoUrl, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const payload = await response.json().catch(() => ({}));
+  return typeof payload.email === 'string' ? payload.email : null;
+}
+
+export function expiresAt(expiresIn?: number) {
+  const seconds = Math.max(60, expiresIn || 3600);
+  return new Date(Date.now() + seconds * 1000).toISOString();
+}
+
+export async function getValidGoogleConnection(teacherId: string) {
+  const { data: connection, error } = await supabaseAdmin
+    .from('google_calendar_connections')
+    .select('*')
+    .eq('teacher_id', teacherId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!connection) return null;
+
+  const expiresAtValue = connection.expires_at ? new Date(connection.expires_at).getTime() : 0;
+  const shouldRefresh = Boolean(connection.refresh_token) && expiresAtValue < Date.now() + 120000;
+  if (!shouldRefresh) return connection;
+
+  const refreshed = await refreshGoogleToken(connection.refresh_token);
+  const payload = {
+    access_token: refreshed.access_token,
+    expires_at: expiresAt(refreshed.expires_in),
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data, error: updateError } = await supabaseAdmin
+    .from('google_calendar_connections')
+    .update(payload)
+    .eq('teacher_id', teacherId)
+    .select('*')
+    .single();
+
+  if (updateError) throw updateError;
+  return data;
+}
+
+function toGoogleDateTime(classDate: string, classTime: string, durationMinutes: number) {
+  const start = `${classDate}T${classTime.slice(0, 5)}:00`;
+  const [hours, minutes] = classTime.slice(0, 5).split(':').map(Number);
+  const endDate = new Date(`${classDate}T00:00:00`);
+  endDate.setHours(hours || 0, (minutes || 0) + durationMinutes, 0, 0);
+  const yyyy = endDate.getFullYear();
+  const mm = String(endDate.getMonth() + 1).padStart(2, '0');
+  const dd = String(endDate.getDate()).padStart(2, '0');
+  const hh = String(endDate.getHours()).padStart(2, '0');
+  const min = String(endDate.getMinutes()).padStart(2, '0');
+  return {
+    start: { dateTime: start, timeZone: 'America/Sao_Paulo' },
+    end: { dateTime: `${yyyy}-${mm}-${dd}T${hh}:${min}:00`, timeZone: 'America/Sao_Paulo' },
+  };
+}
+
+async function googleCalendarFetch(accessToken: string, path: string, init: RequestInit = {}) {
+  const response = await fetch(`${calendarBase}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(init.headers || {}),
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.error?.message || 'Falha ao sincronizar Google Agenda.');
+  }
+  return payload;
+}
+
+export async function syncTeacherClassesToGoogle(teacherId: string) {
+  const connection = await getValidGoogleConnection(teacherId);
+  if (!connection) {
+    throw new Response(JSON.stringify({ error: 'Conecte o Google Agenda antes de sincronizar.' }), { status: 400 });
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: classes, error } = await supabaseAdmin
+    .from('class_schedules')
+    .select('*, students(full_name, email)')
+    .eq('teacher_id', teacherId)
+    .eq('status', 'scheduled')
+    .gte('class_date', today)
+    .order('class_date')
+    .order('class_time');
+
+  if (error) throw error;
+  let synced = 0;
+
+  for (const item of classes || []) {
+    const existing = await supabaseAdmin
+      .from('google_calendar_events')
+      .select('google_event_id')
+      .eq('class_schedule_id', item.id)
+      .maybeSingle();
+
+    const eventBody = {
+      summary: `Aula - ${item.students?.full_name || 'Aluno'}`,
+      description: `Aula sincronizada pelo LuminaAI.${item.subject ? `\nMateria: ${item.subject}` : ''}`,
+      ...toGoogleDateTime(item.class_date, item.class_time, item.duration_minutes || 60),
+    };
+
+    const eventId = existing.data?.google_event_id;
+    if (eventId) {
+      await googleCalendarFetch(connection.access_token, `/calendars/primary/events/${eventId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(eventBody),
+      });
+    } else {
+      const created = await googleCalendarFetch(connection.access_token, '/calendars/primary/events', {
+        method: 'POST',
+        body: JSON.stringify(eventBody),
+      }) as { id?: string };
+      if (created.id) {
+        await supabaseAdmin.from('google_calendar_events').insert({
+          teacher_id: teacherId,
+          class_schedule_id: item.id,
+          google_event_id: created.id,
+        });
+      }
+    }
+    synced += 1;
+  }
+
+  return { synced };
+}
