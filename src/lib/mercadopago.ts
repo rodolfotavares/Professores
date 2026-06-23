@@ -3,7 +3,10 @@ import { supabaseAdmin } from './supabase-admin';
 const apiBase = 'https://api.mercadopago.com';
 
 function cleanMercadoPagoValue(value?: string) {
-  return (value || '').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+  return (value || '')
+    .normalize('NFKC')
+    .replace(/[^\x21-\x7E]/g, '')
+    .trim();
 }
 
 function getMercadoPagoAccessToken() {
@@ -24,9 +27,9 @@ async function mercadoPagoFetch<T>(path: string, init: RequestInit = {}) {
   const response = await fetch(`${apiBase}${path}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
       ...(init.headers || {}),
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
     },
   });
 
