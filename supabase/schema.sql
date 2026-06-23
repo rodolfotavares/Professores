@@ -21,6 +21,7 @@ create table public.teacher_profiles (
   access_code text not null unique,
   subjects text,
   default_price_per_class numeric(10,2) not null default 100,
+  subscription_exempt boolean not null default false,
   created_at timestamptz not null default now()
 );
 

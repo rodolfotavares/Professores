@@ -25,7 +25,8 @@ export function RoleGate({ expected, children }: { expected: Role; children: Rea
         if (allowed) {
           const subscriptionPending = expected === 'teacher'
             && profile.role === 'teacher'
-            && profile.subscription?.status !== 'paid';
+            && profile.subscription?.status !== 'paid'
+            && profile.subscription?.status !== 'exempt';
           if (subscriptionPending && pathname !== '/teacher/finance') {
             setStatus('blocked');
             setMessage('Sua assinatura mensal do LuminaAI esta pendente. Acesse Financeiro e pague a mensalidade para liberar o app.');

@@ -258,7 +258,7 @@ export function TeacherFinancePanel() {
         setStudents(studentsData.students);
       } catch (err) {
         setStudents([]);
-        if (subscriptionData.subscription.status === 'paid') {
+        if (subscriptionData.subscription.status === 'paid' || subscriptionData.subscription.status === 'exempt') {
           throw err;
         }
       }
@@ -298,6 +298,9 @@ export function TeacherFinancePanel() {
   const paidTotal = rows.filter((student) => student.payment === 'paid').reduce((sum, student) => sum + student.monthly, 0);
   const unpaidTotal = Math.max(0, total - paidTotal);
   const max = Math.max(...rows.map((student) => student.monthly), 1);
+  const subscriptionActive = subscription?.status === 'paid' || subscription?.status === 'exempt';
+  const subscriptionLabel = subscription?.status === 'exempt' ? 'Isento' : subscription?.status === 'paid' ? 'Pago' : 'Pendente';
+  const subscriptionStatusLabel = subscription?.status === 'exempt' ? 'Liberada' : subscription?.status === 'paid' ? 'Ativa' : 'Pendente';
 
   function downloadReceipt(student: typeof rows[number]) {
     const content = [
@@ -351,18 +354,18 @@ export function TeacherFinancePanel() {
             <span className="eyebrow">Assinatura do app</span>
             <h2>LuminaAI Pro</h2>
           </div>
-          <span className={`badge ${subscription?.status === 'paid' ? 'status-success' : 'status-warning'}`}>
-            {subscription?.status === 'paid' ? 'Pago' : 'Pendente'}
+          <span className={`badge ${subscriptionActive ? 'status-success' : 'status-warning'}`}>
+            {subscriptionLabel}
           </span>
         </div>
         <p className="muted">O professor paga apenas pelo uso do LuminaAI. Os alunos nao pagam assinatura do app.</p>
         <div className="grid grid-3">
           <div className="metric"><p className="muted">Mensalidade</p><h2>R$ 39,90</h2></div>
           <div className="metric"><p className="muted">Mes</p><h2>{paymentMonth}</h2></div>
-          <div className="metric"><p className="muted">Status</p><h2>{subscription?.status === 'paid' ? 'Ativa' : 'Pendente'}</h2></div>
+          <div className="metric"><p className="muted">Status</p><h2>{subscriptionStatusLabel}</h2></div>
         </div>
-        <button className="btn primary" onClick={createMercadoPagoCheckout} disabled={checkoutLoading || subscription?.status === 'paid'}>
-          {checkoutLoading ? 'Gerando...' : subscription?.status === 'paid' ? 'Assinatura paga' : 'Pagar R$ 39,90'}
+        <button className="btn primary" onClick={createMercadoPagoCheckout} disabled={checkoutLoading || subscriptionActive}>
+          {checkoutLoading ? 'Gerando...' : subscription?.status === 'exempt' ? 'Professor isento' : subscription?.status === 'paid' ? 'Assinatura paga' : 'Pagar R$ 39,90'}
         </button>
       </div>
       <div className="grid grid-3">

@@ -14,6 +14,22 @@ export function currentSubscriptionMonth() {
 }
 
 export async function getTeacherSubscriptionStatus(teacherId: string, monthReference = currentSubscriptionMonth()) {
+  const { data: teacherProfile } = await supabaseAdmin
+    .from('teacher_profiles')
+    .select('subscription_exempt')
+    .eq('user_id', teacherId)
+    .maybeSingle();
+
+  if (teacherProfile?.subscription_exempt) {
+    return {
+      status: 'exempt',
+      paid_at: null,
+      month_reference: monthReference,
+      amount: 0,
+      exempt: true,
+    };
+  }
+
   const { data } = await supabaseAdmin
     .from('app_subscriptions')
     .select('status, paid_at, month_reference, amount')
@@ -26,6 +42,7 @@ export async function getTeacherSubscriptionStatus(teacherId: string, monthRefer
     paid_at: null,
     month_reference: monthReference,
     amount: 39.9,
+    exempt: false,
   };
 }
 
@@ -43,7 +60,7 @@ async function assertTeacherSubscription(req: NextRequest, user: ApiUser) {
   if (canTeacherUseApi(req.nextUrl.pathname)) return;
 
   const subscription = await getTeacherSubscriptionStatus(user.id);
-  if (subscription.status !== 'paid') {
+  if (subscription.status !== 'paid' && subscription.status !== 'exempt') {
     throw new Response(JSON.stringify({
       error: 'Sua assinatura mensal do LuminaAI esta pendente. Acesse Financeiro e pague a mensalidade para liberar o app.',
       code: 'SUBSCRIPTION_REQUIRED',
