@@ -1,9 +1,12 @@
-const CACHE_NAME = 'luminaai-v1';
+const CACHE_NAME = 'luminaai-v2';
 const STATIC_ASSETS = [
   '/manifest.webmanifest',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/backgrounds/premium-office-dashboard.png'
+  '/icons/lumina-premium-192.png',
+  '/icons/lumina-premium-192-maskable.png',
+  '/icons/lumina-premium-512.png',
+  '/icons/lumina-premium-512-maskable.png',
+  '/icons/lumina-premium-apple-touch.png',
+  '/screenshots/home-install-preview.png'
 ];
 
 self.addEventListener('install', (event) => {
