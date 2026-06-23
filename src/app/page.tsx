@@ -18,6 +18,10 @@ export default function HomePage() {
             <span>Entregas com arquivo</span>
             <span>Previsão financeira</span>
           </div>
+          <div className="legal-links">
+            <Link href="/privacy">Privacidade</Link>
+            <Link href="/terms">Termos</Link>
+          </div>
         </div>
         <div className="product-preview" aria-label="Previa visual do painel LuminaAI">
           <div className="preview-topbar">
