@@ -4,6 +4,7 @@ import { makeTeacherCode } from '@/lib/codes';
 import { assertSupabaseAdminConfigured } from '@/lib/env';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { isStrongPassword, isValidBrazilPhone, normalizeBrazilPhone, passwordRuleMessage } from '@/lib/validation';
+import { currentSubscriptionMonth } from '@/lib/api-auth';
 
 const schema = z.object({
   full_name: z.string().min(2),
@@ -48,6 +49,15 @@ export async function POST(req: NextRequest) {
     });
 
     if (teacherError) throw teacherError;
+
+    const { error: subscriptionError } = await supabaseAdmin.from('app_subscriptions').insert({
+      teacher_id: userId,
+      month_reference: currentSubscriptionMonth(),
+      amount: 39.9,
+      status: 'pending',
+    });
+
+    if (subscriptionError) throw subscriptionError;
 
     return Response.json({ ok: true, access_code: accessCode });
   } catch (error) {

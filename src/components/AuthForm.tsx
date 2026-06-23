@@ -7,6 +7,18 @@ import { apiFetch } from '@/lib/fetcher';
 import { formatBrazilWhatsapp, isStrongPassword, isValidBrazilPhone, normalizeBrazilPhone, passwordRuleMessage } from '@/lib/validation';
 
 type RegisterMode = 'teacher' | 'student';
+type AuthProfile = {
+  role: string;
+  subscription?: { status: string } | null;
+};
+
+function portalPath(profile: AuthProfile) {
+  if (profile.role === 'student') return '/student';
+  if (profile.role === 'teacher' && profile.subscription?.status !== 'paid' && profile.subscription?.status !== 'exempt') {
+    return '/teacher/finance';
+  }
+  return '/teacher';
+}
 
 export function LoginForm() {
   const router = useRouter();
@@ -33,8 +45,8 @@ export function LoginForm() {
       return;
     }
 
-    const { profile } = await apiFetch<{ profile: { role: string } }>('/api/me');
-    router.push(profile.role === 'student' ? '/student' : '/teacher');
+    const { profile } = await apiFetch<{ profile: AuthProfile }>('/api/me');
+    router.push(portalPath(profile));
   }
 
   return (
@@ -216,7 +228,7 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
       const { error: signInError } = await supabaseBrowser.auth.signInWithPassword({ email: form.email, password: form.password });
       if (signInError) throw new Error('Conta criada, mas não foi possível entrar automaticamente. Tente fazer login.');
 
-      const { profile } = await apiFetch<{ profile: { role: string } }>('/api/me');
+      const { profile } = await apiFetch<{ profile: AuthProfile }>('/api/me');
       if (profile.role !== mode) {
         await supabaseBrowser.auth.signOut();
         throw new Error(mode === 'student'
@@ -224,7 +236,7 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
           : 'Cadastro criado, mas o perfil não foi reconhecido como professor. Entre em contato com o suporte.');
       }
 
-      router.push(mode === 'teacher' ? '/teacher' : '/student');
+      router.push(portalPath(profile));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro inesperado.');
     } finally {
