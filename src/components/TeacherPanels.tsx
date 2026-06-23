@@ -99,9 +99,11 @@ export function TeacherDashboard() {
   const completedClasses = classes.filter((item) => item.status === 'completed').length;
   const pendingActivities = activities.filter((activity) => !submissions.some((submission) => submission.activity_id === activity.id)).length;
   const corrected = submissions.filter((submission) => submission.status === 'corrected').length;
-  const averagePerformance = activities.length ? Math.min(98, Math.round(((submissions.length + completedClasses + students.length) / (activities.length + classes.length + Math.max(students.length, 1))) * 100)) : 87;
-  const attendance = classes.length ? Math.round((classes.filter((item) => item.status !== 'absence').length / classes.length) * 100) : 92;
-  const delivery = activities.length ? Math.round((submissions.length / activities.length) * 100) : 75;
+  const hasStudents = students.length > 0;
+  const hasAnyData = students.length > 0 || classes.length > 0 || activities.length > 0 || submissions.length > 0;
+  const averagePerformance = submissions.length ? Math.round((corrected / submissions.length) * 100) : null;
+  const attendance = classes.length ? Math.round((classes.filter((item) => item.status !== 'absence' && item.status !== 'cancelled').length / classes.length) * 100) : null;
+  const delivery = activities.length ? Math.round((submissions.length / activities.length) * 100) : null;
   const week = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
   const today = new Date();
   const weekDaysPreview = Array.from({ length: 7 }, (_, index) => {
@@ -111,8 +113,14 @@ export function TeacherDashboard() {
   });
   const weeklyBars = week.map((label, index) => {
     const total = classes.filter((item) => new Date(`${item.class_date}T00:00:00`).getDay() === index).length;
-    return { label, value: Math.min(95, 24 + total * 18 + (index % 3) * 10) };
+    const maxDayTotal = Math.max(...week.map((_, day) => classes.filter((item) => new Date(`${item.class_date}T00:00:00`).getDay() === day).length), 1);
+    return { label, total, value: total ? Math.max(12, Math.round((total / maxDayTotal) * 92)) : 0 };
   });
+  const performanceText = averagePerformance == null ? '-' : `${averagePerformance}%`;
+  const performanceValue = averagePerformance == null ? '-' : averagePerformance;
+  const attendanceText = attendance == null ? '-' : `${attendance}%`;
+  const deliveryText = delivery == null ? '-' : `${delivery}%`;
+  const submittedToGrade = submissions.filter((submission) => submission.status === 'submitted').length;
 
   return (
     <div className="teacher-glass-dashboard">
@@ -127,6 +135,12 @@ export function TeacherDashboard() {
         </div>
       </div>
       <StatusMessage error={error} loading={loading} />
+      {!loading && !hasStudents && (
+        <div className="empty dashboard-empty-state">
+          <h2>Comece cadastrando seu primeiro aluno</h2>
+          <p>Depois disso, este painel vai mostrar aulas da semana, atividades, frequencia e desempenho com dados reais.</p>
+        </div>
+      )}
       <div className="teacher-dashboard-grid">
         <section className="glass-panel activity-week-card">
           <div className="glass-card-head">
@@ -136,7 +150,7 @@ export function TeacherDashboard() {
           <div className="week-bars">
             {weeklyBars.map((bar) => (
               <div className="week-bar" key={bar.label}>
-                <span style={{ height: `${bar.value}%` }}><em>{bar.value}%</em></span>
+                <span style={{ height: `${bar.value}%` }}><em>{bar.total || '-'}</em></span>
                 <small>{bar.label}</small>
               </div>
             ))}
@@ -155,13 +169,13 @@ export function TeacherDashboard() {
             <span>Mensal</span>
           </div>
           <div className="overview-body">
-            <div className="overview-ring" style={{ background: `conic-gradient(#e5ce00 0 ${averagePerformance * 2.35}deg, #36c7f4 ${averagePerformance * 2.35}deg ${averagePerformance * 3.25}deg, rgba(255,255,255,0.16) ${averagePerformance * 3.25}deg 360deg)` }}>
-              <div><strong>{averagePerformance}%</strong><small>geral</small></div>
+            <div className="overview-ring" style={{ background: averagePerformance == null ? 'rgba(255,255,255,0.12)' : `conic-gradient(#e5ce00 0 ${averagePerformance * 2.35}deg, #36c7f4 ${averagePerformance * 2.35}deg ${averagePerformance * 3.25}deg, rgba(255,255,255,0.16) ${averagePerformance * 3.25}deg 360deg)` }}>
+              <div><strong>{performanceText}</strong><small>geral</small></div>
             </div>
             <div className="overview-list">
-              <span><i className="dot gold-dot" />Média geral <strong>{averagePerformance}</strong></span>
-              <span><i className="dot blue-dot" />Frequência <strong>{attendance}%</strong></span>
-              <span><i className="dot green-dot" />Entregas <strong>{delivery}%</strong></span>
+              <span><i className="dot gold-dot" />Média geral <strong>{performanceValue}</strong></span>
+              <span><i className="dot blue-dot" />Frequência <strong>{attendanceText}</strong></span>
+              <span><i className="dot green-dot" />Entregas <strong>{deliveryText}</strong></span>
             </div>
           </div>
         </section>
@@ -171,15 +185,21 @@ export function TeacherDashboard() {
             <strong>Pendências</strong>
             <span>Hoje</span>
           </div>
-          <DashboardTodo text="Corrigir provas" meta={`${submissions.length} entregas`} status="Pendente" />
-          <DashboardTodo text="Lançar presença" meta={`${pendingClasses} aulas`} status="Em andamento" />
-          <DashboardTodo text="Responder mensagens" meta="recados abertos" status="Concluído" />
+          {hasAnyData ? (
+            <>
+              <DashboardTodo text="Corrigir atividades" meta={`${submittedToGrade} entregas`} status={submittedToGrade ? 'Pendente' : 'Em dia'} />
+              <DashboardTodo text="Lancar presenca" meta={`${pendingClasses} aulas`} status={pendingClasses ? 'Em andamento' : 'Em dia'} />
+              <DashboardTodo text="Atividades corrigidas" meta={`${corrected} registros`} status={corrected ? 'Concluido' : 'Aguardando dados'} />
+            </>
+          ) : (
+            <p className="muted">Sem pendencias enquanto nenhum aluno ou aula foi cadastrado.</p>
+          )}
         </section>
 
         <section className="glass-panel agenda-card">
           <div className="glass-card-head">
             <strong>Agenda da Semana</strong>
-            <span>Junho</span>
+            <span>{classes.length ? '7 dias' : 'Vazia'}</span>
           </div>
           <div className="week-calendar">
             {weekDaysPreview.map((day) => (
@@ -197,9 +217,9 @@ export function TeacherDashboard() {
             <span>Mensal</span>
           </div>
           <div className="result-highlight">
-            <strong>{averagePerformance}%</strong>
-            <span>desempenho médio</span>
-            <em>Ótimo progresso</em>
+            <strong>{performanceText}</strong>
+            <span>{averagePerformance == null ? 'sem dados suficientes' : 'desempenho medio'}</span>
+            <em>{averagePerformance == null ? 'Cadastre alunos e atividades' : 'Progresso calculado'}</em>
           </div>
         </section>
       </div>
