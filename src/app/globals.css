@@ -6898,3 +6898,279 @@ select.input option {
     overflow-x: auto;
   }
 }
+
+/* Final shell containment: compact, stable sidebar and non-overlapping side panels */
+.teacher-portal,
+.student-portal,
+.teacher-portal:has(.teacher-agenda-home),
+.teacher-portal:has(.students-reference-page),
+.teacher-portal:has(.activities-reference-page),
+.teacher-portal:has(.finance-reference-page),
+.student-portal:has(.student-home) {
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 0;
+  overflow-x: hidden;
+}
+
+.teacher-portal .teacher-icon-sidebar,
+.student-portal .teacher-icon-sidebar,
+.teacher-portal:has(.teacher-agenda-home) .teacher-icon-sidebar,
+.teacher-portal:has(.students-reference-page) .teacher-icon-sidebar,
+.teacher-portal:has(.activities-reference-page) .teacher-icon-sidebar,
+.teacher-portal:has(.finance-reference-page) .teacher-icon-sidebar,
+.student-portal:has(.student-home) .teacher-icon-sidebar {
+  position: sticky;
+  top: 0;
+  width: 92px;
+  min-width: 92px;
+  max-width: 92px;
+  height: 100vh;
+  min-height: 100vh;
+  align-self: start;
+  align-items: center;
+  padding: 18px 12px;
+  border: 0;
+  border-right: 1px solid #e7edf6;
+  border-radius: 0;
+  background: #fbfdff;
+  color: #203454;
+  box-shadow: 10px 0 30px rgba(18, 43, 84, 0.04);
+  overflow: visible;
+  z-index: 30;
+}
+
+.teacher-portal .compact-brand,
+.student-portal .compact-brand,
+.teacher-portal:has(.teacher-agenda-home) .compact-brand,
+.teacher-portal:has(.students-reference-page) .compact-brand,
+.teacher-portal:has(.activities-reference-page) .compact-brand,
+.teacher-portal:has(.finance-reference-page) .compact-brand,
+.student-portal:has(.student-home) .compact-brand {
+  display: grid;
+  justify-content: center;
+  justify-items: center;
+  gap: 0;
+  padding: 0 0 18px;
+}
+
+.teacher-portal .compact-brand > div:not(.brand-mark),
+.student-portal .compact-brand > div:not(.brand-mark),
+.teacher-portal:has(.teacher-agenda-home) .compact-brand > div:not(.brand-mark),
+.teacher-portal:has(.students-reference-page) .compact-brand > div:not(.brand-mark),
+.teacher-portal:has(.activities-reference-page) .compact-brand > div:not(.brand-mark),
+.teacher-portal:has(.finance-reference-page) .compact-brand > div:not(.brand-mark),
+.student-portal:has(.student-home) .compact-brand > div:not(.brand-mark) {
+  display: none;
+}
+
+.teacher-portal .brand-mark,
+.student-portal .brand-mark,
+.teacher-portal:has(.finance-reference-page) .brand-mark,
+.teacher-portal:has(.teacher-agenda-home) .brand-mark,
+.teacher-portal:has(.students-reference-page) .brand-mark,
+.teacher-portal:has(.activities-reference-page) .brand-mark,
+.student-portal:has(.student-home) .brand-mark {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  font-size: 18px;
+}
+
+.teacher-portal .icon-nav,
+.student-portal .icon-nav,
+.teacher-portal:has(.teacher-agenda-home) .icon-nav,
+.teacher-portal:has(.students-reference-page) .icon-nav,
+.teacher-portal:has(.activities-reference-page) .icon-nav,
+.teacher-portal:has(.finance-reference-page) .icon-nav,
+.student-portal:has(.student-home) .icon-nav {
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.teacher-portal .icon-nav a,
+.student-portal .icon-nav a,
+.teacher-portal .sidebar-action-button,
+.student-portal .sidebar-action-button,
+.teacher-portal:has(.teacher-agenda-home) .icon-nav a,
+.teacher-portal:has(.teacher-agenda-home) .sidebar-action-button,
+.teacher-portal:has(.students-reference-page) .icon-nav a,
+.teacher-portal:has(.students-reference-page) .sidebar-action-button,
+.teacher-portal:has(.activities-reference-page) .icon-nav a,
+.teacher-portal:has(.activities-reference-page) .sidebar-action-button,
+.teacher-portal:has(.finance-reference-page) .icon-nav a,
+.teacher-portal:has(.finance-reference-page) .sidebar-action-button,
+.student-portal:has(.student-home) .icon-nav a,
+.student-portal:has(.student-home) .sidebar-action-button {
+  width: 54px;
+  min-width: 54px;
+  max-width: 54px;
+  min-height: 54px;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: #425574;
+  box-shadow: none;
+}
+
+.teacher-portal .icon-nav a span,
+.student-portal .icon-nav a span,
+.teacher-portal .sidebar-action-button span,
+.student-portal .sidebar-action-button span,
+.teacher-portal:has(.teacher-agenda-home) .icon-nav a span,
+.teacher-portal:has(.teacher-agenda-home) .sidebar-action-button span,
+.teacher-portal:has(.students-reference-page) .icon-nav a span,
+.teacher-portal:has(.students-reference-page) .sidebar-action-button span,
+.teacher-portal:has(.activities-reference-page) .icon-nav a span,
+.teacher-portal:has(.activities-reference-page) .sidebar-action-button span,
+.teacher-portal:has(.finance-reference-page) .icon-nav a span,
+.teacher-portal:has(.finance-reference-page) .sidebar-action-button span,
+.student-portal:has(.student-home) .icon-nav a span,
+.student-portal:has(.student-home) .sidebar-action-button span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.teacher-portal .icon-nav a:hover,
+.student-portal .icon-nav a:hover,
+.teacher-portal .sidebar-action-button:hover,
+.student-portal .sidebar-action-button:hover {
+  background: #eef5ff;
+  color: #0b64e9;
+  transform: translateY(-1px);
+}
+
+.teacher-portal .sidebar-actions,
+.student-portal .sidebar-actions,
+.teacher-portal:has(.finance-reference-page) .sidebar-actions,
+.student-portal:has(.student-home) .sidebar-actions {
+  width: 100%;
+  margin-top: auto;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.teacher-portal .clean-shell,
+.student-portal .clean-shell,
+.teacher-portal .app-content,
+.student-portal .app-content,
+.teacher-portal .clean-shell > *,
+.student-portal .clean-shell > * {
+  min-width: 0;
+}
+
+.teacher-agenda-home,
+.student-home,
+.students-reference-page,
+.activities-reference-page,
+.finance-reference-page {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.teacher-agenda-home {
+  grid-template-columns: minmax(0, 190px) minmax(0, 1fr) minmax(260px, 300px);
+}
+
+.student-home {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+}
+
+.students-reference-page {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+}
+
+.activities-reference-page {
+  grid-template-columns: minmax(0, 1fr) minmax(330px, 380px);
+}
+
+.teacher-detail-panel,
+.student-side-panel,
+.student-edit-panel-ref,
+.activity-correction-panel {
+  position: sticky;
+  top: 0;
+  max-width: 100%;
+  min-width: 0;
+  z-index: 2;
+}
+
+.teacher-agenda-main,
+.student-main-column,
+.students-reference-main,
+.activities-reference-main,
+.finance-reference-main {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+@media (max-width: 1320px) {
+  .teacher-agenda-home,
+  .student-home,
+  .students-reference-page,
+  .activities-reference-page {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-detail-panel,
+  .student-side-panel,
+  .student-edit-panel-ref,
+  .activity-correction-panel {
+    position: static;
+    height: auto;
+    min-height: auto;
+    border-left: 0;
+    border-top: 1px solid #e5ecf6;
+  }
+}
+
+@media (max-width: 760px) {
+  .teacher-portal,
+  .student-portal,
+  .teacher-portal:has(.teacher-agenda-home),
+  .teacher-portal:has(.students-reference-page),
+  .teacher-portal:has(.activities-reference-page),
+  .teacher-portal:has(.finance-reference-page),
+  .student-portal:has(.student-home) {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-portal .teacher-icon-sidebar,
+  .student-portal .teacher-icon-sidebar,
+  .teacher-portal:has(.teacher-agenda-home) .teacher-icon-sidebar,
+  .teacher-portal:has(.students-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.activities-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.finance-reference-page) .teacher-icon-sidebar,
+  .student-portal:has(.student-home) .teacher-icon-sidebar {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    height: 76px;
+    min-height: 76px;
+    flex-direction: row;
+    padding: 10px 12px;
+    overflow-x: auto;
+  }
+
+  .teacher-portal .compact-brand,
+  .student-portal .compact-brand {
+    padding: 0;
+  }
+
+  .teacher-portal .icon-nav,
+  .student-portal .icon-nav {
+    grid-auto-flow: column;
+    grid-auto-columns: 54px;
+    width: auto;
+  }
+}
