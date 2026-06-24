@@ -1,5 +1,5 @@
-import { TeacherFinancePanel } from '@/components/TeacherPanels';
+import { TeacherFinanceBoard } from '@/components/TeacherFinanceBoard';
 
 export default function TeacherFinancePage() {
-  return <TeacherFinancePanel />;
+  return <TeacherFinanceBoard />;
 }
