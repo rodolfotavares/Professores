@@ -4348,3 +4348,686 @@ select.input option {
     grid-template-columns: 1fr;
   }
 }
+
+/* Pixel-style calendar dashboards */
+.teacher-portal,
+.student-portal {
+  background: #f8fbff;
+}
+
+.teacher-portal:has(.teacher-agenda-home),
+.student-portal:has(.student-home) {
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 0;
+}
+
+.teacher-portal:has(.teacher-agenda-home) .clean-shell,
+.student-portal:has(.student-home) .clean-shell {
+  background: #fbfdff;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.teacher-portal:has(.teacher-agenda-home) .app-content,
+.student-portal:has(.student-home) .app-content {
+  padding: 0;
+}
+
+.student-portal:has(.student-home) .clean-topbar {
+  display: none;
+}
+
+.teacher-portal:has(.teacher-agenda-home) .teacher-icon-sidebar,
+.student-portal:has(.student-home) .teacher-icon-sidebar {
+  width: 88px;
+  min-height: 100vh;
+  border-radius: 0;
+  border: 0;
+  border-right: 1px solid #e7edf6;
+  background: linear-gradient(180deg, #fbfdff 0%, #f5f8fd 100%);
+  box-shadow: 10px 0 30px rgba(15, 35, 68, 0.04);
+  color: #1f3353;
+}
+
+.teacher-portal:has(.teacher-agenda-home) .icon-nav a,
+.student-portal:has(.student-home) .icon-nav a,
+.teacher-portal:has(.teacher-agenda-home) .sidebar-action-button,
+.student-portal:has(.student-home) .sidebar-action-button {
+  border: 0;
+  background: transparent;
+  color: #425574;
+}
+
+.teacher-portal:has(.teacher-agenda-home) .icon-nav a:hover,
+.student-portal:has(.student-home) .icon-nav a:hover,
+.teacher-portal:has(.teacher-agenda-home) .sidebar-action-button:hover,
+.student-portal:has(.student-home) .sidebar-action-button:hover {
+  background: #eef5ff;
+  color: #0b64e9;
+  box-shadow: inset 3px 0 0 #0b64e9;
+}
+
+.teacher-portal:has(.teacher-agenda-home) .clean-topbar {
+  height: 76px;
+  grid-template-columns: 1fr auto;
+  padding: 12px 28px;
+  border-bottom: 1px solid #e7edf6;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 28px rgba(30, 54, 93, 0.04);
+}
+
+.teacher-portal:has(.teacher-agenda-home) .app-title-block {
+  display: none;
+}
+
+.teacher-portal:has(.teacher-agenda-home) .app-search {
+  width: min(520px, 42vw);
+  margin-left: auto;
+  margin-right: auto;
+  border: 1px solid #e3eaf5;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(31, 68, 126, 0.06);
+}
+
+.teacher-agenda-home {
+  min-height: calc(100vh - 76px);
+  display: grid;
+  grid-template-columns: 250px minmax(620px, 1fr) 330px;
+  color: #091936;
+}
+
+.teacher-student-rail,
+.teacher-detail-panel,
+.student-side-panel {
+  background: rgba(255, 255, 255, 0.9);
+  border-left: 1px solid #e7edf6;
+  border-right: 1px solid #e7edf6;
+  box-shadow: 16px 0 30px rgba(22, 43, 78, 0.04);
+}
+
+.teacher-student-rail {
+  padding: 28px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.rail-head,
+.calendar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.rail-head h2,
+.calendar-toolbar h1,
+.student-greeting h1 {
+  margin: 0;
+  color: #071832;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.rail-head button,
+.calendar-toolbar button,
+.student-week-actions button {
+  width: 42px;
+  height: 42px;
+  border: 1px solid #e1e9f5;
+  border-radius: 12px;
+  background: #fff;
+  color: #0b64e9;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(18, 63, 132, 0.07);
+}
+
+.rail-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid #e2e9f4;
+  border-radius: 10px;
+  background: #fff;
+  color: #7890ad;
+}
+
+.rail-search input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  color: #12233d;
+  background: transparent;
+}
+
+.student-list-clean {
+  display: grid;
+  gap: 10px;
+  overflow: auto;
+}
+
+.student-list-clean button {
+  display: grid;
+  grid-template-columns: 36px 8px 1fr;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #1c2e49;
+  text-align: left;
+  cursor: pointer;
+}
+
+.student-list-clean button:hover,
+.student-list-clean button.active {
+  background: #eef5ff;
+}
+
+.student-avatar-clean,
+.detail-photo,
+.student-photo {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 800;
+  background: linear-gradient(135deg, #1f74ff, #7bb7ff);
+  box-shadow: 0 10px 24px rgba(11, 100, 233, 0.18);
+}
+
+.student-avatar-clean {
+  width: 36px;
+  height: 36px;
+  font-size: 12px;
+}
+
+.student-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #34c77b;
+}
+
+.teacher-student-rail > a,
+.student-material-link {
+  margin-top: auto;
+  color: #0b64e9;
+  font-weight: 700;
+  text-align: center;
+}
+
+.teacher-calendar-board {
+  padding: 32px;
+  background: #fbfdff;
+}
+
+.calendar-toolbar {
+  margin-bottom: 28px;
+}
+
+.calendar-toolbar h1 {
+  text-transform: capitalize;
+  font-size: clamp(28px, 3vw, 42px);
+}
+
+.calendar-toolbar p {
+  margin: 8px 0 0;
+  color: #60708a;
+}
+
+.calendar-toolbar > div:last-child {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.calendar-toolbar span {
+  display: grid;
+  place-items: center;
+  min-width: 74px;
+  height: 42px;
+  border-radius: 12px;
+  background: #0b64e9;
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 14px 28px rgba(11, 100, 233, 0.2);
+}
+
+.month-grid-clean {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(88px, 1fr));
+  border: 1px solid #e5ecf6;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(20, 42, 77, 0.07);
+}
+
+.month-grid-clean > strong {
+  min-height: 48px;
+  display: grid;
+  place-items: center;
+  border-right: 1px solid #e8eef7;
+  color: #0f213d;
+}
+
+.month-cell-clean {
+  min-height: 122px;
+  padding: 12px 10px;
+  border-top: 1px solid #e8eef7;
+  border-right: 1px solid #e8eef7;
+  background: #fff;
+}
+
+.month-cell-clean > span {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  color: #13233e;
+  font-weight: 700;
+}
+
+.month-cell-clean.today {
+  background: linear-gradient(180deg, #f1f7ff, #fff);
+}
+
+.month-cell-clean.today > span {
+  background: #0b64e9;
+  color: #fff;
+}
+
+.month-cell-clean.muted-month > span {
+  color: #9aa8ba;
+}
+
+.calendar-event-clean {
+  width: 100%;
+  display: block;
+  margin-top: 7px;
+  padding: 6px 8px;
+  border: 1px solid #cfe0fb;
+  border-radius: 7px;
+  background: #edf5ff;
+  color: #0752bd;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.calendar-event-clean.tone-1 {
+  border-color: #cfead8;
+  background: #effaf2;
+  color: #15723c;
+}
+
+.calendar-event-clean.tone-2 {
+  border-color: #ffe0ad;
+  background: #fff8eb;
+  color: #b36500;
+}
+
+.calendar-event-clean.tone-3 {
+  border-color: #ffcbd1;
+  background: #fff0f2;
+  color: #bc2434;
+}
+
+.calendar-event-clean.selected {
+  outline: 2px solid #0b64e9;
+  box-shadow: 0 0 0 4px rgba(11, 100, 233, 0.12);
+}
+
+.teacher-detail-panel {
+  padding: 36px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.detail-profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.detail-photo {
+  width: 72px;
+  height: 72px;
+  font-size: 22px;
+}
+
+.detail-profile h2,
+.student-profile-card h2 {
+  margin: 0;
+  color: #071832;
+}
+
+.detail-profile em {
+  display: inline-flex;
+  margin-top: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #e9f8ef;
+  color: #197a43;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.detail-lines {
+  display: grid;
+  gap: 16px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid #e5ecf5;
+  color: #34435d;
+}
+
+.side-primary,
+.outline-action {
+  display: grid;
+  place-items: center;
+  min-height: 52px;
+  border-radius: 10px;
+  font-weight: 800;
+}
+
+.side-primary {
+  border: 0;
+  background: linear-gradient(135deg, #0b64e9, #0750d4);
+  color: #fff;
+  box-shadow: 0 18px 32px rgba(11, 100, 233, 0.24);
+}
+
+.outline-action {
+  border: 1px solid #dce6f3;
+  color: #223451;
+  background: #fff;
+}
+
+.teacher-day-tasks,
+.student-today-list {
+  display: grid;
+  gap: 16px;
+  padding-top: 10px;
+}
+
+.teacher-day-tasks h3,
+.student-today-list h3 {
+  margin: 0;
+  color: #0c1d38;
+}
+
+.teacher-day-tasks label {
+  display: flex;
+  gap: 12px;
+  color: #243651;
+}
+
+.student-portal:has(.student-home) {
+  grid-template-columns: 220px minmax(0, 1fr);
+}
+
+.student-portal:has(.student-home) .teacher-icon-sidebar {
+  width: 220px;
+  align-items: stretch;
+  padding: 34px 22px;
+}
+
+.student-portal:has(.student-home) .compact-brand {
+  display: none;
+}
+
+.student-portal:has(.student-home) .icon-nav {
+  gap: 16px;
+}
+
+.student-portal:has(.student-home) .icon-nav a,
+.student-portal:has(.student-home) .sidebar-action-button {
+  width: 100%;
+  min-height: 58px;
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 0 16px;
+  border-radius: 14px;
+}
+
+.student-portal:has(.student-home) .icon-nav a span,
+.student-portal:has(.student-home) .sidebar-action-button span {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.student-portal:has(.student-home) .sidebar-actions {
+  margin-top: auto;
+}
+
+.student-home {
+  min-height: 100vh;
+  grid-template-columns: minmax(680px, 1fr) 330px;
+  gap: 0;
+  background: #fbfdff;
+}
+
+.student-main-area {
+  padding: 42px 36px 34px;
+}
+
+.student-greeting {
+  margin-bottom: 24px;
+}
+
+.student-greeting h1 {
+  font-size: clamp(34px, 4vw, 50px);
+}
+
+.student-greeting p {
+  margin: 8px 0 0;
+  color: #526581;
+  font-size: 20px;
+}
+
+.student-summary-grid {
+  grid-template-columns: repeat(3, minmax(210px, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.student-summary-card,
+.student-week-card,
+.continue-card {
+  background: #fff;
+  border: 1px solid #e4ebf5;
+  border-radius: 16px;
+  box-shadow: 0 16px 44px rgba(18, 43, 84, 0.07);
+}
+
+.student-summary-card {
+  min-height: 140px;
+  padding: 24px;
+  align-items: center;
+}
+
+.student-summary-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  color: #0b64e9;
+  background: #eaf3ff;
+}
+
+.student-summary-icon.green {
+  color: #35a95a;
+  background: #ecf9f0;
+}
+
+.student-summary-card span,
+.student-summary-card a {
+  color: #0b64e9;
+  font-weight: 800;
+}
+
+.student-summary-card strong {
+  color: #0a1b36;
+}
+
+.student-week-card {
+  padding: 22px;
+  margin-bottom: 22px;
+}
+
+.student-week-grid {
+  border: 1px solid #e5ecf6;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.student-week-day {
+  background: #fff;
+  border-bottom: 1px solid #e5ecf6;
+}
+
+.student-week-day.active {
+  background: #ecf4ff;
+}
+
+.student-week-day.active strong {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  min-height: 28px;
+  margin: 4px auto 0;
+  border-radius: 999px;
+  background: #0b64e9;
+  color: #fff;
+}
+
+.student-week-cell {
+  min-height: 72px;
+  border-color: #e8eef7;
+}
+
+.student-class-chip {
+  border-color: #cfe0fb;
+  background: #edf5ff;
+  color: #0752bd;
+}
+
+.student-class-chip:nth-child(2n) {
+  border-color: #cfead8;
+  background: #effaf2;
+  color: #15723c;
+}
+
+.student-class-chip.selected {
+  background: #0b64e9;
+  color: #fff;
+}
+
+.continue-card {
+  padding: 18px 22px;
+}
+
+.continue-row {
+  border-top: 1px solid #e7edf6;
+}
+
+.student-side-panel {
+  padding: 36px 28px;
+  border-left: 1px solid #e5ecf6;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: -16px 0 32px rgba(18, 43, 84, 0.05);
+}
+
+.student-photo {
+  width: 72px;
+  height: 72px;
+  font-size: 26px;
+}
+
+.student-next-details {
+  border-top: 1px solid #e5ecf6;
+  border-bottom: 1px solid #e5ecf6;
+  padding: 22px 0;
+}
+
+.student-today-task {
+  align-items: flex-start;
+}
+
+@media (max-width: 1180px) {
+  .teacher-agenda-home {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .teacher-detail-panel {
+    grid-column: 1 / -1;
+    border-top: 1px solid #e7edf6;
+  }
+
+  .student-portal:has(.student-home) {
+    grid-template-columns: 88px minmax(0, 1fr);
+  }
+
+  .student-portal:has(.student-home) .teacher-icon-sidebar {
+    width: 88px;
+    padding: 14px 10px;
+    align-items: center;
+  }
+
+  .student-portal:has(.student-home) .icon-nav a,
+  .student-portal:has(.student-home) .sidebar-action-button {
+    width: 48px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .student-portal:has(.student-home) .icon-nav a span,
+  .student-portal:has(.student-home) .sidebar-action-button span {
+    font-size: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .teacher-portal:has(.teacher-agenda-home),
+  .student-portal:has(.student-home) {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-portal:has(.teacher-agenda-home) .teacher-icon-sidebar,
+  .student-portal:has(.student-home) .teacher-icon-sidebar {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    min-height: auto;
+    border-right: 0;
+    border-bottom: 1px solid #e7edf6;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .teacher-agenda-home,
+  .student-home {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-student-rail {
+    order: 2;
+  }
+
+  .teacher-calendar-board,
+  .student-main-area {
+    padding: 22px 16px;
+    overflow-x: auto;
+  }
+
+  .month-grid-clean,
+  .student-week-grid {
+    min-width: 760px;
+  }
+}

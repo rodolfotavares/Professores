@@ -1,5 +1,5 @@
-import { TeacherDashboard } from '@/components/TeacherPanels';
+import { TeacherHome } from '@/components/TeacherHome';
 
 export default function TeacherPage() {
-  return <TeacherDashboard />;
+  return <TeacherHome />;
 }
