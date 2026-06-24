@@ -6,28 +6,29 @@ import { apiFetch } from '@/lib/fetcher';
 
 const titles: Record<string, { title: string; eyebrow: string }> = {
   '/teacher': { title: 'Painel', eyebrow: 'Portal do Professor' },
-  '/teacher/classes': { title: 'Turmas', eyebrow: 'Organização' },
-  '/teacher/students': { title: 'Alunos', eyebrow: 'Administração' },
+  '/teacher/students': { title: 'Alunos', eyebrow: 'Gestão' },
   '/teacher/activities': { title: 'Atividades', eyebrow: 'Tarefas' },
-  '/teacher/grades': { title: 'Notas', eyebrow: 'Avaliação' },
-  '/teacher/frequency': { title: 'Frequência', eyebrow: 'Presença' },
   '/teacher/schedule': { title: 'Agenda', eyebrow: 'Calendário' },
   '/teacher/finance': { title: 'Financeiro', eyebrow: 'Receita' },
   '/teacher/messages': { title: 'Mensagens', eyebrow: 'Comunicação' },
+  '/teacher/support': { title: 'Suporte', eyebrow: 'Ajuda' },
   '/teacher/settings': { title: 'Configurações', eyebrow: 'Conta' },
   '/teacher/planner': { title: 'Planos de aula', eyebrow: 'Planejamento' },
   '/teacher/news': { title: 'Notícias', eyebrow: 'Curadoria' },
   '/teacher/tutorial': { title: 'Tutorial', eyebrow: 'Instalação' },
+  '/teacher/classes': { title: 'Turmas', eyebrow: 'Organização' },
+  '/teacher/grades': { title: 'Notas', eyebrow: 'Avaliação' },
+  '/teacher/frequency': { title: 'Frequência', eyebrow: 'Presença' },
   '/student': { title: 'Painel', eyebrow: 'Portal do Aluno' },
-  '/student/classes': { title: 'Minhas aulas', eyebrow: 'Aulas' },
   '/student/activities': { title: 'Atividades', eyebrow: 'Tarefas' },
-  '/student/grades': { title: 'Notas', eyebrow: 'Desempenho' },
-  '/student/frequency': { title: 'Frequência', eyebrow: 'Presença' },
   '/student/schedule': { title: 'Agenda', eyebrow: 'Calendário' },
   '/student/messages': { title: 'Mensagens', eyebrow: 'Comunicação' },
-  '/student/materials': { title: 'Materiais', eyebrow: 'Arquivos' },
-  '/student/settings': { title: 'Perfil', eyebrow: 'Configurações' },
+  '/student/settings': { title: 'Perfil', eyebrow: 'Conta' },
   '/student/tutorial': { title: 'Tutorial', eyebrow: 'Instalação' },
+  '/student/classes': { title: 'Minhas aulas', eyebrow: 'Aulas' },
+  '/student/grades': { title: 'Notas', eyebrow: 'Desempenho' },
+  '/student/frequency': { title: 'Frequência', eyebrow: 'Presença' },
+  '/student/materials': { title: 'Materiais', eyebrow: 'Arquivos' },
 };
 
 export function AppLayout({ children, area }: { children: React.ReactNode; area: 'teacher' | 'student' }) {
@@ -43,16 +44,23 @@ export function AppLayout({ children, area }: { children: React.ReactNode; area:
   }, [pathname]);
 
   return (
-    <section className="app-glass-shell">
-      <header className="app-top-header">
-        <div>
+    <section className="app-glass-shell clean-shell">
+      <header className="app-top-header clean-topbar">
+        <div className="app-title-block">
           <span className="eyebrow">{current.eyebrow}</span>
           <h1>{current.title}</h1>
         </div>
+
+        <div className="app-search" role="search">
+          <SearchIcon />
+          <input aria-label="Buscar" placeholder={area === 'teacher' ? 'Buscar alunos, aulas, atividades...' : 'Buscar aulas, atividades, mensagens...'} />
+          <kbd>⌘ K</kbd>
+        </div>
+
         <div className="app-header-actions">
           <div className="notification-menu">
             <button className="glass-icon-button notification-button" title="Notificações" aria-label="Notificações" onClick={() => setOpen((value) => !value)}>
-              o
+              <BellIcon />
               {notifications.length > 0 && <span>{notifications.length}</span>}
             </button>
             {open && (
@@ -77,9 +85,16 @@ export function AppLayout({ children, area }: { children: React.ReactNode; area:
               </div>
             )}
           </div>
-          <div className="teacher-avatar">{area === 'teacher' ? 'P' : 'A'}</div>
+          <a className="glass-icon-button header-message-button" href={area === 'teacher' ? '/teacher/messages' : '/student/messages'} title="Mensagens" aria-label="Mensagens">
+            <MessageIcon />
+          </a>
+          <div className="profile-chip">
+            <div className="teacher-avatar">{area === 'teacher' ? 'P' : 'A'}</div>
+            <span>{area === 'teacher' ? 'Professor' : 'Aluno'}</span>
+          </div>
         </div>
       </header>
+
       <div className="app-content">
         {children}
       </div>
@@ -88,15 +103,7 @@ export function AppLayout({ children, area }: { children: React.ReactNode; area:
 }
 
 export function GlobalBackground() {
-  return (
-    <div className="global-background" aria-hidden="true">
-      <div className="global-background-image" />
-      <div className="global-background-overlay" />
-      <div className="global-background-light light-blue" />
-      <div className="global-background-light light-cyan" />
-      <div className="global-background-light light-violet" />
-    </div>
-  );
+  return null;
 }
 
 export function GlassCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
@@ -133,5 +140,31 @@ export function DataTable({ rows }: { rows: Array<{ title: string; meta?: string
         ))}
       </div>
     </GlassCard>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
+function BellIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" />
+      <path d="M10 21h4" />
+    </svg>
+  );
+}
+
+function MessageIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z" />
+    </svg>
   );
 }
