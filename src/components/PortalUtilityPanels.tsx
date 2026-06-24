@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { GlassCard, MetricCard, StatusBadge } from '@/components/AppShell';
 import { EmptyState, StatusMessage } from '@/components/PanelState';
@@ -159,6 +160,40 @@ export function TeacherSupportPanel() {
       <div className="grid grid-2">
         <LanguagePreferenceCard />
       </div>
+      <GlassCard className="support-shortcuts-card">
+        <div className="glass-card-head">
+          <div>
+            <span className="eyebrow">Extras sem poluir o menu</span>
+            <strong>Ferramentas secundárias</strong>
+          </div>
+        </div>
+        <div className="support-shortcuts">
+          <Link className="support-shortcut" href="/teacher/settings">
+            <strong>Configurações</strong>
+            <small>Código do professor, idioma e conta.</small>
+          </Link>
+          <Link className="support-shortcut" href="/teacher/tutorial">
+            <strong>Tutorial de instalação</strong>
+            <small>Android, iPhone e login do aluno.</small>
+          </Link>
+          <Link className="support-shortcut" href="/teacher/planner">
+            <strong>Plano de aula com IA</strong>
+            <small>Use quando quiser preparar uma aula.</small>
+          </Link>
+          <Link className="support-shortcut" href="/teacher/grades">
+            <strong>Notas</strong>
+            <small>Consulta detalhada das correções.</small>
+          </Link>
+          <Link className="support-shortcut" href="/teacher/frequency">
+            <strong>Frequência</strong>
+            <small>Histórico de presenças por aluno.</small>
+          </Link>
+          <Link className="support-shortcut" href="/teacher/news">
+            <strong>Notícias</strong>
+            <small>Pesquisa de assuntos para aulas.</small>
+          </Link>
+        </div>
+      </GlassCard>
     </div>
   );
 }
@@ -422,6 +457,28 @@ export function TeacherSettingsPanel() {
       <div className="grid grid-2">
         <LanguagePreferenceCard />
       </div>
+      <GlassCard className="support-shortcuts-card">
+        <div className="glass-card-head">
+          <div>
+            <span className="eyebrow">Ajuda e histórico</span>
+            <strong>Áreas secundárias</strong>
+          </div>
+        </div>
+        <div className="support-shortcuts">
+          <Link className="support-shortcut" href="/student/tutorial">
+            <strong>Tutorial de instalação</strong>
+            <small>Como colocar o app na tela inicial.</small>
+          </Link>
+          <Link className="support-shortcut" href="/student/grades">
+            <strong>Notas</strong>
+            <small>Veja notas e feedbacks recebidos.</small>
+          </Link>
+          <Link className="support-shortcut" href="/student/frequency">
+            <strong>Frequência</strong>
+            <small>Acompanhe presenças e confirmações.</small>
+          </Link>
+        </div>
+      </GlassCard>
     </div>
   );
 }

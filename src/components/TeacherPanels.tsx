@@ -90,11 +90,7 @@ export function TeacherDashboard() {
 
   usePanelLoad(load);
 
-  const activeGroups = new Set(
-    students
-      .filter((student) => student.status !== 'inactive')
-      .map((student) => student.subject || 'Geral'),
-  ).size;
+  const activeStudents = students.filter((student) => student.status !== 'inactive').length;
   const pendingClasses = classes.filter((item) => item.status === 'scheduled').length;
   const completedClasses = classes.filter((item) => item.status === 'completed').length;
   const pendingActivities = activities.filter((activity) => !submissions.some((submission) => submission.activity_id === activity.id)).length;
@@ -159,8 +155,8 @@ export function TeacherDashboard() {
 
         <section className="quick-metrics">
           <MetricPill label="Total de alunos" value={students.length} />
-          <MetricPill label="Turmas ativas" value={activeGroups} />
-          <MetricPill label="Pendentes" value={pendingActivities} />
+          <MetricPill label="Alunos ativos" value={activeStudents} />
+          <MetricPill label="Aulas futuras" value={pendingClasses} />
         </section>
 
         <section className="glass-panel overview-card">

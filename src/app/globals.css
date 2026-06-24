@@ -2947,6 +2947,40 @@ select.input option {
   gap: 10px;
 }
 
+.support-shortcuts-card {
+  gap: 16px;
+}
+
+.support-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.support-shortcut {
+  display: grid;
+  gap: 6px;
+  min-height: 112px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.045));
+  color: #ffffff;
+  text-decoration: none;
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.support-shortcut:hover {
+  transform: translateY(-3px);
+  border-color: rgba(56, 189, 248, 0.38);
+  background: linear-gradient(145deg, rgba(37, 99, 235, 0.22), rgba(255, 255, 255, 0.07));
+}
+
+.support-shortcut small {
+  color: rgba(232, 241, 255, 0.68);
+  line-height: 1.45;
+}
+
 .payment-month-card {
   gap: 10px;
 }
@@ -2996,6 +3030,10 @@ select.input option {
 
 @media (max-width: 640px) {
   .support-chat-form {
+    grid-template-columns: 1fr;
+  }
+
+  .support-shortcuts {
     grid-template-columns: 1fr;
   }
 }
