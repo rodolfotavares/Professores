@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/fetcher';
@@ -31,14 +32,22 @@ const titles: Record<string, { title: string; eyebrow: string }> = {
   '/student/materials': { title: 'Materiais', eyebrow: 'Arquivos' },
 };
 
+type NotificationItem = {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  link: string;
+};
+
 export function AppLayout({ children, area }: { children: React.ReactNode; area: 'teacher' | 'student' }) {
   const pathname = usePathname();
   const current = titles[pathname] || { title: area === 'teacher' ? 'Portal do Professor' : 'Portal do Aluno', eyebrow: 'LuminaAI' };
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; message: string; type: string; link: string }>>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   useEffect(() => {
-    apiFetch<{ notifications: Array<{ id: string; title: string; message: string; type: string; link: string }> }>('/api/notifications')
+    apiFetch<{ notifications: NotificationItem[] }>('/api/notifications')
       .then((data) => setNotifications(data.notifications))
       .catch(() => setNotifications([]));
   }, [pathname]);
@@ -54,7 +63,7 @@ export function AppLayout({ children, area }: { children: React.ReactNode; area:
         <div className="app-search" role="search">
           <SearchIcon />
           <input aria-label="Buscar" placeholder={area === 'teacher' ? 'Buscar alunos, aulas, atividades...' : 'Buscar aulas, atividades, mensagens...'} />
-          <kbd>⌘ K</kbd>
+          <kbd>Ctrl K</kbd>
         </div>
 
         <div className="app-header-actions">
@@ -73,21 +82,21 @@ export function AppLayout({ children, area }: { children: React.ReactNode; area:
                   <p className="muted">Nenhum lembrete urgente no momento.</p>
                 ) : (
                   notifications.map((item) => (
-                    <a className="notification-item" href={item.link} key={item.id}>
+                    <Link className="notification-item" href={item.link} key={item.id} onClick={() => setOpen(false)}>
                       <span className={`notification-dot ${item.type}`} />
                       <span>
                         <strong>{item.title}</strong>
                         <small>{item.message}</small>
                       </span>
-                    </a>
+                    </Link>
                   ))
                 )}
               </div>
             )}
           </div>
-          <a className="glass-icon-button header-message-button" href={area === 'teacher' ? '/teacher/messages' : '/student/messages'} title="Mensagens" aria-label="Mensagens">
+          <Link className="glass-icon-button header-message-button" href={area === 'teacher' ? '/teacher/messages' : '/student/messages'} title="Mensagens" aria-label="Mensagens">
             <MessageIcon />
-          </a>
+          </Link>
           <div className="profile-chip">
             <div className="teacher-avatar">{area === 'teacher' ? 'P' : 'A'}</div>
             <span>{area === 'teacher' ? 'Professor' : 'Aluno'}</span>
@@ -95,9 +104,7 @@ export function AppLayout({ children, area }: { children: React.ReactNode; area:
         </div>
       </header>
 
-      <div className="app-content">
-        {children}
-      </div>
+      <div className="app-content">{children}</div>
     </section>
   );
 }

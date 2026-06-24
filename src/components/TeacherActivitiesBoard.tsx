@@ -36,6 +36,15 @@ function statusClass(label: string) {
   return 'neutral';
 }
 
+function SearchGlyph() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
 export function TeacherActivitiesBoard() {
   const [students, setStudents] = useState<Student[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -45,6 +54,7 @@ export function TeacherActivitiesBoard() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'review' | 'progress' | 'done'>('all');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCorrectionOpen, setIsCorrectionOpen] = useState(true);
   const [form, setForm] = useState({ title: '', description: '', subject: '', student_id: '', due_date: '' });
   const [file, setFile] = useState<File | null>(null);
   const [grade, setGrade] = useState('8.5');
@@ -76,11 +86,13 @@ export function TeacherActivitiesBoard() {
   usePanelLoad(load);
 
   const selectedActivity = activities.find((activity) => activity.id === selectedActivityId) || activities[0] || null;
+  const activitySubmissions = submissions.filter((submission) => submission.activity_id === selectedActivity?.id);
   const selectedSubmission =
     submissions.find((submission) => submission.id === selectedSubmissionId) ||
-    submissions.find((submission) => submission.activity_id === selectedActivity?.id) ||
+    activitySubmissions[0] ||
     null;
   const selectedStudent = students.find((student) => student.id === selectedSubmission?.student_id || student.id === selectedActivity?.student_id) || null;
+  const selectedSubmissionIndex = selectedSubmission ? Math.max(0, activitySubmissions.findIndex((item) => item.id === selectedSubmission.id)) : -1;
 
   useEffect(() => {
     if (!selectedSubmission) return;
@@ -91,12 +103,11 @@ export function TeacherActivitiesBoard() {
   const rows = useMemo(() => {
     return activities.map((activity) => {
       const related = submissions.filter((submission) => submission.activity_id === activity.id);
-      const corrected = related.filter((submission) => submission.status === 'corrected').length;
       const delivered = related.length;
       const total = activity.student_id ? 1 : Math.max(students.length, delivered, 1);
       const progress = Math.round((delivered / total) * 100);
       const label = statusFor(activity, submissions);
-      return { activity, related, corrected, delivered, total, progress, label };
+      return { activity, related, delivered, total, progress, label };
     });
   }, [activities, students.length, submissions]);
 
@@ -159,6 +170,18 @@ export function TeacherActivitiesBoard() {
     }
   }
 
+  function selectActivity(activity: Activity, related: ActivitySubmission[]) {
+    setSelectedActivityId(activity.id);
+    setSelectedSubmissionId(related[0]?.id || '');
+    setIsCorrectionOpen(true);
+  }
+
+  function moveSubmission(direction: -1 | 1) {
+    if (!activitySubmissions.length) return;
+    const nextIndex = (selectedSubmissionIndex + direction + activitySubmissions.length) % activitySubmissions.length;
+    setSelectedSubmissionId(activitySubmissions[nextIndex].id);
+  }
+
   return (
     <div className="activities-reference-page">
       <section className="activities-reference-main">
@@ -188,7 +211,7 @@ export function TeacherActivitiesBoard() {
         )}
         <div className="activities-reference-tools">
           <label className="students-search">
-            <span>⌕</span>
+            <SearchGlyph />
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar atividades" />
           </label>
           <div className="activity-filter-tabs">
@@ -212,10 +235,7 @@ export function TeacherActivitiesBoard() {
               type="button"
               className={`activity-table-row ${activity.id === selectedActivity?.id ? 'selected' : ''}`}
               key={activity.id}
-              onClick={() => {
-                setSelectedActivityId(activity.id);
-                if (related[0]) setSelectedSubmissionId(related[0].id);
-              }}
+              onClick={() => selectActivity(activity, related)}
             >
               <span className={`activity-doc-icon tone-${index % 4}`}>▤</span>
               <span className="activity-title-cell"><strong>{activity.title}</strong><small>{activity.description || 'Lista de exercícios'}</small></span>
@@ -229,50 +249,56 @@ export function TeacherActivitiesBoard() {
         </div>
       </section>
 
-      <aside className="activity-correction-panel">
-        <button className="student-side-close" type="button" aria-label="Fechar">×</button>
-        <h2>Corrigir atividade</h2>
-        <p>{selectedActivity?.title || 'Selecione uma atividade'}</p>
-        <div className="correction-selector-row">
-          <button type="button" className="correction-student-select">
-            <span>{initials(selectedStudent?.full_name)}</span>
-            {selectedStudent?.full_name || selectedSubmission?.students?.full_name || 'Aluno'}
-          </button>
-          <div className="correction-counter">
-            <button type="button">‹</button>
-            <strong>{selectedSubmission ? submissions.findIndex((item) => item.id === selectedSubmission.id) + 1 : 0} de {Math.max(submissions.length, 1)}</strong>
-            <button type="button">›</button>
-          </div>
-        </div>
-        <div className="submitted-file-preview">
-          <strong>Arquivo enviado</strong>
-          <div>
-            {selectedSubmission?.answer_file_url ? (
-              <a href={selectedSubmission.answer_file_url} target="_blank">Abrir arquivo enviado pelo aluno</a>
-            ) : (
-              <p>{selectedSubmission?.answer_text || 'A resposta do aluno aparecerá aqui quando houver entrega.'}</p>
-            )}
-          </div>
-        </div>
-        <label className="grade-control">
-          <span>Nota</span>
-          <div>
-            <button type="button" onClick={() => setGrade(String(Math.max(0, Number(grade || 0) - 0.5)))}>−</button>
-            <input value={grade} onChange={(event) => setGrade(event.target.value)} />
-            <button type="button" onClick={() => setGrade(String(Math.min(10, Number(grade || 0) + 0.5)))}>+</button>
-            <em>/ 10</em>
-          </div>
-        </label>
-        <label className="feedback-control">
-          <span>Feedback para o aluno</span>
-          <textarea value={feedback} onChange={(event) => setFeedback(event.target.value)} maxLength={500} />
-          <small>{feedback.length}/500</small>
-        </label>
-        <div className="correction-actions">
-          <button className="outline-action" type="button">Salvar rascunho</button>
-          <button className="side-primary" type="button" onClick={correctSelected} disabled={!selectedSubmission || saving}>{saving ? 'Enviando...' : 'Devolver ao aluno'}</button>
-        </div>
-        <div className="correction-success-note">O aluno receberá sua nota e feedback no portal do aluno.</div>
+      <aside className={`activity-correction-panel ${isCorrectionOpen ? '' : 'is-closed'}`}>
+        <button className="student-side-close" type="button" aria-label="Fechar" onClick={() => setIsCorrectionOpen(false)}>×</button>
+        {!isCorrectionOpen ? (
+          <button className="reopen-panel-button" type="button" onClick={() => setIsCorrectionOpen(true)}>Abrir correção</button>
+        ) : (
+          <>
+            <h2>Corrigir atividade</h2>
+            <p>{selectedActivity?.title || 'Selecione uma atividade'}</p>
+            <div className="correction-selector-row">
+              <button type="button" className="correction-student-select">
+                <span>{initials(selectedStudent?.full_name || selectedSubmission?.students?.full_name)}</span>
+                {selectedStudent?.full_name || selectedSubmission?.students?.full_name || 'Aluno'}
+              </button>
+              <div className="correction-counter">
+                <button type="button" onClick={() => moveSubmission(-1)}>‹</button>
+                <strong>{selectedSubmissionIndex >= 0 ? selectedSubmissionIndex + 1 : 0} de {Math.max(activitySubmissions.length, 1)}</strong>
+                <button type="button" onClick={() => moveSubmission(1)}>›</button>
+              </div>
+            </div>
+            <div className="submitted-file-preview">
+              <strong>Arquivo enviado</strong>
+              <div>
+                {selectedSubmission?.answer_file_url ? (
+                  <a href={selectedSubmission.answer_file_url} target="_blank">Abrir arquivo enviado pelo aluno</a>
+                ) : (
+                  <p>{selectedSubmission?.answer_text || 'A resposta do aluno aparecerá aqui quando houver entrega.'}</p>
+                )}
+              </div>
+            </div>
+            <label className="grade-control">
+              <span>Nota</span>
+              <div>
+                <button type="button" onClick={() => setGrade(String(Math.max(0, Number(grade || 0) - 0.5)))}>−</button>
+                <input value={grade} onChange={(event) => setGrade(event.target.value)} />
+                <button type="button" onClick={() => setGrade(String(Math.min(10, Number(grade || 0) + 0.5)))}>+</button>
+                <em>/ 10</em>
+              </div>
+            </label>
+            <label className="feedback-control">
+              <span>Feedback para o aluno</span>
+              <textarea value={feedback} onChange={(event) => setFeedback(event.target.value)} maxLength={500} />
+              <small>{feedback.length}/500</small>
+            </label>
+            <div className="correction-actions">
+              <button className="outline-action" type="button" onClick={() => setError('Rascunho mantido nesta tela. Para concluir, clique em Devolver ao aluno.')}>Salvar rascunho</button>
+              <button className="side-primary" type="button" onClick={correctSelected} disabled={!selectedSubmission || saving}>{saving ? 'Enviando...' : 'Devolver ao aluno'}</button>
+            </div>
+            <div className="correction-success-note">O aluno receberá sua nota e feedback no portal do aluno.</div>
+          </>
+        )}
       </aside>
     </div>
   );

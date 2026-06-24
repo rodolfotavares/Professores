@@ -6682,3 +6682,219 @@ select.input option {
     min-width: 860px;
   }
 }
+
+/* Stable teacher shell: one sidebar width for every tab */
+.teacher-portal {
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 0;
+}
+
+.teacher-portal .teacher-icon-sidebar {
+  position: sticky;
+  top: 0;
+  width: 240px;
+  min-width: 240px;
+  height: 100vh;
+  min-height: 100vh;
+  align-self: start;
+  align-items: stretch;
+  padding: 32px 16px 24px;
+  border: 0;
+  border-right: 1px solid #e7edf6;
+  border-radius: 0;
+  background: #fbfdff;
+  color: #203454;
+  box-shadow: 12px 0 34px rgba(18, 43, 84, 0.04);
+  overflow: visible;
+}
+
+.teacher-portal .compact-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 6px 34px;
+}
+
+.teacher-portal .compact-brand > div:not(.brand-mark) {
+  display: block;
+}
+
+.teacher-portal .brand-mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+}
+
+.teacher-portal .icon-nav {
+  gap: 12px;
+}
+
+.teacher-portal .icon-nav a,
+.teacher-portal .sidebar-action-button {
+  width: 100%;
+  min-height: 52px;
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #30435f;
+}
+
+.teacher-portal .icon-nav a span,
+.teacher-portal .sidebar-action-button span {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.teacher-portal .icon-nav a:hover,
+.teacher-portal .sidebar-action-button:hover {
+  background: #edf5ff;
+  color: #0b64e9;
+}
+
+.teacher-portal .sidebar-actions {
+  margin-top: auto;
+}
+
+.teacher-portal .clean-shell {
+  min-width: 0;
+}
+
+.teacher-portal .app-content {
+  min-width: 0;
+}
+
+.activity-correction-panel.is-closed {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.activity-correction-panel.is-closed .student-side-close {
+  display: none;
+}
+
+.reopen-panel-button {
+  min-width: 170px;
+  min-height: 46px;
+  border: 1px solid #dce5f1;
+  border-radius: 10px;
+  background: #fff;
+  color: #0b64e9;
+  font-weight: 800;
+}
+
+@media (max-width: 980px) {
+  .teacher-portal {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-portal .teacher-icon-sidebar {
+    position: sticky;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: auto;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+}
+
+/* Stable student shell: keep the student sidebar identical on every tab */
+.student-portal {
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 0;
+}
+
+.student-portal .teacher-icon-sidebar {
+  position: sticky;
+  top: 0;
+  width: 220px;
+  min-width: 220px;
+  height: 100vh;
+  min-height: 100vh;
+  align-self: start;
+  align-items: stretch;
+  padding: 32px 14px 24px;
+  border: 0;
+  border-right: 1px solid #e7edf6;
+  border-radius: 0;
+  background: #fbfdff;
+  color: #203454;
+  box-shadow: 12px 0 34px rgba(18, 43, 84, 0.04);
+  overflow: visible;
+}
+
+.student-portal .compact-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 6px 34px;
+}
+
+.student-portal .compact-brand > div:not(.brand-mark) {
+  display: block;
+}
+
+.student-portal .brand-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+.student-portal .icon-nav {
+  gap: 12px;
+}
+
+.student-portal .icon-nav a,
+.student-portal .sidebar-action-button {
+  width: 100%;
+  min-height: 52px;
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #30435f;
+}
+
+.student-portal .icon-nav a span,
+.student-portal .sidebar-action-button span {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.student-portal .icon-nav a:hover,
+.student-portal .sidebar-action-button:hover {
+  background: #edf5ff;
+  color: #0b64e9;
+}
+
+.student-portal .sidebar-actions {
+  margin-top: auto;
+}
+
+.student-portal .clean-shell,
+.student-portal .app-content {
+  min-width: 0;
+}
+
+@media (max-width: 980px) {
+  .student-portal {
+    grid-template-columns: 1fr;
+  }
+
+  .student-portal .teacher-icon-sidebar {
+    position: sticky;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: auto;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+}
