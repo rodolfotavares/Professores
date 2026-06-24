@@ -176,22 +176,6 @@ export function TeacherSupportPanel() {
             <strong>Tutorial de instalação</strong>
             <small>Android, iPhone e login do aluno.</small>
           </Link>
-          <Link className="support-shortcut" href="/teacher/planner">
-            <strong>Plano de aula com IA</strong>
-            <small>Use quando quiser preparar uma aula.</small>
-          </Link>
-          <Link className="support-shortcut" href="/teacher/grades">
-            <strong>Notas</strong>
-            <small>Consulta detalhada das correções.</small>
-          </Link>
-          <Link className="support-shortcut" href="/teacher/frequency">
-            <strong>Frequência</strong>
-            <small>Histórico de presenças por aluno.</small>
-          </Link>
-          <Link className="support-shortcut" href="/teacher/news">
-            <strong>Notícias</strong>
-            <small>Pesquisa de assuntos para aulas.</small>
-          </Link>
         </div>
       </GlassCard>
     </div>
