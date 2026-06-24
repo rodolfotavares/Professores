@@ -7174,3 +7174,637 @@ select.input option {
     width: auto;
   }
 }
+
+/* Public homepage and authentication redesign */
+.flow-landing,
+.auth-shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 78% 16%, rgba(11, 100, 233, 0.08), transparent 32%),
+    radial-gradient(circle at 10% 88%, rgba(11, 100, 233, 0.07), transparent 30%),
+    #fbfdff;
+  color: #071832;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.flow-landing {
+  padding: 26px clamp(18px, 3vw, 42px) 34px;
+}
+
+.flow-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 0 auto 32px;
+  max-width: 1500px;
+}
+
+.flow-logo,
+.auth-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #061a46;
+  text-decoration: none;
+}
+
+.flow-logo span,
+.auth-brand span {
+  display: grid;
+  place-items: center;
+  color: #0b64e9;
+}
+
+.flow-logo strong {
+  font-size: clamp(28px, 3vw, 38px);
+  letter-spacing: 0;
+}
+
+.flow-header nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.flow-header nav a {
+  color: #061a46;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.flow-login-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  padding: 0 30px;
+  border: 0;
+  border-radius: 9px;
+  background: #0b64e9;
+  color: white !important;
+  box-shadow: 0 14px 30px rgba(11, 100, 233, 0.24);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.flow-login-button:hover {
+  transform: translateY(-2px);
+  background: #0759d4;
+  box-shadow: 0 18px 34px rgba(11, 100, 233, 0.3);
+}
+
+.flow-hero {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.66fr) minmax(700px, 1.34fr);
+  gap: clamp(34px, 4vw, 56px);
+  align-items: center;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+.flow-copy {
+  display: grid;
+  gap: 28px;
+}
+
+.flow-copy h1 {
+  max-width: 520px;
+  margin: 0;
+  color: #051747;
+  font-size: clamp(44px, 5vw, 70px);
+  line-height: 1.09;
+  letter-spacing: 0;
+}
+
+.flow-copy p {
+  max-width: 520px;
+  margin: 0;
+  color: #53627d;
+  font-size: clamp(18px, 1.8vw, 24px);
+  line-height: 1.5;
+}
+
+.flow-role-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(190px, 1fr));
+  gap: 14px;
+  max-width: 470px;
+}
+
+.flow-role-card {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  min-height: 295px;
+  padding: 34px 24px 28px;
+  border: 1px solid #d9e2ef;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #071832;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: 0 18px 46px rgba(16, 40, 82, 0.06);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.flow-role-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(11, 100, 233, 0.42);
+  box-shadow: 0 22px 54px rgba(16, 40, 82, 0.12);
+}
+
+.flow-role-card svg {
+  color: #0b64e9;
+}
+
+.flow-role-card strong {
+  color: #071832;
+  font-size: 23px;
+  line-height: 1.15;
+}
+
+.flow-role-card span {
+  color: #51617c;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.flow-role-card em {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: #eaf2ff;
+  color: #0b64e9;
+  font-style: normal;
+  font-size: 25px;
+}
+
+.flow-create-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: fit-content;
+  margin-left: 130px;
+  color: #0b64e9;
+  font-size: 18px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.flow-preview {
+  display: grid;
+  grid-template-columns: 170px minmax(480px, 1fr) 250px;
+  min-height: 670px;
+  border: 1px solid #dce4ef;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 24px 70px rgba(16, 40, 82, 0.12);
+  overflow: hidden;
+}
+
+.flow-preview-sidebar {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 28px 12px;
+  border-right: 1px solid #e6edf6;
+  color: #21324d;
+}
+
+.flow-preview-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px 18px;
+  color: #071832;
+}
+
+.flow-preview-brand svg {
+  color: #0b64e9;
+}
+
+.flow-preview-sidebar span,
+.flow-preview-sidebar small {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.flow-preview-sidebar span.active {
+  background: #eaf3ff;
+  color: #0b64e9;
+}
+
+.flow-preview-sidebar small {
+  margin-top: 116px;
+}
+
+.flow-calendar {
+  padding: 32px 18px 26px;
+  min-width: 0;
+}
+
+.flow-calendar-head {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 22px;
+  margin-bottom: 24px;
+}
+
+.flow-calendar-head h2 {
+  margin: 0;
+  color: #071832;
+  font-size: 23px;
+}
+
+.flow-calendar-head div {
+  display: flex;
+  gap: 10px;
+}
+
+.flow-calendar-head button {
+  min-width: 48px;
+  min-height: 36px;
+  border: 1px solid #dce4ef;
+  border-radius: 8px;
+  background: #fff;
+  color: #071832;
+  font-weight: 700;
+}
+
+.flow-weekdays,
+.flow-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.flow-weekdays span {
+  padding: 12px 10px;
+  border: 1px solid #e4ebf4;
+  border-bottom: 0;
+  color: #4b5b77;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.flow-calendar-grid {
+  border-left: 1px solid #e4ebf4;
+  border-top: 1px solid #e4ebf4;
+}
+
+.flow-calendar-grid > div {
+  position: relative;
+  min-height: 98px;
+  padding: 12px 8px;
+  border-right: 1px solid #e4ebf4;
+  border-bottom: 1px solid #e4ebf4;
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.flow-calendar-grid > div.selected > span {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #0b64e9;
+  color: white;
+}
+
+.flow-calendar-grid small {
+  display: block;
+  width: fit-content;
+  max-width: 86px;
+  margin-top: 14px;
+  padding: 7px 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.flow-calendar-grid small.green { background: #dff7e7; color: #0f6b35; }
+.flow-calendar-grid small.purple { background: #ede3ff; color: #4d2a9b; }
+.flow-calendar-grid small.yellow { background: #fff1c8; color: #71510b; }
+.flow-calendar-grid small.blue { background: #e0efff; color: #0b4ea2; }
+.flow-calendar-grid small.active { box-shadow: 0 0 0 2px #0b64e9 inset; }
+
+.flow-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin-top: 18px;
+  color: #31415d;
+  font-size: 13px;
+}
+
+.flow-legend span::before {
+  content: '';
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 7px;
+  border-radius: 999px;
+  background: #9bdcae;
+}
+
+.flow-legend span:nth-child(2)::before { background: #a78bfa; }
+.flow-legend span:nth-child(3)::before { background: #f7c948; }
+.flow-legend span:nth-child(4)::before { background: #93c5fd; }
+
+.flow-preview-rail {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 32px 16px;
+  border-left: 1px solid #e6edf6;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.flow-date-card,
+.flow-student-card,
+.flow-small-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid #e0e8f3;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 12px 24px rgba(16, 40, 82, 0.05);
+}
+
+.flow-date-card div {
+  padding: 12px 14px;
+  border-left: 4px solid #9b7cf8;
+  border-radius: 8px;
+  background: #fbfcff;
+}
+
+.flow-date-card b,
+.flow-date-card span,
+.flow-date-card small {
+  display: block;
+  margin-top: 4px;
+}
+
+.flow-student-card span {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #dfeeff, #fff);
+  color: #0b64e9;
+  font-weight: 900;
+}
+
+.flow-student-card button {
+  width: fit-content;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #dce8fb;
+  border-radius: 7px;
+  background: #fff;
+  color: #0b64e9;
+  font-weight: 700;
+}
+
+.flow-small-card small {
+  width: fit-content;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #ddf7e8;
+  color: #14783f;
+}
+
+.flow-class-button {
+  min-height: 54px;
+  border: 0;
+  border-radius: 8px;
+  background: #0b64e9;
+  color: white;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.flow-benefits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  max-width: 1500px;
+  margin: 38px auto 0;
+  padding: 28px 34px;
+  border: 1px solid #dce4ef;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 18px 46px rgba(16, 40, 82, 0.06);
+}
+
+.flow-benefits article {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  padding: 8px 34px;
+  color: #0b64e9;
+}
+
+.flow-benefits article + article {
+  border-left: 1px solid #dbe4f0;
+}
+
+.flow-benefits strong {
+  color: #071832;
+  font-size: 18px;
+}
+
+.flow-benefits p {
+  margin: 8px 0 0;
+  color: #53627d;
+  line-height: 1.45;
+}
+
+.auth-shell {
+  display: grid;
+  place-items: center;
+  padding: 36px 18px;
+}
+
+.auth-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent 0 calc(100% - 1px), rgba(11, 100, 233, 0.04) calc(100% - 1px)) 0 0 / 86px 86px,
+    linear-gradient(transparent 0 calc(100% - 1px), rgba(11, 100, 233, 0.04) calc(100% - 1px)) 0 0 / 86px 86px;
+  mask-image: radial-gradient(circle at center, black, transparent 76%);
+}
+
+.auth-panel-card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 16px;
+  width: min(100%, 440px);
+  padding: 34px;
+  border: 1px solid #dce4ef;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 24px 70px rgba(16, 40, 82, 0.12);
+}
+
+.auth-register-card {
+  width: min(100%, 560px);
+}
+
+.auth-brand {
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.auth-brand strong {
+  color: #071832;
+  font-size: 24px;
+}
+
+.auth-heading {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.auth-heading h1 {
+  margin: 0;
+  color: #071832;
+  font-size: clamp(30px, 4vw, 40px);
+  line-height: 1.08;
+}
+
+.auth-heading p {
+  max-width: 380px;
+  margin: 0;
+  color: #53627d;
+  line-height: 1.45;
+}
+
+.auth-panel-card .label {
+  color: #1b2b46;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.auth-panel-card .input {
+  min-height: 52px;
+  margin-top: 7px;
+  border: 1px solid #d7e1ee;
+  border-radius: 9px;
+  background: #fff;
+  color: #071832;
+  box-shadow: none;
+}
+
+.auth-panel-card .input:focus {
+  border-color: #0b64e9;
+  outline: 3px solid rgba(11, 100, 233, 0.12);
+}
+
+.auth-panel-card .password-field button {
+  color: #0b64e9;
+  font-weight: 800;
+}
+
+.auth-submit {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.auth-panel-card .auth-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.auth-panel-card a,
+.auth-panel-card .forgot-link {
+  color: #0b64e9;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+@media (max-width: 1180px) {
+  .flow-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .flow-preview {
+    grid-template-columns: 150px minmax(0, 1fr);
+  }
+
+  .flow-preview-rail {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .flow-class-button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .flow-header,
+  .flow-header nav {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .flow-role-grid,
+  .flow-benefits,
+  .flow-preview,
+  .flow-preview-rail {
+    grid-template-columns: 1fr;
+  }
+
+  .flow-create-link {
+    margin-left: 0;
+  }
+
+  .flow-preview-sidebar {
+    display: none;
+  }
+
+  .flow-calendar {
+    overflow-x: auto;
+  }
+
+  .flow-calendar-grid,
+  .flow-weekdays {
+    min-width: 680px;
+  }
+
+  .flow-benefits article {
+    padding: 18px 4px;
+  }
+
+  .flow-benefits article + article {
+    border-left: 0;
+    border-top: 1px solid #dbe4f0;
+  }
+}

@@ -1,113 +1,177 @@
 import Link from 'next/link';
 
-const benefits = [
-  {
-    title: 'Alunos e agenda em ordem',
-    text: 'Cadastre alunos, dias de aula, horários e valores sem planilhas soltas.',
-  },
-  {
-    title: 'Atividades com entrega',
-    text: 'Envie tarefas, receba respostas com arquivos e corrija em um só fluxo.',
-  },
-  {
-    title: 'Cobrança mais clara',
-    text: 'Acompanhe previsão mensal, alunos ativos e pagamentos de forma simples.',
-  },
+const calendarItems = [
+  { day: 6, title: 'Inglês', time: '09:00', tone: 'green' },
+  { day: 7, title: 'Matemática', time: '14:00', tone: 'purple' },
+  { day: 8, title: 'Física', time: '10:30', tone: 'yellow' },
+  { day: 9, title: 'Redação', time: '16:00', tone: 'blue' },
+  { day: 13, title: 'Inglês', time: '09:00', tone: 'green' },
+  { day: 14, title: 'Matemática', time: '14:00', tone: 'purple' },
+  { day: 15, title: 'Física', time: '10:30', tone: 'yellow' },
+  { day: 16, title: 'Redação', time: '16:00', tone: 'blue' },
+  { day: 20, title: 'Inglês', time: '09:00', tone: 'green' },
+  { day: 21, title: 'Matemática', time: '14:00', tone: 'purple active' },
+  { day: 22, title: 'Física', time: '10:30', tone: 'yellow' },
+  { day: 23, title: 'Redação', time: '16:00', tone: 'blue' },
+  { day: 27, title: 'Inglês', time: '09:00', tone: 'green' },
+  { day: 28, title: 'Matemática', time: '14:00', tone: 'purple' },
 ];
 
-const steps = [
-  'Cadastre seus alunos e horários.',
-  'Publique atividades e acompanhe entregas.',
-  'Use mensagens, agenda e financeiro no dia a dia.',
+const benefits = [
+  ['Agenda inteligente', 'Organize aulas e receba lembretes automáticos.', 'calendar'],
+  ['Atividades conectadas', 'Crie, atribua e acompanhe atividades em poucos cliques.', 'tasks'],
+  ['Financeiro simples', 'Controle pagamentos e acompanhe recebimentos com facilidade.', 'money'],
 ];
 
 export default function HomePage() {
   return (
-    <main className="marketing-page">
-      <section className="marketing-hero">
-        <div className="hero-copy">
-          <span className="eyebrow">Gestão premium para professores particulares</span>
-          <h1>LuminaAI</h1>
-          <p>Organize aulas particulares com aparência profissional: alunos, agenda, atividades, mensagens e financeiro em um portal simples para professor e aluno.</p>
-          <div className="row hero-actions">
-            <Link className="btn accent" href="/register/teacher">Começar agora</Link>
-            <Link className="btn primary" href="/login">Entrar</Link>
-            <Link className="btn ghost" href="/register/student">Sou aluno</Link>
+    <main className="flow-landing">
+      <header className="flow-header">
+        <Link className="flow-logo" href="/">
+          <span><CalendarLogo /></span>
+          <strong>LuminaAI</strong>
+        </Link>
+        <nav>
+          <Link href="/login">Já tenho uma conta</Link>
+          <Link className="flow-login-button" href="/login">Entrar</Link>
+        </nav>
+      </header>
+
+      <section className="flow-hero">
+        <div className="flow-copy">
+          <h1>Sua rotina de aulas, mais simples.</h1>
+          <p>Organize agenda, alunos, atividades e pagamentos em um só lugar.</p>
+
+          <div className="flow-role-grid">
+            <Link className="flow-role-card" href="/register/teacher">
+              <TeacherCardIcon />
+              <strong>Sou professor</strong>
+              <span>Gerencie seus alunos e aulas com facilidade.</span>
+              <em>→</em>
+            </Link>
+            <Link className="flow-role-card" href="/register/student">
+              <StudentCardIcon />
+              <strong>Sou aluno</strong>
+              <span>Acompanhe suas aulas e atividades.</span>
+              <em>→</em>
+            </Link>
           </div>
-          <div className="trust-strip">
-            <span>Feito para aulas particulares</span>
-            <span>App instalável no celular</span>
-            <span>R$ 39,90/mês</span>
-          </div>
-          <div className="legal-links">
-            <Link href="/privacy">Privacidade</Link>
-            <Link href="/terms">Termos</Link>
-          </div>
+
+          <Link className="flow-create-link" href="/register/teacher">Criar conta gratuita <span>›</span></Link>
         </div>
 
-        <div className="product-preview" aria-label="Prévia visual do painel LuminaAI">
-          <div className="preview-topbar">
-            <span />
-            <strong>Painel do professor</strong>
-            <small>premium</small>
-          </div>
-          <div className="preview-grid">
-            <div className="preview-stat">
-              <small>Agenda</small>
-              <strong>Organizada</strong>
-            </div>
-            <div className="preview-stat">
-              <small>Atividades</small>
-              <strong>Controladas</strong>
-            </div>
-            <div className="preview-card wide">
-              <div className="mini-bar one" />
-              <div className="mini-bar two" />
-              <div className="mini-bar three" />
-            </div>
-            <div className="preview-card">
-              <span className="mini-dot" />
-              <p>Aula confirmada</p>
-            </div>
-            <div className="preview-card">
-              <span className="mini-dot gold" />
-              <p>Tarefa entregue</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="marketing-section">
-        <div className="section-heading">
-          <span className="eyebrow">Por que usar</span>
-          <h2>Menos bagunça. Mais controle. Mais profissionalismo.</h2>
-        </div>
-        <div className="marketing-card-grid">
-          {benefits.map((benefit) => (
-            <article className="marketing-card" key={benefit.title}>
-              <strong>{benefit.title}</strong>
-              <p>{benefit.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="marketing-section marketing-split">
-        <div className="pricing-panel">
-          <span className="eyebrow">Plano do professor</span>
-          <h2>R$ 39,90</h2>
-          <p>por mês. Os alunos não pagam assinatura para acessar o portal.</p>
-          <Link className="btn accent" href="/register/teacher">Criar conta de professor</Link>
-        </div>
-        <div className="how-it-works">
-          <span className="eyebrow">Como funciona</span>
-          <ol>
-            {steps.map((step) => (
-              <li key={step}>{step}</li>
+        <div className="flow-preview" aria-label="Prévia do painel LuminaAI">
+          <aside className="flow-preview-sidebar">
+            <div className="flow-preview-brand"><CalendarLogo /> <strong>LuminaAI</strong></div>
+            {['Agenda', 'Alunos', 'Atividades', 'Financeiro', 'Mensagens', 'Relatórios', 'Configurações'].map((item, index) => (
+              <span className={index === 0 ? 'active' : ''} key={item}><PreviewIcon /> {item}</span>
             ))}
-          </ol>
+            <small>Ajuda</small>
+          </aside>
+
+          <section className="flow-calendar">
+            <div className="flow-calendar-head">
+              <h2>Maio de 2025</h2>
+              <div>
+                <button>‹</button>
+                <button>›</button>
+                <button>Hoje</button>
+              </div>
+              <button>Mês⌄</button>
+            </div>
+            <div className="flow-weekdays">
+              {['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'].map((day) => <span key={day}>{day}</span>)}
+            </div>
+            <div className="flow-calendar-grid">
+              {Array.from({ length: 35 }).map((_, index) => {
+                const day = index < 4 ? 27 + index : index - 3;
+                const item = calendarItems.find((entry) => entry.day === day);
+                return (
+                  <div className={day === 21 ? 'selected' : ''} key={`${day}-${index}`}>
+                    <span>{day}</span>
+                    {item && <small className={item.tone}>{item.title}<br />{item.time}</small>}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flow-legend">
+              {['Inglês', 'Matemática', 'Física', 'Redação'].map((item) => <span key={item}>{item}</span>)}
+            </div>
+          </section>
+
+          <aside className="flow-preview-rail">
+            <div className="flow-date-card">
+              <strong>Quarta-feira, 21 de maio</strong>
+              <div>
+                <b>Matemática</b>
+                <span>14:00 - 15:00</span>
+                <small>Aula particular</small>
+              </div>
+            </div>
+            <div className="flow-student-card">
+              <span>AC</span>
+              <strong>Ana Clara Souza</strong>
+              <small>9º ano - Ensino Fundamental</small>
+              <button>Ver perfil do aluno</button>
+            </div>
+            <div className="flow-small-card">
+              <strong>Próxima atividade</strong>
+              <span>Lista de exercícios - Funções</span>
+            </div>
+            <div className="flow-small-card">
+              <strong>Pagamento</strong>
+              <b>R$ 180,00</b>
+              <small>Em dia</small>
+            </div>
+            <button className="flow-class-button">Entrar na aula</button>
+          </aside>
         </div>
+      </section>
+
+      <section className="flow-benefits">
+        {benefits.map(([title, text, icon]) => (
+          <article key={title}>
+            <BenefitIcon name={icon} />
+            <div>
+              <strong>{title}</strong>
+              <p>{text}</p>
+            </div>
+          </article>
+        ))}
       </section>
     </main>
   );
+}
+
+function CalendarLogo() {
+  return (
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M8 3v4M16 3v4M3 10h18M7 15h10" />
+    </svg>
+  );
+}
+
+function TeacherCardIcon() {
+  return <CalendarLogo />;
+}
+
+function StudentCardIcon() {
+  return (
+    <svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22V5.5Z" />
+      <path d="M8 6h8M8 10h7M8 14h5" />
+      <path d="m15 15 1.5 1.5L20 13" />
+    </svg>
+  );
+}
+
+function PreviewIcon() {
+  return <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="3" /></svg>;
+}
+
+function BenefitIcon({ name }: { name: string }) {
+  if (name === 'money') return <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 6v12M16 9.5A3 3 0 0 0 12.5 8H11a2.5 2.5 0 0 0 0 5h2a2.5 2.5 0 0 1 0 5h-1.5A3 3 0 0 1 8 16.5" /></svg>;
+  if (name === 'tasks') return <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M9 8h6M9 12h6M9 16h3" /></svg>;
+  return <CalendarLogo />;
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser, supabaseBrowserConfigured } from '@/lib/supabase-browser';
@@ -50,11 +51,12 @@ export function LoginForm() {
   }
 
   return (
-    <form className="card stack auth-card" onSubmit={submit}>
+    <form className="auth-panel-card" onSubmit={submit}>
+      <AuthBrand />
       <div className="auth-heading">
-        <span className="eyebrow">LuminaAI</span>
-        <h1>Entrar</h1>
-        <p>Acesse seu portal com e-mail e senha.</p>
+        <span className="eyebrow">Bem-vindo de volta</span>
+        <h1>Entrar no LuminaAI</h1>
+        <p>Acesse seu painel para acompanhar aulas, alunos, atividades e pagamentos.</p>
       </div>
       {error && <p className="error">{error}</p>}
       <label className="label">E-mail<input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
@@ -64,11 +66,11 @@ export function LoginForm() {
           <button type="button" onClick={() => setShowPassword((current) => !current)}>{showPassword ? 'Ocultar' : 'Mostrar'}</button>
         </span>
       </label>
-      <button className="btn primary" disabled={loading}>{loading ? 'Entrando...' : 'Entrar'}</button>
-      <a className="forgot-link" href="/forgot-password">Esqueci minha senha</a>
-      <div className="row auth-links">
-        <a href="/register/teacher">Criar professor</a>
-        <a href="/register/student">Criar aluno</a>
+      <button className="flow-login-button auth-submit" disabled={loading}>{loading ? 'Entrando...' : 'Entrar'}</button>
+      <Link className="forgot-link" href="/forgot-password">Esqueci minha senha</Link>
+      <div className="auth-links">
+        <Link href="/register/teacher">Criar conta de professor</Link>
+        <Link href="/register/student">Criar conta de aluno</Link>
       </div>
     </form>
   );
@@ -95,7 +97,7 @@ export function ForgotPasswordForm() {
       const redirectTo = `${window.location.origin}/reset-password`;
       const { error: resetError } = await supabaseBrowser.auth.resetPasswordForEmail(email, { redirectTo });
       if (resetError) throw resetError;
-      setSuccess('Enviamos um e-mail com o link para redefinir sua senha. Verifique tambem a caixa de spam.');
+      setSuccess('Enviamos um e-mail com o link para redefinir sua senha. Verifique também a caixa de spam.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível enviar o e-mail de recuperação.');
     } finally {
@@ -104,17 +106,18 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <form className="card stack auth-card" onSubmit={submit}>
+    <form className="auth-panel-card" onSubmit={submit}>
+      <AuthBrand />
       <div className="auth-heading">
-        <span className="eyebrow">LuminaAI</span>
+        <span className="eyebrow">Recuperação</span>
         <h1>Recuperar senha</h1>
-        <p>Informe seu e-mail para receber o link de recuperacao.</p>
+        <p>Informe seu e-mail para receber o link de redefinição.</p>
       </div>
       {error && <p className="error">{error}</p>}
       {success && <p className="success">{success}</p>}
       <label className="label">E-mail<input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
-      <button className="btn primary" disabled={loading}>{loading ? 'Enviando...' : 'Enviar e-mail'}</button>
-      <a className="forgot-link" href="/login">Voltar para o login</a>
+      <button className="flow-login-button auth-submit" disabled={loading}>{loading ? 'Enviando...' : 'Enviar e-mail'}</button>
+      <Link className="forgot-link" href="/login">Voltar para o login</Link>
     </form>
   );
 }
@@ -140,11 +143,11 @@ export function ResetPasswordForm() {
 
     try {
       if (!isStrongPassword(password)) throw new Error(passwordRuleMessage);
-      if (password !== confirmPassword) throw new Error('A confirmacao da senha precisa ser igual a senha.');
+      if (password !== confirmPassword) throw new Error('A confirmação da senha precisa ser igual à senha.');
 
       const { error: updateError } = await supabaseBrowser.auth.updateUser({ password });
       if (updateError) throw updateError;
-      setSuccess('Senha alterada com sucesso. Voce ja pode entrar com a nova senha.');
+      setSuccess('Senha alterada com sucesso. Você já pode entrar com a nova senha.');
       window.setTimeout(() => router.push('/login'), 1200);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível alterar a senha.');
@@ -154,18 +157,19 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <form className="card stack auth-card" onSubmit={submit}>
+    <form className="auth-panel-card" onSubmit={submit}>
+      <AuthBrand />
       <div className="auth-heading">
-        <span className="eyebrow">LuminaAI</span>
+        <span className="eyebrow">Segurança</span>
         <h1>Nova senha</h1>
-        <p>Digite e confirme sua nova senha.</p>
+        <p>Digite e confirme sua nova senha de acesso.</p>
       </div>
       {error && <p className="error">{error}</p>}
       {success && <p className="success">{success}</p>}
       <label className="label">Nova senha<input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} pattern="^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{6,}$" title={passwordRuleMessage} /></label>
       <label className="label">Confirmar nova senha<input className="input" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={6} /></label>
       <p className="muted auth-hint">{passwordRuleMessage}</p>
-      <button className="btn primary" disabled={loading}>{loading ? 'Salvando...' : 'Alterar senha'}</button>
+      <button className="flow-login-button auth-submit" disabled={loading}>{loading ? 'Salvando...' : 'Alterar senha'}</button>
     </form>
   );
 }
@@ -198,15 +202,9 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
     setSuccess('');
 
     try {
-      if (!isStrongPassword(form.password)) {
-        throw new Error(passwordRuleMessage);
-      }
-      if (form.password !== form.confirm_password) {
-        throw new Error('A confirmacao da senha precisa ser igual a senha.');
-      }
-      if (!isValidBrazilPhone(form.whatsapp)) {
-        throw new Error('Informe um WhatsApp brasileiro valido com DDD, usando 10 ou 11 digitos.');
-      }
+      if (!isStrongPassword(form.password)) throw new Error(passwordRuleMessage);
+      if (form.password !== form.confirm_password) throw new Error('A confirmação da senha precisa ser igual à senha.');
+      if (!isValidBrazilPhone(form.whatsapp)) throw new Error('Informe um WhatsApp brasileiro válido com DDD, usando 10 ou 11 dígitos.');
 
       await supabaseBrowser.auth.signOut();
 
@@ -219,11 +217,7 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
       const payload = await result.json();
       if (!result.ok) throw new Error(payload.error || 'Falha no cadastro.');
 
-      if (mode === 'teacher') {
-        setSuccess(`Professor criado. Código de acesso: ${payload.access_code}`);
-      } else {
-        setSuccess('Aluno criado e vinculado ao professor.');
-      }
+      setSuccess(mode === 'teacher' ? `Professor criado. Código de acesso: ${payload.access_code}` : 'Aluno criado e vinculado ao professor.');
 
       const { error: signInError } = await supabaseBrowser.auth.signInWithPassword({ email: form.email, password: form.password });
       if (signInError) throw new Error('Conta criada, mas não foi possível entrar automaticamente. Tente fazer login.');
@@ -245,8 +239,13 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
   }
 
   return (
-    <form className="card stack" onSubmit={submit} style={{ width: '100%', maxWidth: 520 }}>
-      <h1>{mode === 'teacher' ? 'Cadastro do Professor' : 'Cadastro do Aluno'}</h1>
+    <form className="auth-panel-card auth-register-card" onSubmit={submit}>
+      <AuthBrand />
+      <div className="auth-heading">
+        <span className="eyebrow">{mode === 'teacher' ? 'Portal do professor' : 'Portal do aluno'}</span>
+        <h1>{mode === 'teacher' ? 'Criar conta de professor' : 'Criar conta de aluno'}</h1>
+        <p>{mode === 'teacher' ? 'Comece organizando sua rotina de aulas em um painel profissional.' : 'Entre com o código recebido do professor para vincular sua conta.'}</p>
+      </div>
       {error && <p className="error">{error}</p>}
       {success && <p className="success">{success}</p>}
       {mode === 'student' && (
@@ -261,7 +260,25 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
       {mode === 'teacher' && (
         <label className="label">Matérias<input className="input" value={form.subjects} onChange={(e) => set('subjects', e.target.value)} /></label>
       )}
-      <button className={mode === 'teacher' ? 'btn primary' : 'btn student'} disabled={loading}>{loading ? 'Criando...' : 'Criar conta'}</button>
+      <button className="flow-login-button auth-submit" disabled={loading}>{loading ? 'Criando...' : 'Criar conta'}</button>
+      <div className="auth-links">
+        <Link href="/login">Já tenho uma conta</Link>
+        <Link href={mode === 'teacher' ? '/register/student' : '/register/teacher'}>{mode === 'teacher' ? 'Sou aluno' : 'Sou professor'}</Link>
+      </div>
     </form>
+  );
+}
+
+function AuthBrand() {
+  return (
+    <Link className="auth-brand" href="/">
+      <span>
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="16" rx="2" />
+          <path d="M8 3v4M16 3v4M3 10h18M7 15h10" />
+        </svg>
+      </span>
+      <strong>LuminaAI</strong>
+    </Link>
   );
 }
