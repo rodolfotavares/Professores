@@ -1,5 +1,5 @@
-import { StudentDashboard } from '@/components/StudentPanels';
+import { StudentHome } from '@/components/StudentHome';
 
 export default function StudentPage() {
-  return <StudentDashboard />;
+  return <StudentHome />;
 }
