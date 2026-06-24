@@ -36,6 +36,15 @@ function money(value: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 }
 
+function SearchGlyph() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
 export function TeacherHome() {
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<ClassSchedule[]>([]);
@@ -112,10 +121,10 @@ export function TeacherHome() {
       <aside className="teacher-student-rail">
         <div className="rail-head">
           <h2>Alunos</h2>
-          <button type="button" aria-label="Recolher painel">«</button>
+          <button type="button" aria-label="Recolher painel">‹</button>
         </div>
         <label className="rail-search">
-          <span>⌕</span>
+          <SearchGlyph />
           <input placeholder="Buscar aluno..." />
         </label>
         <div className="student-list-clean">
@@ -182,9 +191,9 @@ export function TeacherHome() {
           </div>
         </div>
         <div className="detail-lines">
-          <p>📅 {selectedClass ? new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(new Date(`${selectedClass.class_date}T00:00:00`)) : 'Nenhuma aula selecionada'}</p>
-          <p>🕒 {selectedClass ? `${selectedClass.class_time.slice(0, 5)} · ${selectedClass.duration_minutes} min` : 'Horário não definido'}</p>
-          <p>📘 {selectedClass?.subject || selectedStudent?.subject || 'Matéria não definida'}</p>
+          <p><span>Data</span>{selectedClass ? new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(new Date(`${selectedClass.class_date}T00:00:00`)) : 'Nenhuma aula selecionada'}</p>
+          <p><span>Horário</span>{selectedClass ? `${selectedClass.class_time.slice(0, 5)} · ${selectedClass.duration_minutes} min` : 'Horário não definido'}</p>
+          <p><span>Matéria</span>{selectedClass?.subject || selectedStudent?.subject || 'Matéria não definida'}</p>
         </div>
         <a className="side-primary" href="/teacher/schedule">Abrir agenda</a>
         <a className="outline-action" href="/teacher/students">Administrar aluno</a>

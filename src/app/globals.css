@@ -5031,3 +5031,155 @@ select.input option {
     min-width: 760px;
   }
 }
+
+/* Final alignment pass: calendar-first professional layout */
+.teacher-agenda-home {
+  grid-template-columns: 205px minmax(760px, 1fr) 275px;
+}
+
+.teacher-student-rail {
+  padding: 24px 14px;
+  gap: 14px;
+}
+
+.teacher-detail-panel {
+  padding: 30px 22px;
+  gap: 20px;
+}
+
+.teacher-calendar-board {
+  padding: 30px 28px;
+}
+
+.calendar-toolbar {
+  margin-bottom: 22px;
+}
+
+.month-cell-clean {
+  min-height: 132px;
+}
+
+.student-list-clean button {
+  grid-template-columns: 32px 7px minmax(0, 1fr);
+  min-height: 42px;
+  padding: 4px 8px;
+}
+
+.student-avatar-clean {
+  width: 32px;
+  height: 32px;
+  font-size: 11px;
+}
+
+.student-list-clean button strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-photo {
+  width: 64px;
+  height: 64px;
+  font-size: 20px;
+}
+
+.detail-profile {
+  align-items: flex-start;
+}
+
+.detail-profile h2 {
+  font-size: 22px;
+  line-height: 1.15;
+}
+
+.detail-lines p {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.detail-lines p span {
+  color: #0b64e9;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.teacher-day-tasks label {
+  align-items: flex-start;
+  font-size: 14px;
+}
+
+.student-portal:has(.student-home) {
+  grid-template-columns: 210px minmax(0, 1fr);
+}
+
+.student-portal:has(.student-home) .teacher-icon-sidebar {
+  width: 210px;
+  min-width: 210px;
+  align-self: stretch;
+  height: 100vh;
+  min-height: 100vh;
+  padding: 32px 18px;
+}
+
+.student-home {
+  align-items: stretch;
+  grid-template-columns: minmax(720px, 1fr) 320px;
+}
+
+.student-side-panel {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  min-height: 100vh;
+  border-radius: 0;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  padding: 34px 24px;
+}
+
+.student-profile-card {
+  align-items: center;
+}
+
+.student-side-close {
+  top: 20px;
+  right: 20px;
+}
+
+@media (max-width: 1280px) {
+  .teacher-agenda-home {
+    grid-template-columns: 190px minmax(680px, 1fr) 260px;
+  }
+
+  .teacher-calendar-board {
+    padding: 26px 22px;
+  }
+}
+
+@media (max-width: 1180px) {
+  .teacher-agenda-home {
+    grid-template-columns: 190px minmax(0, 1fr);
+  }
+
+  .teacher-detail-panel {
+    grid-column: 1 / -1;
+  }
+
+  .student-home {
+    grid-template-columns: 1fr;
+  }
+
+  .student-side-panel {
+    position: static;
+    height: auto;
+    min-height: auto;
+    border-top: 1px solid #e5ecf6;
+  }
+}
