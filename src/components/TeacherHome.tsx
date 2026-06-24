@@ -54,6 +54,9 @@ export function TeacherHome() {
   const [error, setError] = useState('');
   const [cursorDate, setCursorDate] = useState(() => new Date());
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleTime, setRescheduleTime] = useState('');
+  const [actionLoading, setActionLoading] = useState('');
 
   async function load() {
     try {
@@ -114,6 +117,53 @@ export function TeacherHome() {
       };
     });
   }, [cursorDate, sortedClasses, todayKey]);
+
+  useEffect(() => {
+    setRescheduleDate(selectedClass?.class_date || todayKey);
+    setRescheduleTime(selectedClass?.class_time?.slice(0, 5) || selectedStudent?.class_time?.slice(0, 5) || '14:00');
+  }, [selectedClass?.id, selectedClass?.class_date, selectedClass?.class_time, selectedStudent?.class_time, todayKey]);
+
+  async function updateClassStatus(status: 'completed' | 'cancelled' | 'scheduled') {
+    if (!selectedClass) return;
+    setActionLoading(status);
+    setError('');
+    try {
+      await apiFetch(`/api/teacher/schedule/${selectedClass.id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao atualizar aula.');
+    } finally {
+      setActionLoading('');
+    }
+  }
+
+  async function rescheduleClass() {
+    if (!selectedStudent || !rescheduleDate || !rescheduleTime) return;
+    setActionLoading('reschedule');
+    setError('');
+    try {
+      if (selectedClass) {
+        await apiFetch(`/api/teacher/schedule/${selectedClass.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ class_date: rescheduleDate, class_time: rescheduleTime, status: 'scheduled' }),
+        });
+      } else {
+        await apiFetch('/api/teacher/schedule', {
+          method: 'POST',
+          body: JSON.stringify({ student_id: selectedStudent.id, class_date: rescheduleDate, class_time: rescheduleTime, duration_minutes: selectedStudent.duration_minutes || 60 }),
+        });
+      }
+      setCursorDate(new Date(`${rescheduleDate}T00:00:00`));
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao reagendar aula.');
+    } finally {
+      setActionLoading('');
+    }
+  }
 
   return (
     <div className="teacher-agenda-home">
@@ -195,7 +245,26 @@ export function TeacherHome() {
           <p><span>Horário</span>{selectedClass ? `${selectedClass.class_time.slice(0, 5)} · ${selectedClass.duration_minutes} min` : 'Horário não definido'}</p>
           <p><span>Matéria</span>{selectedClass?.subject || selectedStudent?.subject || 'Matéria não definida'}</p>
         </div>
-        <a className="side-primary" href="/teacher/schedule">Abrir agenda</a>
+        <div className="lesson-action-box">
+          <h3>Ações da aula</h3>
+          <label>
+            <span>Nova data</span>
+            <input type="date" value={rescheduleDate} onChange={(event) => setRescheduleDate(event.target.value)} />
+          </label>
+          <label>
+            <span>Novo horário</span>
+            <input type="time" value={rescheduleTime} onChange={(event) => setRescheduleTime(event.target.value)} />
+          </label>
+          <button type="button" className="outline-action" onClick={rescheduleClass} disabled={!selectedStudent || actionLoading === 'reschedule'}>
+            {actionLoading === 'reschedule' ? 'Reagendando...' : 'Reagendar aula'}
+          </button>
+          <button type="button" className="side-primary" onClick={() => updateClassStatus('completed')} disabled={!selectedClass || actionLoading === 'completed'}>
+            {actionLoading === 'completed' ? 'Confirmando...' : 'Confirmar aula'}
+          </button>
+          <button type="button" className="outline-action danger-outline" onClick={() => updateClassStatus('cancelled')} disabled={!selectedClass || actionLoading === 'cancelled'}>
+            {actionLoading === 'cancelled' ? 'Desmarcando...' : 'Desmarcar aula'}
+          </button>
+        </div>
         <a className="outline-action" href="/teacher/students">Administrar aluno</a>
         <div className="teacher-day-tasks">
           <h3>Para hoje</h3>

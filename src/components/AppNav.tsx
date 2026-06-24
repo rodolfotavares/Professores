@@ -18,7 +18,6 @@ export function TeacherNav() {
       <nav className="sidebar-nav icon-nav">
         <NavIcon href="/teacher" label="Início" icon="home" />
         <NavIcon href="/teacher/students" label="Alunos" icon="users" />
-        <NavIcon href="/teacher/schedule" label="Agenda" icon="calendar" />
         <NavIcon href="/teacher/activities" label="Atividades" icon="tasks" />
         <NavIcon href="/teacher/messages" label="Mensagens" icon="message" />
         <NavIcon href="/teacher/finance" label="Financeiro" icon="chart" />

@@ -1,5 +1,5 @@
-import { StudentsPanel } from '@/components/TeacherPanels';
+import { TeacherStudentsBoard } from '@/components/TeacherStudentsBoard';
 
 export default function TeacherStudentsPage() {
-  return <StudentsPanel />;
+  return <TeacherStudentsBoard />;
 }
