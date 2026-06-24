@@ -1,5 +1,5 @@
-import { TeacherActivitiesPanel } from '@/components/TeacherPanels';
+import { TeacherActivitiesBoard } from '@/components/TeacherActivitiesBoard';
 
 export default function TeacherActivitiesPage() {
-  return <TeacherActivitiesPanel />;
+  return <TeacherActivitiesBoard />;
 }
