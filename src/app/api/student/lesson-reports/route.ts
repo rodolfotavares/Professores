@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await supabaseAdmin
       .from('lesson_reports')
-      .select('*, class_schedules(class_date, class_time, subject, duration_minutes, actual_duration_minutes)')
+      .select('*, students(full_name, subject, guardian_whatsapp), class_schedules(class_date, class_time, subject, duration_minutes, actual_duration_minutes)')
       .eq('student_id', student.id)
       .eq('status', 'PUBLISHED')
       .order('published_at', { ascending: false });

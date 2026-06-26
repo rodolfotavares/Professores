@@ -75,6 +75,11 @@ function reportText(report: Partial<LessonReport>) {
   ].filter(Boolean).join('\n\n');
 }
 
+function hasRecurringDifficulty(report: LessonReport) {
+  const text = `${report.learning_progress || ''} ${report.reinforcement_points || ''}`.toLowerCase();
+  return text.includes('dificuldade recorrente') || text.includes('recorrente detectada');
+}
+
 export function TeacherSmartLessonPanel() {
   const search = useSearchParams();
   const initialLessonId = search.get('lesson_id') || '';
@@ -124,11 +129,7 @@ export function TeacherSmartLessonPanel() {
   const filtered = filter === 'ALL' ? reports : reports.filter((item) => item.status === filter);
   const counts = useMemo(() => {
     const published = reports.filter((item) => item.status === 'PUBLISHED');
-    const recurringStudents = new Set(
-      published
-        .filter((item) => (item.reinforcement_points || '').length > 20)
-        .map((item) => item.student_id),
-    );
+    const recurringStudents = new Set(published.filter(hasRecurringDifficulty).map((item) => item.student_id));
 
     return {
       generated: reports.length,
@@ -154,7 +155,7 @@ export function TeacherSmartLessonPanel() {
 
   const alerts = useMemo(() => {
     const drafts = reports.filter((item) => item.status === 'DRAFT').length;
-    const recurring = reports.filter((item) => item.status === 'PUBLISHED' && (item.reinforcement_points || '').length > 80).slice(0, 3);
+    const recurring = reports.filter((item) => item.status === 'PUBLISHED' && hasRecurringDifficulty(item)).slice(0, 3);
     const result = [];
     if (drafts) result.push(`${drafts} relatorio(s) aguardando revisao antes de aparecer para o aluno.`);
     recurring.forEach((item) => result.push(`${item.students?.full_name || 'Aluno'} tem ponto de reforco recorrente em ${subjectOf(item)}.`));
@@ -220,12 +221,16 @@ export function TeacherSmartLessonPanel() {
     }
   }
 
-  async function copyGuardianMessage() {
+  async function openGuardianWhatsapp() {
     const message = draft.guardian_message || draft.parent_message || selected?.guardian_message || selected?.parent_message || '';
+    const phone = (selected?.students?.guardian_whatsapp || '').replace(/\D/g, '');
     if (!message) return;
     await navigator.clipboard.writeText(message);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1800);
+    if (phone) {
+      window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+    }
   }
 
   return (
@@ -349,8 +354,10 @@ export function TeacherSmartLessonPanel() {
               </label>
             </div>
             <div className="smart-copy-row">
-              <button type="button" className="outline-action" onClick={copyGuardianMessage}>Copiar mensagem para WhatsApp</button>
-              {copied && <span>Mensagem copiada.</span>}
+              <button type="button" className="outline-action" onClick={openGuardianWhatsapp}>
+                {selected.students?.guardian_whatsapp ? 'Enviar mensagem no WhatsApp' : 'Copiar mensagem para WhatsApp'}
+              </button>
+              {copied && <span>{selected.students?.guardian_whatsapp ? 'WhatsApp aberto com a mensagem pronta.' : 'Mensagem copiada. Cadastre o WhatsApp do responsável para abrir direto.'}</span>}
             </div>
             <div className="smart-actions">
               <button type="button" className="outline-action" onClick={() => save('DRAFT')} disabled={!!saving}>Salvar rascunho</button>

@@ -509,7 +509,7 @@ export function TeacherNewsPanel() {
 
 export function StudentsPanel() {
   const [students, setStudents] = useState<Student[]>([]);
-  const emptyForm = { full_name: '', email: '', whatsapp: '', subject: '', days_of_week: '1,3', class_time: '14:00', classes_per_week: '2', price_per_class: '100' };
+  const emptyForm = { full_name: '', email: '', whatsapp: '', guardian_whatsapp: '', subject: '', days_of_week: '1,3', class_time: '14:00', classes_per_week: '2', price_per_class: '100' };
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -546,7 +546,14 @@ export function StudentsPanel() {
       if (!isValidBrazilPhone(form.whatsapp)) {
         throw new Error('Informe um WhatsApp brasileiro valido com DDD, usando 10 ou 11 digitos.');
       }
-      const cleanForm = { ...form, whatsapp: normalizeBrazilPhone(form.whatsapp) };
+      if (form.guardian_whatsapp && !isValidBrazilPhone(form.guardian_whatsapp)) {
+        throw new Error('Informe um WhatsApp brasileiro valido para o responsavel com DDD, usando 10 ou 11 digitos.');
+      }
+      const cleanForm = {
+        ...form,
+        whatsapp: normalizeBrazilPhone(form.whatsapp),
+        guardian_whatsapp: form.guardian_whatsapp ? normalizeBrazilPhone(form.guardian_whatsapp) : undefined,
+      };
       if (editingId) {
         await apiFetch(`/api/teacher/students/${editingId}`, {
           method: 'PATCH',
@@ -573,6 +580,7 @@ export function StudentsPanel() {
       full_name: student.full_name,
       email: student.email,
       whatsapp: formatBrazilWhatsapp(student.whatsapp || ''),
+      guardian_whatsapp: formatBrazilWhatsapp(student.guardian_whatsapp || ''),
       subject: student.subject || '',
       days_of_week: student.days_of_week?.join(',') || '',
       class_time: student.class_time || '14:00',
@@ -629,6 +637,7 @@ export function StudentsPanel() {
         <Input label="Nome" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
         <Input label="E-mail" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
         <Input label="WhatsApp" value={form.whatsapp} onChange={(v) => setForm({ ...form, whatsapp: formatBrazilWhatsapp(v) })} inputMode="numeric" placeholder="(11) 99999-9999" required={false} />
+        <Input label="WhatsApp do responsavel" value={form.guardian_whatsapp} onChange={(v) => setForm({ ...form, guardian_whatsapp: formatBrazilWhatsapp(v) })} inputMode="numeric" placeholder="(11) 99999-9999" required={false} />
         <Input label="Matéria" value={form.subject} onChange={(v) => setForm({ ...form, subject: v })} />
         <label className="label">Dias das aulas</label>
         <div className="segmented">

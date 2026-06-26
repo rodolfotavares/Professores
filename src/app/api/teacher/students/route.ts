@@ -10,6 +10,7 @@ const schema = z.object({
   full_name: z.string().min(2),
   email: z.string().email(),
   whatsapp: z.string().optional().refine(isValidBrazilPhone, 'Informe um WhatsApp brasileiro valido com DDD.'),
+  guardian_whatsapp: z.string().optional().refine(isValidBrazilPhone, 'Informe um WhatsApp brasileiro valido com DDD.'),
   subject: z.string().optional(),
   days_of_week: z.string().optional(),
   class_time: z.string().optional(),
@@ -46,6 +47,7 @@ export async function POST(req: NextRequest) {
     const classTime = body.class_time || null;
     const durationMinutes = body.duration_minutes || 60;
     const whatsapp = body.whatsapp ? normalizeBrazilPhone(body.whatsapp) : null;
+    const guardianWhatsapp = body.guardian_whatsapp ? normalizeBrazilPhone(body.guardian_whatsapp) : null;
 
     const { data: student, error } = await supabaseAdmin
       .from('students')
@@ -54,6 +56,7 @@ export async function POST(req: NextRequest) {
         full_name: body.full_name,
         email: body.email,
         whatsapp,
+        guardian_whatsapp: guardianWhatsapp,
         subject: body.subject || null,
         days_of_week: daysOfWeek,
         class_time: classTime,

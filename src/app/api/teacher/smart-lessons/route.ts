@@ -13,7 +13,7 @@ const generateSchema = z.object({
   raw_transcript: z.string().optional(),
 });
 
-const reportSelect = '*, students(full_name, subject), class_schedules(class_date, class_time, subject, duration_minutes, actual_duration_minutes)';
+const reportSelect = '*, students(full_name, subject, guardian_whatsapp), class_schedules(class_date, class_time, subject, duration_minutes, actual_duration_minutes)';
 
 export async function GET(req: NextRequest) {
   try {

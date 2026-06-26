@@ -32,6 +32,7 @@ create table public.students (
   full_name text not null,
   email text not null,
   whatsapp text,
+  guardian_whatsapp text,
   subject text,
   school_year text,
   age integer,

@@ -5,6 +5,7 @@ export type Student = {
   full_name: string;
   email: string;
   whatsapp: string | null;
+  guardian_whatsapp: string | null;
   subject: string | null;
   days_of_week: number[];
   class_time: string | null;
@@ -65,7 +66,7 @@ export type LessonReport = {
   published_at: string | null;
   reviewed_at: string | null;
   class_schedules?: { class_date: string; class_time: string; subject: string | null; duration_minutes: number | null; actual_duration_minutes: number | null } | null;
-  students?: { full_name: string; subject?: string | null } | null;
+  students?: { full_name: string; subject?: string | null; guardian_whatsapp?: string | null } | null;
 };
 
 export type Activity = {

@@ -10,6 +10,7 @@ const emptyForm = {
   full_name: '',
   email: '',
   whatsapp: '',
+  guardian_whatsapp: '',
   subject: '',
   class_time: '14:00',
   classes_per_week: '2',
@@ -89,6 +90,7 @@ export function TeacherStudentsBoard() {
       full_name: selectedStudent.full_name,
       email: selectedStudent.email,
       whatsapp: formatBrazilWhatsapp(selectedStudent.whatsapp || ''),
+      guardian_whatsapp: formatBrazilWhatsapp(selectedStudent.guardian_whatsapp || ''),
       subject: selectedStudent.subject || '',
       class_time: selectedStudent.class_time?.slice(0, 5) || '14:00',
       classes_per_week: String(selectedStudent.classes_per_week || 2),
@@ -130,10 +132,12 @@ export function TeacherStudentsBoard() {
     setError('');
     try {
       if (form.whatsapp && !isValidBrazilPhone(form.whatsapp)) throw new Error('Informe um WhatsApp brasileiro válido com DDD.');
+      if (form.guardian_whatsapp && !isValidBrazilPhone(form.guardian_whatsapp)) throw new Error('Informe um WhatsApp brasileiro válido para o responsável com DDD.');
       const payload = {
         full_name: form.full_name,
         email: form.email,
         whatsapp: form.whatsapp ? normalizeBrazilPhone(form.whatsapp) : undefined,
+        guardian_whatsapp: form.guardian_whatsapp ? normalizeBrazilPhone(form.guardian_whatsapp) : undefined,
         subject: form.subject,
         days_of_week: '1,3',
         class_time: form.class_time,
@@ -218,6 +222,7 @@ export function TeacherStudentsBoard() {
           <label>Nome completo<input value={form.full_name} onChange={(event) => setForm({ ...form, full_name: event.target.value })} required /></label>
           <label>E-mail<input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required /></label>
           <label>Telefone<input value={form.whatsapp} onChange={(event) => setForm({ ...form, whatsapp: formatBrazilWhatsapp(event.target.value) })} placeholder="(11) 98765-4321" /></label>
+          <label>WhatsApp do responsável<input value={form.guardian_whatsapp} onChange={(event) => setForm({ ...form, guardian_whatsapp: formatBrazilWhatsapp(event.target.value) })} placeholder="(11) 98765-4321" inputMode="numeric" /></label>
           <label>Matéria<input value={form.subject} onChange={(event) => setForm({ ...form, subject: event.target.value })} /></label>
           <label>Horário padrão<input type="time" value={form.class_time} onChange={(event) => setForm({ ...form, class_time: event.target.value })} /></label>
           <label>Valor da aula (R$)<input type="number" value={form.price_per_class} onChange={(event) => setForm({ ...form, price_per_class: event.target.value })} /></label>

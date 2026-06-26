@@ -10,6 +10,7 @@ const schema = z.object({
   full_name: z.string().min(2).optional(),
   email: z.string().email().optional(),
   whatsapp: z.string().optional().refine(isValidBrazilPhone, 'Informe um WhatsApp brasileiro valido com DDD.'),
+  guardian_whatsapp: z.string().optional().refine(isValidBrazilPhone, 'Informe um WhatsApp brasileiro valido com DDD.'),
   subject: z.string().optional(),
   days_of_week: z.string().optional(),
   class_time: z.string().optional(),
@@ -33,6 +34,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     if (body.full_name !== undefined) update.full_name = body.full_name;
     if (body.email !== undefined) update.email = body.email;
     if (body.whatsapp !== undefined) update.whatsapp = body.whatsapp ? normalizeBrazilPhone(body.whatsapp) : null;
+    if (body.guardian_whatsapp !== undefined) update.guardian_whatsapp = body.guardian_whatsapp ? normalizeBrazilPhone(body.guardian_whatsapp) : null;
     if (body.subject !== undefined) update.subject = body.subject || null;
     if (daysOfWeek !== undefined) update.days_of_week = daysOfWeek;
     if (body.class_time !== undefined) update.class_time = body.class_time || null;

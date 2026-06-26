@@ -34,6 +34,64 @@ function joinHistory(history: StudentLearningHistoryItem[] = [], field: keyof St
     .slice(0, 5);
 }
 
+const difficultySignals = [
+  'dificuldade',
+  'duvida',
+  'duvidas',
+  'confusao',
+  'confundiu',
+  'errou',
+  'erro',
+  'travou',
+  'nao entendeu',
+  'nao conseguiu',
+  'precisa reforcar',
+  'reforcar',
+  'revisar',
+  'atencao',
+  'lento',
+  'inseguro',
+];
+
+function splitSentences(text: string) {
+  return text
+    .split(/(?<=[.!?])\s+|;\s+|\n+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function detectDifficulty(text: string) {
+  const normalized = text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  const matches = difficultySignals.filter((signal) => normalized.includes(signal));
+  const sentences = splitSentences(text).filter((sentence) => {
+    const cleanSentence = sentence.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    return difficultySignals.some((signal) => cleanSentence.includes(signal));
+  });
+
+  return {
+    hasDifficulty: matches.length > 0,
+    signals: matches,
+    notes: sentences.slice(0, 3),
+  };
+}
+
+function hasRecurringDifficulty(currentNotes: string[], previousPoints: string[]) {
+  if (!currentNotes.length || !previousPoints.length) return false;
+  const current = currentNotes.join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  return previousPoints.some((point) => {
+    const words = point
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .split(/\W+/)
+      .filter((word) => word.length > 4);
+    return words.some((word) => current.includes(word));
+  });
+}
+
 export function getStudentLearningHistory(history: StudentLearningHistoryItem[] = []) {
   return {
     reports: history.slice(0, 5),
@@ -51,16 +109,26 @@ export function generateLessonReport(input: GenerateLessonReportInput) {
   const homework = fallback(input.homework, 'Nenhuma tarefa combinada foi informada.');
   const history = getStudentLearningHistory(input.history || []);
   const hadHistory = history.reports.length > 0;
+  const difficulty = detectDifficulty(classNotes);
+  const recurringDifficulty = hasRecurringDifficulty(difficulty.notes, history.reinforcementPoints);
   const previousReinforcement = history.reinforcementPoints[0] || 'nao havia ponto recorrente registrado anteriormente';
   const previousRecommendation = history.previousRecommendations[0] || `continuar acompanhando a evolucao em ${subject}`;
+  const detectedDifficulty = difficulty.notes[0] || (difficulty.hasDifficulty ? classNotes : '');
+  const currentReinforcement = detectedDifficulty || `consolidar ${taught}`;
 
   const learningProgress = hadHistory
-    ? `Comparando com os ultimos registros, o aluno demonstra continuidade no estudo de ${subject}. O principal ponto anterior era ${previousReinforcement}; nesta aula, o professor registrou: ${classNotes}`
-    : `Este e o primeiro registro inteligente recente de ${subject} para este aluno. Ele passa a servir como base para acompanhar evolucao, dificuldades recorrentes e proximas decisoes pedagogicas.`;
+    ? recurringDifficulty
+      ? `A inteligencia identificou dificuldade recorrente em ${subject}. O ponto atual ("${currentReinforcement}") se conecta a registros anteriores: ${previousReinforcement}.`
+      : `A inteligencia comparou esta aula com os ultimos registros e nao encontrou repeticao clara de dificuldade. Ha evolucao ou novo ponto de acompanhamento em: ${currentReinforcement}.`
+    : difficulty.hasDifficulty
+      ? `A inteligencia identificou um primeiro ponto de dificuldade em ${subject}: ${currentReinforcement}. Esse registro sera usado para acompanhar recorrencia nas proximas aulas.`
+      : `Este e o primeiro registro inteligente recente de ${subject} para este aluno. Nao foi detectada dificuldade recorrente neste texto.`;
 
-  const nextLessonSuggestion = hadHistory
-    ? `Comecar retomando rapidamente ${previousReinforcement}, verificar a tarefa anterior e avancar para exercicios guiados ligados a ${taught}.`
-    : `Retomar os pontos principais de ${taught}, verificar a tarefa combinada e propor exercicios curtos para confirmar autonomia do aluno.`;
+  const nextLessonSuggestion = recurringDifficulty || difficulty.hasDifficulty
+    ? `Iniciar retomando ${currentReinforcement}, fazer 2 exemplos guiados e depois propor exercicios curtos para confirmar autonomia.`
+    : hadHistory
+      ? `Comecar verificando a tarefa anterior e avancar para exercicios ligados a ${taught}.`
+      : `Retomar os pontos principais de ${taught}, verificar a tarefa combinada e propor exercicios curtos para confirmar autonomia do aluno.`;
 
   const guardianMessage = `Ola! A aula de ${subject} foi registrada com foco em ${taught}. ${classNotes} Tarefa combinada: ${homework}. Proxima orientacao: ${nextLessonSuggestion}`;
 
@@ -70,10 +138,14 @@ export function generateLessonReport(input: GenerateLessonReportInput) {
     taught_content: taught,
     student_questions: classNotes.includes('?')
       ? 'O professor registrou duvidas durante a aula. Recomenda-se revisar os pontos citados no relato.'
-      : 'Nenhuma duvida especifica foi registrada de forma separada.',
-    reinforcement_points: hadHistory
-      ? `Reforcar: ${previousReinforcement}. Observacao da aula atual: ${classNotes}`
-      : classNotes,
+      : difficulty.hasDifficulty
+        ? `A inteligencia detectou possivel duvida/dificuldade em: ${currentReinforcement}`
+        : 'Nenhuma duvida especifica foi registrada de forma separada.',
+    reinforcement_points: recurringDifficulty
+      ? `Dificuldade recorrente detectada: ${currentReinforcement}. Registro anterior relacionado: ${previousReinforcement}.`
+      : difficulty.hasDifficulty
+        ? `Ponto detectado para reforco: ${currentReinforcement}.`
+        : `Manter acompanhamento de ${taught}.`,
     exercises_done: 'Exercicios e exemplos mencionados pelo professor foram considerados no acompanhamento pedagogico.',
     homework,
     next_recommendation: previousRecommendation,

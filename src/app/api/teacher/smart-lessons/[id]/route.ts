@@ -21,7 +21,7 @@ const schema = z.object({
   status: z.enum(['DRAFT', 'APPROVED', 'PUBLISHED', 'ARCHIVED']).optional(),
 });
 
-const reportSelect = '*, students(full_name, subject), class_schedules(class_date, class_time, subject, duration_minutes, actual_duration_minutes)';
+const reportSelect = '*, students(full_name, subject, guardian_whatsapp), class_schedules(class_date, class_time, subject, duration_minutes, actual_duration_minutes)';
 
 export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
