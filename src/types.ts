@@ -54,11 +54,16 @@ export type LessonReport = {
   homework: string | null;
   next_recommendation: string | null;
   parent_message: string | null;
+  learning_progress: string | null;
+  next_lesson_suggestion: string | null;
+  guardian_message: string | null;
+  teacher_signature: string | null;
   raw_transcript: string | null;
   status: LessonReportStatus;
   created_at: string;
   updated_at: string;
   published_at: string | null;
+  reviewed_at: string | null;
   class_schedules?: { class_date: string; class_time: string; subject: string | null; duration_minutes: number | null; actual_duration_minutes: number | null } | null;
   students?: { full_name: string; subject?: string | null } | null;
 };

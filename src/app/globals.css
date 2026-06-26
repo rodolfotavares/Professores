@@ -7873,6 +7873,35 @@ select.input option {
   font-size: 34px;
 }
 
+.smart-alerts,
+.smart-demo-box,
+.smart-progress-card,
+.smart-report-preview {
+  border: 1px solid #dfe7f1;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 46px rgba(16, 40, 82, 0.06);
+}
+
+.smart-alerts {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 24px;
+  padding: 20px;
+}
+
+.smart-alerts h2,
+.smart-progress-card h3 {
+  margin: 0;
+  color: #071832;
+}
+
+.smart-alerts p {
+  margin: 0;
+  color: #526174;
+  line-height: 1.5;
+}
+
 .smart-generate-card {
   display: grid;
   gap: 12px;
@@ -7883,6 +7912,11 @@ select.input option {
 .smart-generate-card h2 {
   margin: 0 0 4px;
   color: #071832;
+}
+
+.smart-generate-card p {
+  margin: 0;
+  color: #60708a;
 }
 
 .smart-generate-card input,
@@ -7932,6 +7966,39 @@ select.input option {
 .smart-report-list {
   display: grid;
   gap: 10px;
+}
+
+.smart-demo-box {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.smart-demo-box strong {
+  color: #071832;
+}
+
+.smart-demo-box article {
+  border: 1px solid #e6edf6;
+  border-radius: 12px;
+  padding: 14px;
+  background: #f8fbff;
+}
+
+.smart-demo-box span {
+  color: #0b64e9;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.smart-demo-box h3 {
+  margin: 6px 0;
+  color: #071832;
+}
+
+.smart-demo-box p {
+  margin: 0;
+  color: #60708a;
 }
 
 .smart-report-list button {
@@ -8005,6 +8072,32 @@ select.input option {
   color: #60708a;
 }
 
+.smart-progress-card {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 16px;
+}
+
+.smart-progress-card dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.smart-progress-card dt {
+  color: #60708a;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.smart-progress-card dd {
+  margin: 0 0 8px;
+  color: #203454;
+  line-height: 1.45;
+}
+
 .smart-editor-fields {
   display: grid;
   gap: 13px;
@@ -8029,6 +8122,25 @@ select.input option {
   grid-column: 1 / -1;
 }
 
+.smart-copy-row {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.smart-copy-row span {
+  color: #117a3d;
+  font-weight: 800;
+}
+
+.smart-report-preview {
+  white-space: pre-wrap;
+  margin: 18px 0 0;
+  padding: 16px;
+  color: #526174;
+  font: 13px/1.55 inherit;
+}
+
 .smart-lesson-actions-inline {
   display: grid;
   gap: 10px;
@@ -8041,11 +8153,49 @@ select.input option {
   background: #fbfdff;
 }
 
-.student-report-grid {
+.student-report-grid,
+.student-timeline {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 18px;
   margin-top: 26px;
+}
+
+.student-report-grid {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.student-timeline {
+  position: relative;
+  max-width: 960px;
+}
+
+.student-timeline::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 12px;
+  width: 2px;
+  background: #dce7f8;
+}
+
+.student-timeline-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 18px;
+}
+
+.timeline-dot {
+  position: relative;
+  z-index: 1;
+  width: 26px;
+  height: 26px;
+  margin-top: 24px;
+  border: 5px solid #dcecff;
+  border-radius: 50%;
+  background: #0b64e9;
+  box-shadow: 0 0 0 6px #fbfdff;
 }
 
 .student-report-card {

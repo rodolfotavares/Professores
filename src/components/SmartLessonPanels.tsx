@@ -14,20 +14,42 @@ const statusLabels: Record<LessonReportStatus, string> = {
 };
 
 const fields = [
-  ['title', 'Título'],
+  ['title', 'Titulo'],
   ['summary', 'Resumo'],
-  ['taught_content', 'Conteúdo ensinado'],
-  ['student_questions', 'Dúvidas identificadas'],
-  ['reinforcement_points', 'Pontos para reforçar'],
-  ['exercises_done', 'Exercícios realizados'],
-  ['homework', 'Tarefa'],
-  ['next_recommendation', 'Próximos passos'],
-  ['parent_message', 'Mensagem ao responsável'],
+  ['taught_content', 'Conteudo trabalhado'],
+  ['student_questions', 'Duvidas identificadas'],
+  ['reinforcement_points', 'Pontos para reforcar'],
+  ['exercises_done', 'Exercicios realizados'],
+  ['homework', 'Tarefa combinada'],
+  ['learning_progress', 'Evolucao percebida'],
+  ['next_lesson_suggestion', 'Proxima aula sugerida'],
+  ['next_recommendation', 'Recomendacao pedagogica'],
+  ['guardian_message', 'Mensagem para responsavel'],
 ] as const;
 
+const demoReports = [
+  {
+    student: 'Ana Beatriz',
+    subject: 'Matematica',
+    title: 'Relatorio de Matematica - Ana Beatriz',
+    summary: 'Trabalhou funcoes do 1o grau e mostrou boa evolucao na leitura dos graficos.',
+  },
+  {
+    student: 'Lucas Almeida',
+    subject: 'Fisica',
+    title: 'Relatorio de Fisica - Lucas Almeida',
+    summary: 'Revisou movimento uniforme e precisa reforcar interpretacao de enunciados.',
+  },
+];
+
 function formatDate(value?: string | null) {
-  if (!value) return 'Data não definida';
+  if (!value) return 'Data nao definida';
   return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(`${value}T00:00:00`));
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return 'Ainda nao publicado';
+  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value));
 }
 
 function subjectOf(report: LessonReport) {
@@ -41,6 +63,18 @@ function statusTone(status: LessonReportStatus) {
   return 'warning';
 }
 
+function reportText(report: Partial<LessonReport>) {
+  return [
+    report.title,
+    report.summary,
+    report.taught_content && `Conteudo: ${report.taught_content}`,
+    report.reinforcement_points && `Reforco: ${report.reinforcement_points}`,
+    report.homework && `Tarefa: ${report.homework}`,
+    report.learning_progress && `Evolucao percebida: ${report.learning_progress}`,
+    report.next_lesson_suggestion && `Proxima aula sugerida: ${report.next_lesson_suggestion}`,
+  ].filter(Boolean).join('\n\n');
+}
+
 export function TeacherSmartLessonPanel() {
   const search = useSearchParams();
   const initialLessonId = search.get('lesson_id') || '';
@@ -51,13 +85,13 @@ export function TeacherSmartLessonPanel() {
   const [form, setForm] = useState({
     lesson_id: initialLessonId,
     taught_content: '',
-    observations: '',
+    class_notes: '',
     homework: '',
-    raw_transcript: '',
   });
   const [draft, setDraft] = useState<Partial<LessonReport>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState('');
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
 
   async function load() {
@@ -88,17 +122,50 @@ export function TeacherSmartLessonPanel() {
   }, [selected?.id]);
 
   const filtered = filter === 'ALL' ? reports : reports.filter((item) => item.status === filter);
-  const counts = useMemo(() => ({
-    DRAFT: reports.filter((item) => item.status === 'DRAFT').length,
-    APPROVED: reports.filter((item) => item.status === 'APPROVED').length,
-    PUBLISHED: reports.filter((item) => item.status === 'PUBLISHED').length,
-    ARCHIVED: reports.filter((item) => item.status === 'ARCHIVED').length,
-  }), [reports]);
+  const counts = useMemo(() => {
+    const published = reports.filter((item) => item.status === 'PUBLISHED');
+    const recurringStudents = new Set(
+      published
+        .filter((item) => (item.reinforcement_points || '').length > 20)
+        .map((item) => item.student_id),
+    );
+
+    return {
+      generated: reports.length,
+      review: reports.filter((item) => item.status === 'DRAFT' || item.status === 'APPROVED').length,
+      published: published.length,
+      recurring: recurringStudents.size,
+    };
+  }, [reports]);
+
+  const progress = useMemo(() => {
+    if (!selected) return null;
+    const studentReports = reports
+      .filter((item) => item.student_id === selected.student_id && item.status === 'PUBLISHED')
+      .sort((a, b) => new Date(b.published_at || b.updated_at).getTime() - new Date(a.published_at || a.updated_at).getTime());
+
+    return {
+      total: studentReports.length,
+      last: studentReports[0]?.published_at || studentReports[0]?.updated_at,
+      evolution: selected.learning_progress || studentReports[0]?.learning_progress || 'Ainda sem evolucao publicada.',
+      reinforcement: selected.reinforcement_points || studentReports[0]?.reinforcement_points || 'Ainda sem ponto recorrente.',
+    };
+  }, [reports, selected]);
+
+  const alerts = useMemo(() => {
+    const drafts = reports.filter((item) => item.status === 'DRAFT').length;
+    const recurring = reports.filter((item) => item.status === 'PUBLISHED' && (item.reinforcement_points || '').length > 80).slice(0, 3);
+    const result = [];
+    if (drafts) result.push(`${drafts} relatorio(s) aguardando revisao antes de aparecer para o aluno.`);
+    recurring.forEach((item) => result.push(`${item.students?.full_name || 'Aluno'} tem ponto de reforco recorrente em ${subjectOf(item)}.`));
+    if (!result.length) result.push('Nenhum alerta pedagogico critico no momento.');
+    return result;
+  }, [reports]);
 
   async function generate(event: FormEvent) {
     event.preventDefault();
     if (!form.lesson_id) {
-      setError('Selecione uma aula para gerar o relatório.');
+      setError('Selecione uma aula para gerar o relatorio.');
       return;
     }
     setSaving('generate');
@@ -110,8 +177,9 @@ export function TeacherSmartLessonPanel() {
       });
       await load();
       setSelectedId(data.report.id);
+      setForm({ lesson_id: form.lesson_id, taught_content: '', class_notes: '', homework: '' });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao gerar relatório.');
+      setError(err instanceof Error ? err.message : 'Falha ao gerar relatorio.');
     } finally {
       setSaving('');
     }
@@ -130,7 +198,7 @@ export function TeacherSmartLessonPanel() {
       setReports((current) => current.map((item) => item.id === data.report.id ? data.report : item));
       setSelectedId(data.report.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao salvar relatório.');
+      setError(err instanceof Error ? err.message : 'Falha ao salvar relatorio.');
     } finally {
       setSaving('');
     }
@@ -146,10 +214,18 @@ export function TeacherSmartLessonPanel() {
       setSelectedId('');
       setDraft({});
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao excluir relatório.');
+      setError(err instanceof Error ? err.message : 'Falha ao excluir relatorio.');
     } finally {
       setSaving('');
     }
+  }
+
+  async function copyGuardianMessage() {
+    const message = draft.guardian_message || draft.parent_message || selected?.guardian_message || selected?.parent_message || '';
+    if (!message) return;
+    await navigator.clipboard.writeText(message);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1800);
   }
 
   return (
@@ -158,34 +234,45 @@ export function TeacherSmartLessonPanel() {
         <div className="smart-header">
           <div>
             <span className="eyebrow">Aula Inteligente</span>
-            <h1>Relatórios pedagógicos com revisão do professor</h1>
-            <p>A IA gera apenas um rascunho. Você revisa, aprova e publica manualmente.</p>
+            <h1>Relatorios pedagogicos com revisao do professor</h1>
+            <p>A IA organiza poucas linhas em um relatorio claro. Voce revisa, aprova e publica manualmente.</p>
           </div>
         </div>
         <StatusMessage error={error} loading={loading} />
 
         <div className="smart-metrics">
-          <article><span>Rascunhos</span><strong>{counts.DRAFT}</strong></article>
-          <article><span>Aprovados</span><strong>{counts.APPROVED}</strong></article>
-          <article><span>Publicados</span><strong>{counts.PUBLISHED}</strong></article>
-          <article><span>Arquivados</span><strong>{counts.ARCHIVED}</strong></article>
+          <article><span>Relatorios gerados</span><strong>{counts.generated}</strong></article>
+          <article><span>Aguardando revisao</span><strong>{counts.review}</strong></article>
+          <article><span>Publicados</span><strong>{counts.published}</strong></article>
+          <article><span>Alunos com dificuldade recorrente</span><strong>{counts.recurring}</strong></article>
         </div>
 
+        <section className="smart-alerts">
+          <h2>Alertas pedagogicos</h2>
+          {alerts.map((alert) => <p key={alert}>{alert}</p>)}
+        </section>
+
         <form className="smart-generate-card" onSubmit={generate}>
-          <h2>Gerar relatório da aula</h2>
+          <div>
+            <h2>Gerar relatorio da aula</h2>
+            <p>Escreva poucas linhas. A IA organiza o relatorio para voce.</p>
+          </div>
           <select value={form.lesson_id} onChange={(event) => setForm({ ...form, lesson_id: event.target.value })} required>
-            <option value="">Selecione uma aula</option>
+            <option value="">Selecionar aula</option>
             {classes.map((item) => (
               <option value={item.id} key={item.id}>
                 {formatDate(item.class_date)} - {item.class_time.slice(0, 5)} - {item.students?.full_name || 'Aluno'} - {item.subject || 'Aula'}
               </option>
             ))}
           </select>
-          <input value={form.taught_content} onChange={(event) => setForm({ ...form, taught_content: event.target.value })} placeholder="Conteúdo trabalhado" />
-          <input value={form.observations} onChange={(event) => setForm({ ...form, observations: event.target.value })} placeholder="Observações do professor" />
+          <input value={form.taught_content} onChange={(event) => setForm({ ...form, taught_content: event.target.value })} placeholder="Conteudo trabalhado" />
+          <textarea
+            value={form.class_notes}
+            onChange={(event) => setForm({ ...form, class_notes: event.target.value })}
+            placeholder="Ex: Trabalhamos ligacao ionica. O aluno entendeu a parte principal, mas teve duvida em identificar cation e anion. Fizemos exercicios 1 a 4 e ficou tarefa 5 a 8."
+          />
           <input value={form.homework} onChange={(event) => setForm({ ...form, homework: event.target.value })} placeholder="Tarefa combinada" />
-          <textarea value={form.raw_transcript} onChange={(event) => setForm({ ...form, raw_transcript: event.target.value })} placeholder="Cole aqui a transcrição da aula ou escreva um resumo livre." />
-          <button className="side-primary" disabled={saving === 'generate'}>{saving === 'generate' ? 'Gerando...' : 'Gerar relatório com IA'}</button>
+          <button className="side-primary" disabled={saving === 'generate'}>{saving === 'generate' ? 'Gerando...' : 'Gerar relatorio em 10 segundos'}</button>
         </form>
 
         <div className="smart-filter-row">
@@ -197,7 +284,18 @@ export function TeacherSmartLessonPanel() {
         </div>
 
         <div className="smart-report-list">
-          {filtered.length === 0 && <p className="muted">Nenhum relatório encontrado.</p>}
+          {filtered.length === 0 && (
+            <div className="smart-demo-box">
+              <strong>Exemplos do modulo</strong>
+              {demoReports.map((report) => (
+                <article key={report.student}>
+                  <span>{report.student} - {report.subject}</span>
+                  <h3>{report.title}</h3>
+                  <p>{report.summary}</p>
+                </article>
+              ))}
+            </div>
+          )}
           {filtered.map((report) => (
             <button className={report.id === selected?.id ? 'active' : ''} type="button" key={report.id} onClick={() => setSelectedId(report.id)}>
               <span>
@@ -213,16 +311,27 @@ export function TeacherSmartLessonPanel() {
       <aside className="smart-editor">
         {!selected ? (
           <div className="empty-smart-editor">
-            <h2>Selecione ou gere um relatório</h2>
-            <p>Depois da geração, o conteúdo fica privado até você publicar.</p>
+            <h2>Selecione ou gere um relatorio</h2>
+            <p>Depois da geracao, o conteudo fica privado ate voce publicar.</p>
           </div>
         ) : (
           <>
             <div className="smart-editor-head">
               <span className={`smart-status ${statusTone(selected.status)}`}>{statusLabels[selected.status]}</span>
-              <h2>Revisão do relatório</h2>
+              <h2>Revisao do relatorio</h2>
               <p>{selected.students?.full_name || 'Aluno'} - {subjectOf(selected)}</p>
             </div>
+            {progress && (
+              <section className="smart-progress-card">
+                <h3>Progresso do aluno</h3>
+                <dl>
+                  <dt>Total publicado</dt><dd>{progress.total}</dd>
+                  <dt>Ultima aula publicada</dt><dd>{formatDateTime(progress.last)}</dd>
+                  <dt>Principal evolucao</dt><dd>{progress.evolution}</dd>
+                  <dt>Ponto para reforcar</dt><dd>{progress.reinforcement}</dd>
+                </dl>
+              </section>
+            )}
             <div className="smart-editor-fields">
               {fields.map(([name, label]) => (
                 <label key={name}>
@@ -234,14 +343,23 @@ export function TeacherSmartLessonPanel() {
                   )}
                 </label>
               ))}
+              <label>
+                <span>Assinatura do professor</span>
+                <input value={(draft.teacher_signature as string) || ''} onChange={(event) => setDraft({ ...draft, teacher_signature: event.target.value })} />
+              </label>
+            </div>
+            <div className="smart-copy-row">
+              <button type="button" className="outline-action" onClick={copyGuardianMessage}>Copiar mensagem para WhatsApp</button>
+              {copied && <span>Mensagem copiada.</span>}
             </div>
             <div className="smart-actions">
               <button type="button" className="outline-action" onClick={() => save('DRAFT')} disabled={!!saving}>Salvar rascunho</button>
               <button type="button" className="outline-action" onClick={() => save('APPROVED')} disabled={!!saving}>Aprovar</button>
-              <button type="button" className="side-primary" onClick={() => save('PUBLISHED')} disabled={!!saving}>Publicar relatório</button>
+              <button type="button" className="side-primary" onClick={() => save('PUBLISHED')} disabled={!!saving}>Publicar relatorio</button>
               <button type="button" className="outline-action" onClick={() => save('ARCHIVED')} disabled={!!saving}>Arquivar</button>
               <button type="button" className="outline-action danger-outline" onClick={remove} disabled={!!saving}>Excluir</button>
             </div>
+            <pre className="smart-report-preview">{reportText(draft)}</pre>
           </>
         )}
       </aside>
@@ -257,33 +375,42 @@ export function StudentLessonHistoryPanel() {
   useEffect(() => {
     apiFetch<{ reports: LessonReport[] }>('/api/student/lesson-reports')
       .then((data) => setReports(data.reports))
-      .catch((err) => setError(err instanceof Error ? err.message : 'Falha ao carregar histórico.'))
+      .catch((err) => setError(err instanceof Error ? err.message : 'Falha ao carregar historico.'))
       .finally(() => setLoading(false));
   }, []);
 
   return (
     <div className="student-history-page">
       <div className="student-greeting">
-        <h1>Histórico de Aulas</h1>
-        <p>Relatórios publicados pelo professor aparecem aqui.</p>
+        <h1>Historico de Aulas</h1>
+        <p>Veja em timeline apenas os relatorios publicados pelo professor.</p>
       </div>
       <StatusMessage error={error} loading={loading} />
-      <div className="student-report-grid">
-        {reports.length === 0 && <div className="empty-smart-editor"><h2>Nenhum relatório publicado</h2><p>Quando o professor publicar uma aula, ela aparecerá nesta área.</p></div>}
+      <div className="student-timeline">
+        {reports.length === 0 && (
+          <div className="empty-smart-editor">
+            <h2>Nenhum relatorio publicado</h2>
+            <p>Quando o professor publicar uma aula, ela aparecera nesta area.</p>
+          </div>
+        )}
         {reports.map((report) => (
-          <article className="student-report-card" key={report.id}>
-            <div>
-              <span>{formatDate(report.class_schedules?.class_date)}</span>
-              <h2>{report.title}</h2>
-              <p>{report.summary}</p>
+          <article className="student-timeline-card" key={report.id}>
+            <div className="timeline-dot" />
+            <div className="student-report-card">
+              <div>
+                <span>{formatDate(report.class_schedules?.class_date)}</span>
+                <h2>{report.title}</h2>
+                <p>{report.summary}</p>
+              </div>
+              <dl>
+                <dt>Conteudo trabalhado</dt><dd>{report.taught_content || 'Nao informado.'}</dd>
+                <dt>Evolucao percebida</dt><dd>{report.learning_progress || 'Nao informada.'}</dd>
+                <dt>Pontos para reforcar</dt><dd>{report.reinforcement_points || 'Nao informado.'}</dd>
+                <dt>Proxima aula sugerida</dt><dd>{report.next_lesson_suggestion || report.next_recommendation || 'Nao informado.'}</dd>
+                <dt>Tarefa</dt><dd>{report.homework || 'Nao informada.'}</dd>
+              </dl>
+              <small>{report.teacher_signature || 'Relatorio revisado pelo professor.'} Publicado em {formatDateTime(report.published_at)}.</small>
             </div>
-            <dl>
-              <dt>Conteúdo ensinado</dt><dd>{report.taught_content || 'Não informado.'}</dd>
-              <dt>Pontos para reforçar</dt><dd>{report.reinforcement_points || 'Não informado.'}</dd>
-              <dt>Tarefa</dt><dd>{report.homework || 'Não informada.'}</dd>
-              <dt>Próximos passos</dt><dd>{report.next_recommendation || 'Não informado.'}</dd>
-            </dl>
-            <small>Os relatórios gerados pela IA são sugestões produzidas com base nas informações fornecidas pelo professor. O professor é o responsável pela revisão, aprovação e publicação do conteúdo.</small>
           </article>
         ))}
       </div>

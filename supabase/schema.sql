@@ -87,11 +87,16 @@ create table public.lesson_reports (
   homework text,
   next_recommendation text,
   parent_message text,
+  learning_progress text,
+  next_lesson_suggestion text,
+  guardian_message text,
+  teacher_signature text,
   raw_transcript text,
   status text not null default 'DRAFT' check (status in ('DRAFT', 'APPROVED', 'PUBLISHED', 'ARCHIVED')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  published_at timestamptz
+  published_at timestamptz,
+  reviewed_at timestamptz
 );
 
 create table public.activities (
