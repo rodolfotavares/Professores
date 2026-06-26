@@ -85,7 +85,7 @@ const supportAnswers = [
   },
   {
     keywords: ['agenda', 'aula', 'horario', 'horário', 'presenca', 'presença'],
-    answer: 'A agenda nasce dos dias e horários cadastrados no aluno. O professor pode editar a agenda em Alunos ou Agenda, e o aluno visualiza os próximos encontros na aba Agenda.',
+    answer: 'A agenda nasce dos dias e horarios cadastrados no aluno. O professor acompanha e ajusta aulas no cadastro do aluno, e o aluno visualiza os proximos encontros no Inicio do portal.',
   },
   {
     keywords: ['atividade', 'tarefa', 'corrigir', 'nota', 'feedback'],
@@ -109,12 +109,12 @@ function supportReply(question: string) {
   const normalized = question.toLowerCase();
   const match = supportAnswers.find((item) => item.keywords.some((keyword) => normalized.includes(keyword)));
   if (match) return match.answer;
-  return 'Posso ajudar somente com funções do LuminaAI: alunos, agenda, atividades, notas, frequência, mensagens, financeiro, instalação e configurações.';
+  return 'Posso ajudar somente com funcoes do LuminaAI: alunos, aulas, atividades, mensagens, financeiro, instalacao, suporte e configuracoes.';
 }
 
 export function TeacherSupportPanel() {
   const [messages, setMessages] = useState([
-    { role: 'assistant', text: 'Olá! Sou o assistente do LuminaAI. Posso ajudar com funções do app, como alunos, agenda, atividades, notas e mensagens.' },
+    { role: 'assistant', text: 'Ola! Sou o assistente do LuminaAI. Posso ajudar com funcoes do app, como alunos, aulas, atividades, mensagens e financeiro.' },
   ]);
   const [question, setQuestion] = useState('');
 
@@ -444,22 +444,18 @@ export function TeacherSettingsPanel() {
       <GlassCard className="support-shortcuts-card">
         <div className="glass-card-head">
           <div>
-            <span className="eyebrow">Ajuda e histórico</span>
-            <strong>Áreas secundárias</strong>
+            <span className="eyebrow">Ajuda</span>
+            <strong>Atalhos uteis</strong>
           </div>
         </div>
         <div className="support-shortcuts">
-          <Link className="support-shortcut" href="/student/tutorial">
+          <Link className="support-shortcut" href="/teacher/tutorial">
             <strong>Tutorial de instalação</strong>
             <small>Como colocar o app na tela inicial.</small>
           </Link>
-          <Link className="support-shortcut" href="/student/grades">
-            <strong>Notas</strong>
-            <small>Veja notas e feedbacks recebidos.</small>
-          </Link>
-          <Link className="support-shortcut" href="/student/frequency">
-            <strong>Frequência</strong>
-            <small>Acompanhe presenças e confirmações.</small>
+          <Link className="support-shortcut" href="/teacher/support">
+            <strong>Suporte</strong>
+            <small>Contato e assistente de ajuda do LuminaAI.</small>
           </Link>
         </div>
       </GlassCard>

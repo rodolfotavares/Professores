@@ -4,8 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '@/lib/fetcher';
 import { EmptyState, StatusMessage } from '@/components/PanelState';
 import { MessageThread } from '@/components/MessageThread';
-import { downloadScheduleIcs, requestReminderPermission } from '@/lib/calendar-export';
-import type { Activity, ActivitySubmission, ClassSchedule, LessonReport, Message, Student } from '@/types';
+import type { Activity, ActivitySubmission, LessonReport, Message, Student } from '@/types';
 
 function usePanelLoad(load: () => Promise<void>, interval = 15000) {
   useEffect(() => {
@@ -47,143 +46,6 @@ function statusLabel(status?: string) {
     inactive: 'Inativo',
   };
   return status ? labels[status] || status : '';
-}
-
-function formatDate(date?: string) {
-  if (!date) return 'Data não definida';
-  return new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(new Date(`${date}T00:00:00`));
-}
-
-function shortDateParts(date?: string) {
-  if (!date) return { day: '--', month: '---' };
-  const parsed = new Date(`${date}T00:00:00`);
-  return {
-    day: new Intl.DateTimeFormat('pt-BR', { day: '2-digit' }).format(parsed),
-    month: new Intl.DateTimeFormat('pt-BR', { month: 'short' }).format(parsed).replace('.', ''),
-  };
-}
-
-export function StudentDashboard() {
-  const [student, setStudent] = useState<Student | null>(null);
-  const [classes, setClasses] = useState<ClassSchedule[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [submissions, setSubmissions] = useState<ActivitySubmission[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  async function load() {
-    try {
-      setError('');
-      const [me, schedule, activityData] = await Promise.all([
-        apiFetch<{ student: Student }>('/api/student/me'),
-        apiFetch<{ classes: ClassSchedule[] }>('/api/student/schedule'),
-        apiFetch<{ activities: Activity[]; submissions: ActivitySubmission[] }>('/api/student/activities'),
-      ]);
-      setStudent(me.student);
-      setClasses(schedule.classes);
-      setActivities(activityData.activities);
-      setSubmissions(activityData.submissions);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao carregar painel.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  usePanelLoad(load);
-
-  const pending = activities.filter((activity) => !submissions.some((submission) => submission.activity_id === activity.id));
-
-  return (
-    <div className="stack">
-      <PanelHeader eyebrow="Início" title="Portal do Aluno" text="Veja suas aulas, tarefas e recados em um só lugar." />
-      <StatusMessage error={error} loading={loading} />
-      <div className="grid grid-3">
-        <div className="metric"><p className="muted">Aluno</p><h2>{student?.full_name || '...'}</h2></div>
-        <div className="metric"><p className="muted">Aulas</p><h2>{classes.length}</h2></div>
-        <div className="metric"><p className="muted">Pendentes</p><h2>{pending.length}</h2></div>
-      </div>
-    </div>
-  );
-}
-
-export function StudentSchedulePanel() {
-  const [classes, setClasses] = useState<ClassSchedule[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  async function load() {
-    try {
-      setError('');
-      const data = await apiFetch<{ classes: ClassSchedule[] }>('/api/student/schedule');
-      setClasses(data.classes);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao carregar agenda.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  usePanelLoad(load);
-
-  const sortedClasses = [...classes].sort((a, b) => `${a.class_date} ${a.class_time}`.localeCompare(`${b.class_date} ${b.class_time}`));
-  const nextClass = sortedClasses.find((item) => item.status === 'scheduled') || sortedClasses[0];
-  const confirmed = classes.filter((item) => item.student_confirmed).length;
-  const scheduled = classes.filter((item) => item.status === 'scheduled').length;
-  const groupedClasses = sortedClasses.reduce<Record<string, ClassSchedule[]>>((groups, item) => {
-    const key = item.class_date || 'sem-data';
-    groups[key] = groups[key] || [];
-    groups[key].push(item);
-    return groups;
-  }, {});
-
-  async function confirm(id: string) {
-    await apiFetch(`/api/student/schedule/${id}/confirm`, { method: 'PATCH' });
-    await load();
-  }
-
-  return (
-    <div className="stack">
-      <PanelHeader eyebrow="Calendário" title="Agenda" text="Veja exatamente quando suas aulas acontecerão." />
-      <StatusMessage error={error} loading={loading} />
-      <div className="row">
-        <button className="btn student" onClick={() => downloadScheduleIcs(classes, 'agenda-lumina-aluno.ics', 'Aluno')}>Exportar agenda</button>
-        <button className="btn student" onClick={requestReminderPermission}>Ativar lembretes</button>
-      </div>
-      <div className="grid grid-3">
-        <div className="metric"><p className="muted">Aulas agendadas</p><h2>{scheduled}</h2></div>
-        <div className="metric"><p className="muted">Confirmadas</p><h2>{confirmed}</h2></div>
-        <div className="metric"><p className="muted">Próxima aula</p><h2>{nextClass?.class_time || '--:--'}</h2></div>
-      </div>
-      {!loading && classes.length === 0 && <EmptyState title="Nenhuma aula agendada" text="Quando o professor criar aulas, elas aparecem aqui." />}
-      <div className="student-agenda">
-        {Object.entries(groupedClasses).map(([date, items]) => (
-          <section className="agenda-day-group card" key={date}>
-            <div className="agenda-day-title">
-              <span>{formatDate(date)}</span>
-              <small>{items.length} aula{items.length > 1 ? 's' : ''}</small>
-            </div>
-            {items.map((item) => {
-              const parts = shortDateParts(item.class_date);
-              return (
-                <div className="agenda-class-row" key={item.id}>
-                  <div className="agenda-date-pill">
-                    <strong>{parts.day}</strong>
-                    <span>{parts.month}</span>
-                  </div>
-                  <div className="agenda-class-info">
-                    <strong>{item.subject || 'Aula'}</strong>
-                    <p>{item.class_time || 'Horário não definido'} · {statusLabel(item.status)}</p>
-                  </div>
-                  {item.student_confirmed ? <span className="badge">Confirmada</span> : <button className="btn student" onClick={() => confirm(item.id)}>Confirmar presença</button>}
-                </div>
-              );
-            })}
-          </section>
-        ))}
-      </div>
-    </div>
-  );
 }
 
 function reportSubject(report: LessonReport) {
@@ -247,7 +109,7 @@ function StudentActivitiesEvolution({ reports, pending, completed, expired }: { 
               <p>Pontuação de domínio por aula (0 a 100)</p>
             </div>
             <select value="12" aria-label="Filtro de aulas" onChange={() => undefined}>
-              <option>Últimas 12 aulas</option>
+              <option>Ultimas 12 aulas</option>
             </select>
           </div>
           {points.length ? (
@@ -397,47 +259,6 @@ export function StudentActivitiesPanel() {
         );
       })}
       </section>
-    </div>
-  );
-}
-
-function ActivityChart({ pending, completed, expired }: { pending: number; completed: number; expired: number }) {
-  const total = pending + completed + expired;
-  const completedDeg = total ? (completed / total) * 360 : 0;
-  const pendingDeg = total ? (pending / total) * 360 : 0;
-  const chartStyle = {
-    background: total
-      ? `conic-gradient(#084eb8 0 ${completedDeg}deg, #0d6efd ${completedDeg}deg ${completedDeg + pendingDeg}deg, #8bbcff ${completedDeg + pendingDeg}deg 360deg)`
-      : 'conic-gradient(#d7e4f7 0 360deg)',
-  };
-
-  return (
-    <div className="card activity-chart">
-      <div className="chart-donut" style={chartStyle}>
-        <div>
-          <strong>{total}</strong>
-          <span>tarefas</span>
-        </div>
-      </div>
-      <div className="chart-summary">
-        <span className="eyebrow">Resumo das atividades</span>
-        <h2>Progresso das tarefas</h2>
-        <div className="chart-legend">
-          <ChartLegend label="Concluídas" value={completed} tone="strong" />
-          <ChartLegend label="Pendentes" value={pending} tone="main" />
-          <ChartLegend label="Expiradas" value={expired} tone="soft" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ChartLegend({ label, value, tone }: { label: string; value: number; tone: 'strong' | 'main' | 'soft' }) {
-  return (
-    <div className="chart-legend-item">
-      <span className={`chart-dot ${tone}`} />
-      <strong>{value}</strong>
-      <small>{label}</small>
     </div>
   );
 }
