@@ -1,11 +1,11 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '@/lib/fetcher';
 import { EmptyState, StatusMessage } from '@/components/PanelState';
 import { MessageThread } from '@/components/MessageThread';
 import { downloadScheduleIcs, requestReminderPermission } from '@/lib/calendar-export';
-import type { Activity, ActivitySubmission, ClassSchedule, Message, Student } from '@/types';
+import type { Activity, ActivitySubmission, ClassSchedule, LessonReport, Message, Student } from '@/types';
 
 function usePanelLoad(load: () => Promise<void>, interval = 15000) {
   useEffect(() => {
@@ -186,9 +186,108 @@ export function StudentSchedulePanel() {
   );
 }
 
+function reportSubject(report: LessonReport) {
+  return report.class_schedules?.subject || report.students?.subject || 'Aula';
+}
+
+function scoreOfReport(report: LessonReport, index: number) {
+  if (typeof report.learning_score === 'number') return Math.max(0, Math.min(100, report.learning_score));
+  const text = `${report.learning_progress || ''} ${report.reinforcement_points || ''}`.toLowerCase();
+  if (text.includes('dificuldade recorrente')) return Math.max(25, 56 - index * 3);
+  if (text.includes('duvida') || text.includes('dificuldade')) return 58;
+  return Math.min(86, 64 + index * 4);
+}
+
+function StudentActivitiesEvolution({ reports, pending, completed, expired }: { reports: LessonReport[]; pending: number; completed: number; expired: number }) {
+  const chronological = useMemo(() => [...reports]
+    .sort((a, b) => new Date(a.published_at || a.updated_at).getTime() - new Date(b.published_at || b.updated_at).getTime())
+    .slice(-12), [reports]);
+  const points = chronological.map((report, index) => ({
+    report,
+    score: scoreOfReport(report, index),
+    x: chronological.length === 1 ? 50 : (index / (chronological.length - 1)) * 100,
+    y: 100 - scoreOfReport(report, index),
+  }));
+  const path = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(' ');
+  const last = points[points.length - 1];
+  const previous = points[points.length - 2];
+  const delta = last && previous ? last.score - previous.score : 0;
+  const subjectCount = new Set(reports.map(reportSubject)).size;
+  const reinforcementCount = reports.filter((report) => `${report.learning_progress || ''} ${report.reinforcement_points || ''}`.toLowerCase().includes('dificuldade')).length;
+  const completionRate = pending + completed + expired ? Math.round((completed / (pending + completed + expired)) * 100) : 0;
+  const participation = pending + completed + expired ? Math.round(((completed + pending * 0.45) / (pending + completed + expired)) * 100) : 0;
+
+  return (
+    <section className="student-activity-evolution">
+      <div className="student-evolution-title">
+        <div>
+          <h1>Evolução do aluno <span>IA</span></h1>
+          <p>Análise inteligente baseada nos relatórios de aula e nas atividades.</p>
+        </div>
+      </div>
+      <div className="student-evolution-kpis">
+        <article className="student-profile-kpi">
+          <span>AB</span>
+          <div>
+            <strong>{reports[0]?.students?.full_name || 'Aluno'}</strong>
+            <p>Matérias acompanhadas: {subjectCount || 0}</p>
+            <small>Total de aulas analisadas: {reports.length}</small>
+          </div>
+        </article>
+        <article><small>Evolução geral</small><strong>{last ? `${last.score}%` : '--'}</strong><p>{delta >= 0 ? 'Evolução positiva' : 'Queda por dúvida recorrente'}</p></article>
+        <article><small>Participação</small><strong>{participation}%</strong><p>Interação com tarefas</p></article>
+        <article><small>Tarefas entregues</small><strong>{completionRate}%</strong><p>Entregas registradas</p></article>
+        <article><small>Pontos para reforçar</small><strong>{reinforcementCount}</strong><p>Habilidades com atenção</p></article>
+      </div>
+      <div className="student-evolution-layout">
+        <article className="student-evolution-main-chart">
+          <div className="chart-panel-head">
+            <div>
+              <h2>Evolução geral ao longo do tempo</h2>
+              <p>Pontuação de domínio por aula (0 a 100)</p>
+            </div>
+            <select value="12" aria-label="Filtro de aulas" onChange={() => undefined}>
+              <option>Últimas 12 aulas</option>
+            </select>
+          </div>
+          {points.length ? (
+            <svg viewBox="0 0 100 56" preserveAspectRatio="none" aria-label="Gráfico de evolução">
+              <path className="chart-grid" d="M0 8 H100 M0 20 H100 M0 32 H100 M0 44 H100" />
+              <path className="chart-area" d={`${path} L 100 56 L 0 56 Z`} />
+              <path className="chart-line" d={path} />
+              {points.map((point, index) => (
+                <g key={point.report.id}>
+                  <circle cx={point.x} cy={point.y * 0.56} r="1.6" />
+                  <text x={point.x} y={Math.max(5, point.y * 0.56 - 4)}>{point.score}</text>
+                  <text className="chart-label" x={point.x} y="54">{`Aula ${index + 1}`}</text>
+                </g>
+              ))}
+            </svg>
+          ) : (
+            <div className="empty-smart-editor"><h2>Sem evolução ainda</h2><p>Quando o professor publicar relatórios, o gráfico aparecerá aqui.</p></div>
+          )}
+        </article>
+        <article className="student-ai-analysis">
+          <h2>Análise da IA</h2>
+          <div>
+            <p>{last?.report.learning_evidence || 'A IA ainda precisa de relatórios publicados para medir a evolução com sinceridade.'}</p>
+            <strong>Critério de leitura:</strong>
+            <ul>
+              <li>Dúvidas recorrentes reduzem a pontuação.</li>
+              <li>Dúvidas que desaparecem aumentam a evolução.</li>
+              <li>Novas dúvidas deixam a análise mais cautelosa.</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+    </section>
+  );
+}
+
 export function StudentActivitiesPanel() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [submissions, setSubmissions] = useState<ActivitySubmission[]>([]);
+  const [reports, setReports] = useState<LessonReport[]>([]);
   const [expandedId, setExpandedId] = useState('');
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [files, setFiles] = useState<Record<string, File | null>>({});
@@ -199,9 +298,13 @@ export function StudentActivitiesPanel() {
   async function load() {
     try {
       setError('');
-      const data = await apiFetch<{ activities: Activity[]; submissions: ActivitySubmission[] }>('/api/student/activities');
+      const [data, reportData] = await Promise.all([
+        apiFetch<{ activities: Activity[]; submissions: ActivitySubmission[] }>('/api/student/activities'),
+        apiFetch<{ reports: LessonReport[] }>('/api/student/lesson-reports'),
+      ]);
       setActivities(data.activities);
       setSubmissions(data.submissions);
+      setReports(reportData.reports);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao carregar atividades.');
     } finally {
@@ -244,14 +347,22 @@ export function StudentActivitiesPanel() {
     <div className="stack">
       <PanelHeader eyebrow="Tarefas" title="Atividades" text="Abra uma tarefa para responder e anexar arquivos." />
       <StatusMessage error={error} loading={loading} />
-      <ActivityChart pending={activityStats.pending} completed={activityStats.completed} expired={activityStats.expired} />
+      <StudentActivitiesEvolution reports={reports} pending={activityStats.pending} completed={activityStats.completed} expired={activityStats.expired} />
       {!loading && activities.length === 0 && <EmptyState title="Nenhuma atividade" text="Quando o professor publicar atividades, elas aparecem aqui." />}
+      <section className="student-activities-workspace">
+        <div className="student-activities-title">
+          <div>
+            <h2>Atividades</h2>
+            <p>Abra uma tarefa para ler, responder, editar sua resposta e anexar arquivos.</p>
+          </div>
+          <span>{activities.length} tarefa{activities.length === 1 ? '' : 's'}</span>
+        </div>
       {activities.map((activity) => {
         const submission = submissions.find((item) => item.activity_id === activity.id);
         const expanded = expandedId === activity.id;
         const expired = !submission && activity.due_date ? new Date() > new Date(`${activity.due_date}T23:59:59`) : false;
         return (
-          <div className={`card activity-task ${expanded ? 'expanded' : ''}`} key={activity.id}>
+          <div className={`card activity-task student-activity-expand ${expanded ? 'expanded' : ''}`} key={activity.id}>
             <button className="activity-task-head" type="button" onClick={() => setExpandedId(expanded ? '' : activity.id)}>
               <span>
                 <strong>{activity.title}</strong>
@@ -275,7 +386,7 @@ export function StudentActivitiesPanel() {
                   </div>
                 ) : (
                   <div className="stack">
-                    <label className="label">Resposta<textarea className="input textarea" value={answers[activity.id] || ''} onChange={(e) => setAnswers((current) => ({ ...current, [activity.id]: e.target.value }))} placeholder="Digite sua resposta aqui" /></label>
+                    <label className="label">Resposta<textarea className="input textarea" value={answers[activity.id] || ''} onChange={(e) => setAnswers((current) => ({ ...current, [activity.id]: e.target.value }))} placeholder="Escreva sua resposta com calma. Você pode editar antes de entregar." /></label>
                     <label className="label">Arquivo da resposta<input className="input" type="file" onChange={(e) => setFiles((current) => ({ ...current, [activity.id]: e.target.files?.[0] || null }))} /></label>
                     <button className="btn student" disabled={savingId === activity.id} onClick={() => submit(activity.id)}>{savingId === activity.id ? 'Enviando...' : 'Entregar atividade'}</button>
                   </div>
@@ -285,6 +396,7 @@ export function StudentActivitiesPanel() {
           </div>
         );
       })}
+      </section>
     </div>
   );
 }

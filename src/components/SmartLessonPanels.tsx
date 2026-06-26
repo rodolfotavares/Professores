@@ -457,7 +457,6 @@ export function StudentLessonHistoryPanel() {
         <p>Veja em timeline apenas os relatorios publicados pelo professor.</p>
       </div>
       <StatusMessage error={error} loading={loading} />
-      <StudentEvolutionChart reports={reports} />
       <div className="student-timeline">
         {reports.length === 0 && (
           <div className="empty-smart-editor">

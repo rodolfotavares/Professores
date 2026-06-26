@@ -674,6 +674,296 @@ button:disabled {
   background: linear-gradient(180deg, var(--blue-soft-2), white);
 }
 
+.student-activity-evolution {
+  display: grid;
+  gap: 18px;
+}
+
+.student-evolution-title h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #071832;
+  font-size: clamp(30px, 4vw, 44px);
+}
+
+.student-evolution-title h1 span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 0 10px;
+  background: #ede9fe;
+  color: #7c3aed;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.student-evolution-title p {
+  margin: 6px 0 0;
+  color: #526174;
+  font-size: 17px;
+}
+
+.student-evolution-kpis {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.6fr) repeat(4, minmax(170px, 1fr));
+  gap: 14px;
+}
+
+.student-evolution-kpis article,
+.student-evolution-main-chart,
+.student-ai-analysis,
+.student-activities-workspace {
+  border: 1px solid #dfe7f1;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 46px rgba(16, 40, 82, 0.07);
+}
+
+.student-evolution-kpis article {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  min-height: 136px;
+  padding: 18px 20px;
+}
+
+.student-evolution-kpis article small {
+  color: #071832;
+  font-weight: 900;
+}
+
+.student-evolution-kpis article > strong {
+  color: #0b64e9;
+  font-size: 36px;
+  line-height: 1;
+}
+
+.student-evolution-kpis article p {
+  margin: 0;
+  color: #526174;
+  line-height: 1.45;
+}
+
+.student-profile-kpi {
+  grid-template-columns: 78px minmax(0, 1fr);
+  align-items: center;
+}
+
+.student-profile-kpi span {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+  color: #fff;
+  font-size: 25px;
+  font-weight: 950;
+}
+
+.student-profile-kpi div strong {
+  color: #071832;
+  font-size: 22px;
+}
+
+.student-evolution-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.38fr);
+  gap: 16px;
+}
+
+.student-evolution-main-chart {
+  display: grid;
+  gap: 16px;
+  min-height: 390px;
+  padding: 22px;
+}
+
+.chart-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.chart-panel-head h2,
+.student-ai-analysis h2,
+.student-activities-title h2 {
+  margin: 0;
+  color: #071832;
+}
+
+.chart-panel-head p,
+.student-activities-title p {
+  margin: 6px 0 0;
+  color: #526174;
+}
+
+.chart-panel-head select {
+  min-height: 42px;
+  border: 1px solid #d7e1ee;
+  border-radius: 10px;
+  background: #fff;
+  color: #071832;
+  padding: 0 12px;
+  font-weight: 800;
+}
+
+.student-evolution-main-chart svg {
+  width: 100%;
+  min-height: 290px;
+  overflow: visible;
+}
+
+.student-evolution-main-chart .chart-grid {
+  fill: none;
+  stroke: #dfe7f1;
+  stroke-width: 0.35;
+  stroke-dasharray: 1.5 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.student-evolution-main-chart .chart-area {
+  fill: rgba(124, 58, 237, 0.12);
+}
+
+.student-evolution-main-chart .chart-line {
+  fill: none;
+  stroke: #7c3aed;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.student-evolution-main-chart circle {
+  fill: #7c3aed;
+  stroke: #fff;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.student-evolution-main-chart text {
+  fill: #3b2392;
+  font-size: 4px;
+  font-weight: 900;
+  text-anchor: middle;
+}
+
+.student-evolution-main-chart .chart-label {
+  fill: #526174;
+  font-size: 3.6px;
+}
+
+.student-ai-analysis {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 22px;
+}
+
+.student-ai-analysis div {
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f4efff, #fff);
+  padding: 18px;
+}
+
+.student-ai-analysis p {
+  margin: 0 0 14px;
+  color: #203454;
+  line-height: 1.5;
+}
+
+.student-ai-analysis ul {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #526174;
+}
+
+.student-activities-workspace {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.student-activities-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.student-activities-title > span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  border-radius: 999px;
+  padding: 0 12px;
+  background: #eaf3ff;
+  color: #0b64e9;
+  font-weight: 900;
+}
+
+.student-activity-expand {
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.student-activity-expand::before {
+  background: #7c3aed;
+}
+
+.student-activity-expand .activity-task-head {
+  border-left-color: #7c3aed;
+  border-radius: 14px;
+}
+
+.student-activity-expand.expanded {
+  border-color: rgba(124, 58, 237, 0.32);
+  box-shadow: 0 16px 34px rgba(124, 58, 237, 0.08);
+}
+
+.student-activity-expand .activity-task-body {
+  background: linear-gradient(180deg, #faf7ff, #fff);
+}
+
+@media (max-width: 1180px) {
+  .student-evolution-kpis,
+  .student-evolution-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .student-profile-kpi {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .student-evolution-kpis {
+    gap: 10px;
+  }
+
+  .chart-panel-head,
+  .student-activities-title {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .student-evolution-main-chart {
+    min-height: 320px;
+    padding: 16px;
+  }
+
+  .student-evolution-main-chart svg {
+    min-height: 220px;
+  }
+}
+
 .finance-chart {
   display: grid;
   justify-items: center;
@@ -1346,7 +1636,7 @@ h2 {
 
 @media (max-width: 900px) {
   .marketing-page {
-    align-items: start;
+    align-items: flex-start;
     padding: 20px;
   }
 
@@ -3495,7 +3785,7 @@ select.input option {
   display: grid;
   grid-template-columns: 10px minmax(0, 1fr);
   gap: 10px;
-  align-items: start;
+  align-items: flex-start;
   padding: 10px;
   border-radius: 16px;
   color: #ffffff;
@@ -3555,7 +3845,7 @@ select.input option {
   }
 
   .marketing-page {
-    align-items: start;
+    align-items: flex-start;
   }
 }
 
@@ -4311,7 +4601,7 @@ select.input option {
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr);
   gap: 12px;
-  align-items: start;
+  align-items: flex-start;
 }
 
 .student-today-task input {
