@@ -41,7 +41,6 @@ export function StudentNav() {
       </div>
       <nav className="sidebar-nav icon-nav">
         <NavIcon href="/student" label="Início" icon="home" />
-        <NavIcon href="/student/schedule" label="Agenda" icon="calendar" />
         <NavIcon href="/student/activities" label="Atividades" icon="tasks" />
         <NavIcon href="/student/lesson-history" label="Histórico" icon="smart" />
         <NavIcon href="/student/messages" label="Mensagens" icon="message" />

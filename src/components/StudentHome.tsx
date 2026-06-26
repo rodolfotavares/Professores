@@ -170,7 +170,7 @@ export function StudentHome() {
               </div>
               <div className="continue-progress"><span style={{ width: `${item.progress}%` }} /></div>
               <em>{item.progress}%</em>
-              <a href={item.tone === 'blue' ? '/student/schedule' : '/student/activities'}>Continuar</a>
+              <a href={item.tone === 'blue' ? '/student/lesson-history' : '/student/activities'}>Continuar</a>
             </div>
           ))}
         </section>

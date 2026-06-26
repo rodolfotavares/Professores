@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
             title: 'Aula nas proximas 24h',
             message: `${item.subject || 'Aula'} as ${String(item.class_time).slice(0, 5)}`,
             type: 'schedule',
-            link: '/student/schedule',
+            link: '/student',
           });
         });
 
