@@ -8725,6 +8725,39 @@ select.input option {
   background: #071832;
 }
 
+.demo-link-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+  text-align: left;
+}
+
+.demo-link-list article {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid #dfe7f1;
+  border-radius: 14px;
+  background: rgba(248, 251, 255, 0.9);
+}
+
+.demo-link-list strong {
+  color: #071832;
+  font-size: 15px;
+}
+
+.demo-link-list span {
+  color: #53627d;
+  font-size: 14px;
+}
+
+.demo-link-list a {
+  color: #0b64e9;
+  font-size: 13px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
 .demo-app-page {
   display: grid;
   grid-template-columns: 224px minmax(0, 1fr);
