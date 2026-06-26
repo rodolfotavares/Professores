@@ -1,71 +1,132 @@
-const lessons = [
-  { day: 'Seg', title: 'Portugues', time: '08:00', tone: 'blue' },
-  { day: 'Ter', title: 'Ciencias', time: '10:00', tone: 'green' },
-  { day: 'Qua', title: 'Matematica', time: '14:00', tone: 'active' },
-  { day: 'Sex', title: 'Ingles', time: '16:00', tone: 'gold' },
+const week = [
+  { day: 'Seg', date: '22/06', lessons: [{ title: 'Portugues', time: '08:00', tone: 'blue' }] },
+  { day: 'Ter', date: '23/06', lessons: [{ title: 'Ciencias', time: '10:00', tone: 'green' }] },
+  { day: 'Qua', date: '24/06', lessons: [{ title: 'Matematica', time: '14:00', tone: 'active' }] },
+  { day: 'Qui', date: '25/06', lessons: [{ title: 'Geografia', time: '16:00', tone: 'purple' }] },
+  { day: 'Sex', date: '26/06', lessons: [{ title: 'Ingles', time: '16:00', tone: 'gold' }] },
 ];
 
-const scores = [52, 58, 63, 71, 78, 84];
+const activities = [
+  { title: 'Resolver exercicios sobre funcoes', status: 'Pendente', date: 'Hoje, 18:00' },
+  { title: 'Enviar resumo da aula', status: 'Em andamento', date: 'Amanha, 20:00' },
+  { title: 'Revisao de grafico', status: 'Corrigida', date: 'Nota 9,0' },
+];
+
+const nav = ['Inicio', 'Atividades', 'Historico', 'Mensagens', 'Perfil'];
 
 export default function DemoStudentPage() {
   return (
-    <main className="demo-app-page demo-student-page">
-      <aside className="demo-sidebar light">
-        <div className="demo-logo">L</div>
+    <main className="demo-app-page demo-real-page demo-student-page">
+      <aside className="demo-real-sidebar student">
+        <div className="demo-real-brand">
+          <div className="demo-logo">L</div>
+          <div>
+            <strong>LuminaAI</strong>
+            <span>Portal do aluno</span>
+          </div>
+        </div>
         <nav>
-          <span className="active">Inicio</span>
-          <span>Minha agenda</span>
-          <span>Atividades</span>
-          <span>Historico</span>
-          <span>Mensagens</span>
+          {nav.map((item) => <span className={item === 'Inicio' ? 'active' : ''} key={item}>{item}</span>)}
         </nav>
         <small>Ana Beatriz</small>
       </aside>
-      <section className="demo-main-panel">
-        <header className="demo-student-hero">
+
+      <section className="demo-real-main">
+        <header className="demo-real-topbar">
           <div>
-            <span className="demo-eyebrow">Portal do aluno</span>
+            <span className="demo-eyebrow">Portal do Aluno</span>
             <h1>Ola, Ana Beatriz</h1>
-            <p>Sua semana de estudos organizada em um so lugar.</p>
           </div>
-          <article>
-            <strong>Proxima aula</strong>
-            <span>Hoje, 14:00</span>
-            <p>Matematica com Prof. Camila Rocha</p>
-          </article>
+          <label>
+            <span>Buscar</span>
+            <input readOnly value="Buscar aulas, atividades, mensagens..." />
+          </label>
+          <div className="demo-user">Ana</div>
         </header>
-        <div className="demo-student-grid">
-          <section className="demo-student-calendar">
-            <h2>Esta semana</h2>
-            <div className="demo-lessons-grid">
-              {lessons.map((lesson) => (
-                <article className={lesson.tone} key={lesson.day}>
-                  <span>{lesson.day}</span>
-                  <strong>{lesson.title}</strong>
-                  <small>{lesson.time}</small>
-                </article>
-              ))}
+
+        <section className="demo-student-dashboard">
+          <div className="demo-student-main">
+            <div className="demo-summary-row">
+              <article>
+                <span>Proxima aula</span>
+                <strong>Matematica</strong>
+                <p>Hoje, 14:00 com Prof. Camila</p>
+              </article>
+              <article>
+                <span>Atividades pendentes</span>
+                <strong>2</strong>
+                <p>Toque para responder e anexar arquivos.</p>
+              </article>
+              <article>
+                <span>Seu progresso</span>
+                <strong>84%</strong>
+                <p>Evolucao positiva nas ultimas aulas.</p>
+              </article>
             </div>
-          </section>
-          <aside className="demo-right-panel student">
-            <h2>Para hoje</h2>
-            <label><input type="checkbox" readOnly /> Resolver exercicios sobre funcoes</label>
-            <label><input type="checkbox" readOnly /> Revisar grafico da aula</label>
-            <button className="demo-primary">Entrar na aula</button>
-          </aside>
-        </div>
-        <section className="demo-evolution-public">
-          <div>
-            <span className="demo-eyebrow">Evolucao por IA</span>
-            <h2>84%</h2>
-            <p>A pontuacao subiu porque duvidas anteriores deixaram de aparecer nos relatorios recentes.</p>
+
+            <section className="demo-real-card">
+              <div className="demo-section-head">
+                <div>
+                  <span className="demo-eyebrow">Semana de estudos</span>
+                  <h2>Aulas dentro do inicio</h2>
+                </div>
+                <button>Hoje</button>
+              </div>
+              <div className="demo-week-board">
+                {week.map((item) => (
+                  <article className={item.lessons[0]?.tone || ''} key={item.day}>
+                    <span>{item.day}</span>
+                    <small>{item.date}</small>
+                    {item.lessons.map((lesson) => (
+                      <div key={lesson.title}>
+                        <strong>{lesson.title}</strong>
+                        <em>{lesson.time}</em>
+                      </div>
+                    ))}
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="demo-real-card">
+              <div className="demo-section-head">
+                <div>
+                  <span className="demo-eyebrow">Atividades</span>
+                  <h2>Responder tarefas</h2>
+                </div>
+                <button>Ver todas</button>
+              </div>
+              <div className="demo-student-activities">
+                {activities.map((activity) => (
+                  <details key={activity.title}>
+                    <summary>
+                      <strong>{activity.title}</strong>
+                      <span>{activity.status}</span>
+                    </summary>
+                    <p>Campo de resposta, upload de arquivo e feedback ficam organizados dentro da atividade expandida.</p>
+                    <small>{activity.date}</small>
+                  </details>
+                ))}
+              </div>
+            </section>
           </div>
-          <svg viewBox="0 0 100 42" preserveAspectRatio="none" aria-label="Grafico de evolucao">
-            <path d="M0 34 L20 29 L40 24 L60 17 L80 12 L100 7" />
-            {scores.map((score, index) => (
-              <circle key={score} cx={index * 20} cy={42 - (score / 100) * 42} r="2" />
-            ))}
-          </svg>
+
+          <aside className="demo-real-card demo-student-aside">
+            <span className="demo-eyebrow">Aula de hoje</span>
+            <div className="demo-student-focus">
+              <span>AB</span>
+              <div>
+                <strong>Matematica</strong>
+                <p>Prof. Camila Rocha</p>
+              </div>
+            </div>
+            <p>Hoje, 14:00 - 14:50</p>
+            <button className="demo-primary">Confirmar aula</button>
+            <div className="demo-ai-card">
+              <span>Evolucao por IA</span>
+              <p>As duvidas sobre funcoes diminuiram nos ultimos relatorios.</p>
+            </div>
+          </aside>
         </section>
       </section>
     </main>

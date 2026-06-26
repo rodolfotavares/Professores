@@ -9,7 +9,7 @@ const demoLinks = [
   },
   {
     title: 'Demo do aluno',
-    description: 'Portal do aluno com agenda, atividades, progresso e mensagens.',
+    description: 'Portal do aluno com inicio, atividades, progresso e mensagens.',
     href: '/demo/aluno',
     url: 'https://professores-nine.vercel.app/demo/aluno',
   },
