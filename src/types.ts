@@ -26,7 +26,41 @@ export type ClassSchedule = {
   duration_minutes: number;
   status: 'scheduled' | 'completed' | 'cancelled' | 'absence';
   student_confirmed: boolean;
+  started_at?: string | null;
+  finished_at?: string | null;
+  actual_duration_minutes?: number | null;
+  teacher_present?: boolean;
+  smart_status?: 'not_started' | 'in_progress' | 'completed';
+  meeting_provider?: string | null;
+  meeting_url?: string | null;
+  external_meeting_id?: string | null;
   students?: { full_name: string } | null;
+};
+
+export type LessonReportStatus = 'DRAFT' | 'APPROVED' | 'PUBLISHED' | 'ARCHIVED';
+
+export type LessonReport = {
+  id: string;
+  lesson_id: string;
+  teacher_id: string;
+  student_id: string;
+  student_user_id: string | null;
+  title: string;
+  summary: string | null;
+  taught_content: string | null;
+  student_questions: string | null;
+  reinforcement_points: string | null;
+  exercises_done: string | null;
+  homework: string | null;
+  next_recommendation: string | null;
+  parent_message: string | null;
+  raw_transcript: string | null;
+  status: LessonReportStatus;
+  created_at: string;
+  updated_at: string;
+  published_at: string | null;
+  class_schedules?: { class_date: string; class_time: string; subject: string | null; duration_minutes: number | null; actual_duration_minutes: number | null } | null;
+  students?: { full_name: string; subject?: string | null } | null;
 };
 
 export type Activity = {

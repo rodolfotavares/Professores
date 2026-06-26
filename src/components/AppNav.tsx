@@ -19,6 +19,7 @@ export function TeacherNav() {
         <NavIcon href="/teacher" label="Início" icon="home" />
         <NavIcon href="/teacher/students" label="Alunos" icon="users" />
         <NavIcon href="/teacher/activities" label="Atividades" icon="tasks" />
+        <NavIcon href="/teacher/smart-lesson" label="Aula Inteligente" icon="smart" />
         <NavIcon href="/teacher/messages" label="Mensagens" icon="message" />
         <NavIcon href="/teacher/finance" label="Financeiro" icon="chart" />
         <NavIcon href="/teacher/support" label="Suporte" icon="support" />
@@ -42,6 +43,7 @@ export function StudentNav() {
         <NavIcon href="/student" label="Início" icon="home" />
         <NavIcon href="/student/schedule" label="Agenda" icon="calendar" />
         <NavIcon href="/student/activities" label="Atividades" icon="tasks" />
+        <NavIcon href="/student/lesson-history" label="Histórico" icon="smart" />
         <NavIcon href="/student/messages" label="Mensagens" icon="message" />
         <NavIcon href="/student/settings" label="Perfil" icon="users" />
       </nav>
@@ -138,7 +140,7 @@ function ShareIcon() {
   );
 }
 
-type IconName = 'home' | 'calendar' | 'users' | 'tasks' | 'chart' | 'message' | 'support';
+type IconName = 'home' | 'calendar' | 'users' | 'tasks' | 'chart' | 'message' | 'support' | 'smart';
 
 function Icon({ name }: { name: IconName }) {
   const common = { width: 19, height: 19, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
@@ -148,5 +150,6 @@ function Icon({ name }: { name: IconName }) {
   if (name === 'tasks') return <svg {...common}><path d="M9 11l2 2 4-5" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>;
   if (name === 'chart') return <svg {...common}><path d="M4 19V5" /><path d="M4 19h16" /><rect x="7" y="11" width="3" height="5" rx="1" /><rect x="12" y="7" width="3" height="9" rx="1" /><rect x="17" y="9" width="3" height="7" rx="1" /></svg>;
   if (name === 'support') return <svg {...common}><path d="M4 12a8 8 0 0 1 16 0" /><path d="M4 12v3a2 2 0 0 0 2 2h1v-6H6a2 2 0 0 0-2 2Z" /><path d="M20 12v3a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2Z" /><path d="M14 19h2a4 4 0 0 0 4-4" /><path d="M9 19h3" /></svg>;
+  if (name === 'smart') return <svg {...common}><path d="M12 3a6 6 0 0 0-6 6c0 2.1 1.1 3.4 2 4.5.7.8 1 1.5 1 2.5h6c0-1 .3-1.7 1-2.5.9-1.1 2-2.4 2-4.5a6 6 0 0 0-6-6Z" /><path d="M9 19h6" /><path d="M10 22h4" /></svg>;
   return <svg {...common}><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z" /></svg>;
 }

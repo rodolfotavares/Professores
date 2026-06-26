@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { StatusMessage } from '@/components/PanelState';
 import { apiFetch } from '@/lib/fetcher';
 import type { Activity, ActivitySubmission, ClassSchedule, Student } from '@/types';
@@ -46,6 +47,7 @@ function SearchGlyph() {
 }
 
 export function TeacherHome() {
+  const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<ClassSchedule[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -135,6 +137,24 @@ export function TeacherHome() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao atualizar aula.');
+    } finally {
+      setActionLoading('');
+    }
+  }
+
+  async function smartLessonAction(action: 'start' | 'finish') {
+    if (!selectedClass) return;
+    setActionLoading(action);
+    setError('');
+    try {
+      await apiFetch(`/api/teacher/schedule/${selectedClass.id}/smart`, {
+        method: 'PATCH',
+        body: JSON.stringify({ action }),
+      });
+      await load();
+      if (action === 'finish') router.push(`/teacher/smart-lesson?lesson_id=${selectedClass.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao atualizar Aula Inteligente.');
     } finally {
       setActionLoading('');
     }
@@ -247,6 +267,17 @@ export function TeacherHome() {
         </div>
         <div className="lesson-action-box">
           <h3>Ações da aula</h3>
+          <div className="smart-lesson-actions-inline">
+            <button type="button" className="outline-action" onClick={() => smartLessonAction('start')} disabled={!selectedClass || actionLoading === 'start'}>
+              {actionLoading === 'start' ? 'Iniciando...' : 'Iniciar aula'}
+            </button>
+            <button type="button" className="side-primary" onClick={() => smartLessonAction('finish')} disabled={!selectedClass || actionLoading === 'finish'}>
+              {actionLoading === 'finish' ? 'Finalizando...' : 'Finalizar aula'}
+            </button>
+            <button type="button" className="outline-action" onClick={() => selectedClass && router.push(`/teacher/smart-lesson?lesson_id=${selectedClass.id}`)} disabled={!selectedClass}>
+              Aula Inteligente
+            </button>
+          </div>
           <label>
             <span>Nova data</span>
             <input type="date" value={rescheduleDate} onChange={(event) => setRescheduleDate(event.target.value)} />
