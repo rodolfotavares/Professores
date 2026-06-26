@@ -1,5 +1,6 @@
 'use client';
 
+import type { DragEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { StatusMessage } from '@/components/PanelState';
@@ -59,6 +60,7 @@ export function TeacherHome() {
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [rescheduleTime, setRescheduleTime] = useState('');
   const [actionLoading, setActionLoading] = useState('');
+  const [dragOverDate, setDragOverDate] = useState('');
 
   async function load() {
     try {
@@ -185,6 +187,92 @@ export function TeacherHome() {
     }
   }
 
+  function startClassDrag(event: DragEvent<HTMLButtonElement>, item: ClassSchedule) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('application/lumina-class-id', item.id);
+    event.dataTransfer.setData('text/plain', item.id);
+    setSelectedClassId(item.id);
+  }
+
+  function startStudentDrag(event: DragEvent<HTMLButtonElement>, student: Student) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('application/lumina-student-id', student.id);
+    event.dataTransfer.setData('text/plain', student.id);
+  }
+
+  async function moveClassToDate(classId: string, targetDate: string) {
+    const item = classes.find((classItem) => classItem.id === classId);
+    if (!item || item.class_date === targetDate) return;
+    const previousClasses = classes;
+
+    setSelectedClassId(classId);
+    setClasses((current) => current.map((classItem) => (
+      classItem.id === classId ? { ...classItem, class_date: targetDate, status: 'scheduled' } : classItem
+    )));
+    setRescheduleDate(targetDate);
+    setCursorDate(new Date(`${targetDate}T00:00:00`));
+    setError('');
+
+    try {
+      await apiFetch(`/api/teacher/schedule/${classId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ class_date: targetDate, class_time: item.class_time?.slice(0, 5), status: 'scheduled' }),
+      });
+      await load();
+    } catch (err) {
+      setClasses(previousClasses);
+      setError(err instanceof Error ? err.message : 'Falha ao mover aula na agenda.');
+    }
+  }
+
+  async function moveStudentToDate(studentId: string, targetDate: string) {
+    const student = students.find((item) => item.id === studentId);
+    if (!student) return;
+    const classForStudent =
+      sortedClasses.find((item) => item.student_id === studentId && item.status === 'scheduled' && item.class_date >= todayKey) ||
+      sortedClasses.find((item) => item.student_id === studentId && item.status === 'scheduled') ||
+      sortedClasses.find((item) => item.student_id === studentId);
+
+    if (classForStudent) {
+      await moveClassToDate(classForStudent.id, targetDate);
+      return;
+    }
+
+    const classTime = student.class_time?.slice(0, 5) || '14:00';
+    setError('');
+    try {
+      const data = await apiFetch<{ class: ClassSchedule }>('/api/teacher/schedule', {
+        method: 'POST',
+        body: JSON.stringify({
+          student_id: student.id,
+          class_date: targetDate,
+          class_time: classTime,
+          duration_minutes: student.duration_minutes || 60,
+        }),
+      });
+      setClasses((current) => [...current, data.class]);
+      setSelectedClassId(data.class.id);
+      setRescheduleDate(targetDate);
+      setRescheduleTime(classTime);
+      setCursorDate(new Date(`${targetDate}T00:00:00`));
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao criar aula na agenda.');
+    }
+  }
+
+  async function dropOnDay(event: DragEvent<HTMLDivElement>, targetDate: string) {
+    event.preventDefault();
+    setDragOverDate('');
+    const classId = event.dataTransfer.getData('application/lumina-class-id');
+    const studentId = event.dataTransfer.getData('application/lumina-student-id');
+    if (classId) {
+      await moveClassToDate(classId, targetDate);
+      return;
+    }
+    if (studentId) await moveStudentToDate(studentId, targetDate);
+  }
+
   return (
     <div className="teacher-agenda-home">
       <StatusMessage error={error} loading={loading} />
@@ -204,6 +292,8 @@ export function TeacherHome() {
               type="button"
               className={student.id === selectedStudent?.id ? 'active' : ''}
               key={student.id}
+              draggable
+              onDragStart={(event) => startStudentDrag(event, student)}
               onClick={() => {
                 const classForStudent = sortedClasses.find((item) => item.student_id === student.id);
                 if (classForStudent) setSelectedClassId(classForStudent.id);
@@ -234,14 +324,28 @@ export function TeacherHome() {
         <div className="month-grid-clean">
           {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => <strong key={day}>{day}</strong>)}
           {monthDays.map((day) => (
-            <div className={`month-cell-clean ${day.currentMonth ? '' : 'muted-month'} ${day.today ? 'today' : ''}`} key={day.key}>
+            <div
+              className={`month-cell-clean ${day.currentMonth ? '' : 'muted-month'} ${day.today ? 'today' : ''} ${dragOverDate === day.key ? 'drop-target' : ''}`}
+              key={day.key}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+                setDragOverDate(day.key);
+              }}
+              onDragLeave={() => setDragOverDate((current) => (current === day.key ? '' : current))}
+              onDrop={(event) => dropOnDay(event, day.key)}
+            >
               <span>{day.day}</span>
               {day.events.slice(0, 3).map((event, index) => (
                 <button
                   type="button"
                   className={`calendar-event-clean tone-${index % 4} ${event.id === selectedClass?.id ? 'selected' : ''}`}
                   key={event.id}
+                  draggable
+                  onDragStart={(dragEvent) => startClassDrag(dragEvent, event)}
+                  onDragEnd={() => setDragOverDate('')}
                   onClick={() => setSelectedClassId(event.id)}
+                  title="Arraste para outro dia para reagendar"
                 >
                   <i /> {event.students?.full_name?.split(' ')[0] || students.find((student) => student.id === event.student_id)?.full_name?.split(' ')[0] || 'Aluno'} · {event.class_time.slice(0, 5)}
                 </button>
