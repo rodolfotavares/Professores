@@ -34,6 +34,7 @@ export type ClassSchedule = {
   smart_status?: 'not_started' | 'in_progress' | 'completed';
   meeting_provider?: string | null;
   meeting_url?: string | null;
+  meeting_start_url?: string | null;
   external_meeting_id?: string | null;
   students?: { full_name: string } | null;
 };

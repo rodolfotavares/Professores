@@ -190,9 +190,15 @@ export function StudentHome() {
           <p>{nextClass?.duration_minutes || student?.duration_minutes || 60} minutos</p>
           <p>{nextClass?.subject || student?.subject || 'Matéria não definida'}</p>
         </div>
-        <button className="btn student side-primary" type="button" onClick={confirmNextClass} disabled={!nextClass || nextClass.student_confirmed}>
-          {nextClass?.student_confirmed ? 'Confirmada' : 'Confirmar aula'}
-        </button>
+        {nextClass?.meeting_url ? (
+          <a className="btn student side-primary" href={nextClass.meeting_url} target="_blank" rel="noreferrer">
+            Entrar na aula
+          </a>
+        ) : (
+          <button className="btn student side-primary" type="button" onClick={confirmNextClass} disabled={!nextClass || nextClass.student_confirmed}>
+            {nextClass?.student_confirmed ? 'Confirmada' : 'Confirmar aula'}
+          </button>
+        )}
         <div className="student-today-list">
           <h3>Para hoje</h3>
           {pending.slice(0, 2).map((activity) => (

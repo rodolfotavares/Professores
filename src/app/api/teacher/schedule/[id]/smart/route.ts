@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { apiError, getApiUser, json } from '@/lib/api-auth';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { createZoomMeetingForClass } from '@/lib/zoom';
 
 const schema = z.object({
   action: z.enum(['start', 'finish']),
@@ -24,6 +25,9 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
 
     if (currentError || !current) return json({ error: 'Aula não encontrada.' }, { status: 404 });
 
+    const zoomClass = body.action === 'start'
+      ? await createZoomMeetingForClass(user.id, params.id)
+      : current;
     const now = new Date();
     const update: Record<string, unknown> = {
       updated_at: now.toISOString(),
@@ -51,7 +55,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       .single();
 
     if (error) throw error;
-    return json({ class: data });
+    return json({ class: { ...zoomClass, ...data } });
   } catch (error) {
     return apiError(error);
   }

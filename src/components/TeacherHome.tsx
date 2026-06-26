@@ -149,10 +149,14 @@ export function TeacherHome() {
     setActionLoading(action);
     setError('');
     try {
-      await apiFetch(`/api/teacher/schedule/${selectedClass.id}/smart`, {
+      const data = await apiFetch<{ class: ClassSchedule }>(`/api/teacher/schedule/${selectedClass.id}/smart`, {
         method: 'PATCH',
         body: JSON.stringify({ action }),
       });
+      if (action === 'start') {
+        const startUrl = data.class.meeting_start_url || data.class.meeting_url;
+        if (startUrl) window.open(startUrl, '_blank', 'noopener,noreferrer');
+      }
       await load();
       if (action === 'finish') router.push(`/teacher/smart-lesson?lesson_id=${selectedClass.id}`);
     } catch (err) {
@@ -368,12 +372,13 @@ export function TeacherHome() {
           <p><span>Data</span>{selectedClass ? new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(new Date(`${selectedClass.class_date}T00:00:00`)) : 'Nenhuma aula selecionada'}</p>
           <p><span>Horário</span>{selectedClass ? `${selectedClass.class_time.slice(0, 5)} · ${selectedClass.duration_minutes} min` : 'Horário não definido'}</p>
           <p><span>Matéria</span>{selectedClass?.subject || selectedStudent?.subject || 'Matéria não definida'}</p>
+          <p><span>Zoom</span>{selectedClass?.meeting_url ? 'Reunião criada' : 'Criada ao iniciar aula'}</p>
         </div>
         <div className="lesson-action-box">
           <h3>Ações da aula</h3>
           <div className="smart-lesson-actions-inline">
             <button type="button" className="outline-action" onClick={() => smartLessonAction('start')} disabled={!selectedClass || actionLoading === 'start'}>
-              {actionLoading === 'start' ? 'Iniciando...' : 'Iniciar aula'}
+              {actionLoading === 'start' ? 'Criando Zoom...' : selectedClass?.meeting_start_url ? 'Abrir Zoom' : 'Iniciar aula'}
             </button>
             <button type="button" className="side-primary" onClick={() => smartLessonAction('finish')} disabled={!selectedClass || actionLoading === 'finish'}>
               {actionLoading === 'finish' ? 'Finalizando...' : 'Finalizar aula'}

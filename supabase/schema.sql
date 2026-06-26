@@ -67,6 +67,7 @@ create table public.class_schedules (
   smart_status text not null default 'not_started',
   meeting_provider text,
   meeting_url text,
+  meeting_start_url text,
   external_meeting_id text,
   teacher_notes text,
   created_at timestamptz not null default now(),
@@ -204,6 +205,24 @@ create table public.google_calendar_events (
   synced_at timestamptz not null default now()
 );
 
+create table public.zoom_oauth_states (
+  state text primary key,
+  teacher_id uuid not null references public.profiles(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+create table public.zoom_connections (
+  id uuid primary key default gen_random_uuid(),
+  teacher_id uuid not null unique references public.profiles(id) on delete cascade,
+  zoom_user_id text,
+  zoom_email text,
+  access_token text not null,
+  refresh_token text,
+  expires_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table public.notifications (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -238,6 +257,8 @@ alter table public.app_subscriptions enable row level security;
 alter table public.google_oauth_states enable row level security;
 alter table public.google_calendar_connections enable row level security;
 alter table public.google_calendar_events enable row level security;
+alter table public.zoom_oauth_states enable row level security;
+alter table public.zoom_connections enable row level security;
 alter table public.notifications enable row level security;
 
 create policy "profiles own read" on public.profiles for select using (auth.uid() = id);

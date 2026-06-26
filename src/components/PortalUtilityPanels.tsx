@@ -78,6 +78,67 @@ function LanguagePreferenceCard() {
   );
 }
 
+function ZoomConnectionCard() {
+  const [status, setStatus] = useState<{ connected: boolean; zoom_email: string | null } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [message, setMessage] = useState('');
+
+  async function load() {
+    try {
+      const data = await apiFetch<{ connected: boolean; zoom_email: string | null }>('/api/zoom/status');
+      setStatus(data);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Falha ao verificar Zoom.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  usePanelLoad(load, 30000);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const zoom = params.get('zoom');
+    if (zoom === 'connected') setMessage('Zoom conectado com sucesso.');
+    if (zoom === 'error') setMessage('Nao foi possivel conectar o Zoom.');
+    if (zoom === 'invalid_state') setMessage('A conexao do Zoom expirou. Tente novamente.');
+  }, []);
+
+  async function connectZoom() {
+    setConnecting(true);
+    setMessage('');
+    try {
+      const data = await apiFetch<{ url: string }>('/api/zoom/auth');
+      window.location.href = data.url;
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Falha ao iniciar conexao com Zoom.');
+      setConnecting(false);
+    }
+  }
+
+  return (
+    <GlassCard className="portal-summary-card zoom-connection-card">
+      <div className="glass-card-head">
+        <div>
+          <span className="eyebrow">Aula online</span>
+          <h2>Zoom</h2>
+        </div>
+        <StatusBadge tone={status?.connected ? 'success' : 'warning'}>{status?.connected ? 'Conectado' : 'Nao conectado'}</StatusBadge>
+      </div>
+      <p className="muted">
+        {status?.connected
+          ? `Conectado em ${status.zoom_email || 'sua conta Zoom'}. Ao iniciar uma aula, o LuminaAI cria a reuniao e libera o link para professor e aluno.`
+          : 'Conecte sua conta Zoom para criar reunioes automaticamente ao iniciar a Aula Inteligente.'}
+      </p>
+      {message && <p className="panel-note">{message}</p>}
+      <button className="btn primary" type="button" onClick={connectZoom} disabled={loading || connecting}>
+        {connecting ? 'Conectando...' : status?.connected ? 'Reconectar Zoom' : 'Conectar Zoom'}
+      </button>
+    </GlassCard>
+  );
+}
+
 const supportAnswers = [
   {
     keywords: ['aluno', 'vincular', 'codigo', 'código', 'cadastro'],
@@ -159,6 +220,7 @@ export function TeacherSupportPanel() {
       </div>
       <div className="grid grid-2">
         <LanguagePreferenceCard />
+        <ZoomConnectionCard />
       </div>
       <GlassCard className="support-shortcuts-card">
         <div className="glass-card-head">
