@@ -552,7 +552,7 @@ export function StudentsPanel() {
       const cleanForm = {
         ...form,
         whatsapp: normalizeBrazilPhone(form.whatsapp),
-        guardian_whatsapp: form.guardian_whatsapp ? normalizeBrazilPhone(form.guardian_whatsapp) : undefined,
+        guardian_whatsapp: form.guardian_whatsapp ? normalizeBrazilPhone(form.guardian_whatsapp) : null,
       };
       if (editingId) {
         await apiFetch(`/api/teacher/students/${editingId}`, {

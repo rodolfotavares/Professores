@@ -17,6 +17,9 @@ const schema = z.object({
   next_lesson_suggestion: z.string().nullable().optional(),
   guardian_message: z.string().nullable().optional(),
   teacher_signature: z.string().nullable().optional(),
+  learning_score: z.number().nullable().optional(),
+  detected_doubts: z.string().nullable().optional(),
+  learning_evidence: z.string().nullable().optional(),
   raw_transcript: z.string().nullable().optional(),
   status: z.enum(['DRAFT', 'APPROVED', 'PUBLISHED', 'ARCHIVED']).optional(),
 });

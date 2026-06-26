@@ -59,6 +59,9 @@ export type LessonReport = {
   next_lesson_suggestion: string | null;
   guardian_message: string | null;
   teacher_signature: string | null;
+  learning_score: number | null;
+  detected_doubts: string | null;
+  learning_evidence: string | null;
   raw_transcript: string | null;
   status: LessonReportStatus;
   created_at: string;

@@ -97,7 +97,19 @@ export function TeacherStudentsBoard() {
       price_per_class: String(selectedStudent.price_per_class || 120),
       status: selectedStudent.status || 'active',
     });
-  }, [selectedStudent?.id, isNew]);
+  }, [
+    selectedStudent?.id,
+    selectedStudent?.full_name,
+    selectedStudent?.email,
+    selectedStudent?.whatsapp,
+    selectedStudent?.guardian_whatsapp,
+    selectedStudent?.subject,
+    selectedStudent?.class_time,
+    selectedStudent?.classes_per_week,
+    selectedStudent?.price_per_class,
+    selectedStudent?.status,
+    isNew,
+  ]);
 
   const rows = useMemo(() => {
     return students.map((student) => {
@@ -136,8 +148,8 @@ export function TeacherStudentsBoard() {
       const payload = {
         full_name: form.full_name,
         email: form.email,
-        whatsapp: form.whatsapp ? normalizeBrazilPhone(form.whatsapp) : undefined,
-        guardian_whatsapp: form.guardian_whatsapp ? normalizeBrazilPhone(form.guardian_whatsapp) : undefined,
+        whatsapp: form.whatsapp ? normalizeBrazilPhone(form.whatsapp) : null,
+        guardian_whatsapp: form.guardian_whatsapp ? normalizeBrazilPhone(form.guardian_whatsapp) : null,
         subject: form.subject,
         days_of_week: '1,3',
         class_time: form.class_time,
@@ -148,9 +160,12 @@ export function TeacherStudentsBoard() {
         regenerate_schedule: true,
       };
       if (isNew || !selectedStudent) {
-        await apiFetch('/api/teacher/students', { method: 'POST', body: JSON.stringify(payload) });
+        const data = await apiFetch<{ student: Student }>('/api/teacher/students', { method: 'POST', body: JSON.stringify(payload) });
+        setSelectedId(data.student.id);
       } else {
-        await apiFetch(`/api/teacher/students/${selectedStudent.id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+        const data = await apiFetch<{ student: Student }>(`/api/teacher/students/${selectedStudent.id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+        setStudents((current) => current.map((student) => student.id === data.student.id ? data.student : student));
+        setSelectedId(data.student.id);
       }
       setIsNew(false);
       await load();

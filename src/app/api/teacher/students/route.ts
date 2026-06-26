@@ -9,8 +9,8 @@ import { isValidBrazilPhone, normalizeBrazilPhone } from '@/lib/validation';
 const schema = z.object({
   full_name: z.string().min(2),
   email: z.string().email(),
-  whatsapp: z.string().optional().refine(isValidBrazilPhone, 'Informe um WhatsApp brasileiro valido com DDD.'),
-  guardian_whatsapp: z.string().optional().refine(isValidBrazilPhone, 'Informe um WhatsApp brasileiro valido com DDD.'),
+  whatsapp: z.string().nullable().optional().refine(isValidBrazilPhone, 'Informe um WhatsApp brasileiro valido com DDD.'),
+  guardian_whatsapp: z.string().nullable().optional().refine(isValidBrazilPhone, 'Informe um WhatsApp brasileiro valido com DDD.'),
   subject: z.string().optional(),
   days_of_week: z.string().optional(),
   class_time: z.string().optional(),

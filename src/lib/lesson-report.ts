@@ -5,6 +5,9 @@ export type StudentLearningHistoryItem = {
   next_recommendation?: string | null;
   learning_progress?: string | null;
   next_lesson_suggestion?: string | null;
+  detected_doubts?: string | null;
+  learning_score?: number | null;
+  learning_evidence?: string | null;
   published_at?: string | null;
 };
 
@@ -78,6 +81,24 @@ function detectDifficulty(text: string) {
   };
 }
 
+function normalizeText(value: string) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+function extractDoubtTopics(notes: string[], taught: string) {
+  const source = normalizeText([...notes, taught].join(' '));
+  const ignored = new Set([
+    'aluno', 'aula', 'teve', 'duvida', 'duvidas', 'dificuldade', 'dificuldades', 'parte',
+    'principal', 'identificar', 'entendeu', 'trabalhamos', 'fizemos', 'exercicios', 'precisa',
+    'reforcar', 'revisar', 'conteudo', 'assunto', 'professor',
+  ]);
+  const words = source
+    .split(/\W+/)
+    .filter((word) => word.length >= 5 && !ignored.has(word));
+  const unique = Array.from(new Set(words)).slice(0, 5);
+  return unique.length ? unique : [normalizeText(taught).split(/\W+/).find((word) => word.length >= 5) || 'conteudo'];
+}
+
 function hasRecurringDifficulty(currentNotes: string[], previousPoints: string[]) {
   if (!currentNotes.length || !previousPoints.length) return false;
   const current = currentNotes.join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -90,6 +111,35 @@ function hasRecurringDifficulty(currentNotes: string[], previousPoints: string[]
       .filter((word) => word.length > 4);
     return words.some((word) => current.includes(word));
   });
+}
+
+function scoreEvolution(currentDoubts: string[], history: StudentLearningHistoryItem[]) {
+  const previousScores = history
+    .map((item) => typeof item.learning_score === 'number' ? item.learning_score : null)
+    .filter((item): item is number => item !== null);
+  const previousScore = previousScores[0] ?? 62;
+  const previousDoubts = history
+    .flatMap((item) => clean(item.detected_doubts).split(',').map((part) => normalizeText(part.trim())).filter(Boolean))
+    .slice(0, 12);
+  const resolvedDoubts = previousDoubts.filter((doubt) => !currentDoubts.some((current) => current.includes(doubt) || doubt.includes(current)));
+  const recurringDoubts = currentDoubts.filter((current) => previousDoubts.some((doubt) => current.includes(doubt) || doubt.includes(current)));
+
+  let score = previousScore;
+  if (recurringDoubts.length) score = Math.max(22, previousScore - 8);
+  else if (currentDoubts.length && previousDoubts.length) score = Math.max(42, Math.min(74, previousScore - 2));
+  else if (currentDoubts.length) score = Math.min(previousScore, 58);
+  else if (resolvedDoubts.length) score = Math.min(92, previousScore + Math.min(18, resolvedDoubts.length * 6));
+  else score = Math.min(82, previousScore + 3);
+
+  const evidence = recurringDoubts.length
+    ? `A nota caiu porque a IA encontrou duvida recorrente em: ${recurringDoubts.join(', ')}.`
+    : resolvedDoubts.length
+      ? `A nota subiu porque duvidas anteriores deixaram de aparecer nos relatos: ${resolvedDoubts.slice(0, 4).join(', ')}.`
+      : currentDoubts.length
+        ? `A nota ficou cautelosa porque surgiram duvidas novas em: ${currentDoubts.join(', ')}.`
+        : 'A nota subiu pouco porque nao apareceram duvidas claras no relato atual, mas ainda ha pouco historico para afirmar dominio completo.';
+
+  return { score, recurringDoubts, resolvedDoubts, evidence };
 }
 
 export function getStudentLearningHistory(history: StudentLearningHistoryItem[] = []) {
@@ -111,15 +161,17 @@ export function generateLessonReport(input: GenerateLessonReportInput) {
   const hadHistory = history.reports.length > 0;
   const difficulty = detectDifficulty(classNotes);
   const recurringDifficulty = hasRecurringDifficulty(difficulty.notes, history.reinforcementPoints);
+  const currentDoubtTopics = difficulty.hasDifficulty ? extractDoubtTopics(difficulty.notes, taught) : [];
+  const evolution = scoreEvolution(currentDoubtTopics, history.reports);
   const previousReinforcement = history.reinforcementPoints[0] || 'nao havia ponto recorrente registrado anteriormente';
   const previousRecommendation = history.previousRecommendations[0] || `continuar acompanhando a evolucao em ${subject}`;
   const detectedDifficulty = difficulty.notes[0] || (difficulty.hasDifficulty ? classNotes : '');
   const currentReinforcement = detectedDifficulty || `consolidar ${taught}`;
 
   const learningProgress = hadHistory
-    ? recurringDifficulty
-      ? `A inteligencia identificou dificuldade recorrente em ${subject}. O ponto atual ("${currentReinforcement}") se conecta a registros anteriores: ${previousReinforcement}.`
-      : `A inteligencia comparou esta aula com os ultimos registros e nao encontrou repeticao clara de dificuldade. Ha evolucao ou novo ponto de acompanhamento em: ${currentReinforcement}.`
+    ? recurringDifficulty || evolution.recurringDoubts.length
+      ? `A inteligencia identificou dificuldade recorrente em ${subject}. O ponto atual ("${currentReinforcement}") se conecta a registros anteriores: ${previousReinforcement}. Pontuacao sincera: ${evolution.score}/100.`
+      : `A inteligencia comparou esta aula com os ultimos registros. ${evolution.evidence} Pontuacao sincera: ${evolution.score}/100.`
     : difficulty.hasDifficulty
       ? `A inteligencia identificou um primeiro ponto de dificuldade em ${subject}: ${currentReinforcement}. Esse registro sera usado para acompanhar recorrencia nas proximas aulas.`
       : `Este e o primeiro registro inteligente recente de ${subject} para este aluno. Nao foi detectada dificuldade recorrente neste texto.`;
@@ -152,5 +204,8 @@ export function generateLessonReport(input: GenerateLessonReportInput) {
     learning_progress: learningProgress,
     next_lesson_suggestion: nextLessonSuggestion,
     guardian_message: guardianMessage,
+    learning_score: evolution.score,
+    detected_doubts: currentDoubtTopics.join(', '),
+    learning_evidence: evolution.evidence,
   };
 }

@@ -22,6 +22,8 @@ const fields = [
   ['exercises_done', 'Exercicios realizados'],
   ['homework', 'Tarefa combinada'],
   ['learning_progress', 'Evolucao percebida'],
+  ['learning_evidence', 'Analise sincera da evolucao'],
+  ['detected_doubts', 'Duvidas detectadas pela IA'],
   ['next_lesson_suggestion', 'Proxima aula sugerida'],
   ['next_recommendation', 'Recomendacao pedagogica'],
   ['guardian_message', 'Mensagem para responsavel'],
@@ -78,6 +80,66 @@ function reportText(report: Partial<LessonReport>) {
 function hasRecurringDifficulty(report: LessonReport) {
   const text = `${report.learning_progress || ''} ${report.reinforcement_points || ''}`.toLowerCase();
   return text.includes('dificuldade recorrente') || text.includes('recorrente detectada');
+}
+
+function scoreOf(report: LessonReport, index: number) {
+  if (typeof report.learning_score === 'number') return Math.max(0, Math.min(100, report.learning_score));
+  const text = `${report.learning_progress || ''} ${report.reinforcement_points || ''}`.toLowerCase();
+  if (text.includes('dificuldade recorrente')) return Math.max(25, 58 - index * 4);
+  if (text.includes('duvida') || text.includes('dificuldade')) return 58;
+  return Math.min(84, 66 + index * 4);
+}
+
+function StudentEvolutionChart({ reports }: { reports: LessonReport[] }) {
+  const chronological = [...reports]
+    .sort((a, b) => new Date(a.published_at || a.updated_at).getTime() - new Date(b.published_at || b.updated_at).getTime())
+    .slice(-8);
+  const points = chronological.map((report, index) => ({
+    report,
+    score: scoreOf(report, index),
+    x: chronological.length === 1 ? 50 : (index / (chronological.length - 1)) * 100,
+    y: 100 - scoreOf(report, index),
+  }));
+  const path = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(' ');
+  const last = points[points.length - 1];
+  const previous = points[points.length - 2];
+  const delta = last && previous ? last.score - previous.score : 0;
+
+  return (
+    <section className="student-evolution-card">
+      <div className="student-evolution-head">
+        <div>
+          <span className="eyebrow">Evolucao por IA</span>
+          <h2>{last ? `${last.score}%` : '--'}</h2>
+        </div>
+        <em className={delta >= 0 ? 'up' : 'down'}>{points.length < 2 ? 'primeira leitura' : `${delta >= 0 ? '+' : ''}${delta} pontos`}</em>
+      </div>
+      {points.length > 0 ? (
+        <>
+          <div className="student-evolution-chart" aria-label="Grafico de evolucao do aluno">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img">
+              <defs>
+                <linearGradient id="evolutionLine" x1="0" x2="1" y1="0" y2="0">
+                  <stop offset="0%" stopColor="#0b64e9" />
+                  <stop offset="100%" stopColor="#22c55e" />
+                </linearGradient>
+              </defs>
+              <path className="grid-line" d="M0 25 H100 M0 50 H100 M0 75 H100" />
+              <path className="area-line" d={`${path} L 100 100 L 0 100 Z`} />
+              <path className="score-line" d={path} />
+              {points.map((point) => <circle key={point.report.id} cx={point.x} cy={point.y} r="2.4" />)}
+            </svg>
+          </div>
+          <div className="student-evolution-insight">
+            <strong>{last?.report.class_schedules?.subject || subjectOf(last!.report)}</strong>
+            <p>{last?.report.learning_evidence || last?.report.learning_progress || 'A IA ainda precisa de mais relatórios publicados para medir tendência com segurança.'}</p>
+          </div>
+        </>
+      ) : (
+        <p className="muted">Quando houver relatórios publicados, a evolução aparecerá aqui.</p>
+      )}
+    </section>
+  );
 }
 
 export function TeacherSmartLessonPanel() {
@@ -148,6 +210,7 @@ export function TeacherSmartLessonPanel() {
     return {
       total: studentReports.length,
       last: studentReports[0]?.published_at || studentReports[0]?.updated_at,
+      score: selected.learning_score || studentReports[0]?.learning_score,
       evolution: selected.learning_progress || studentReports[0]?.learning_progress || 'Ainda sem evolucao publicada.',
       reinforcement: selected.reinforcement_points || studentReports[0]?.reinforcement_points || 'Ainda sem ponto recorrente.',
     };
@@ -332,6 +395,7 @@ export function TeacherSmartLessonPanel() {
                 <dl>
                   <dt>Total publicado</dt><dd>{progress.total}</dd>
                   <dt>Ultima aula publicada</dt><dd>{formatDateTime(progress.last)}</dd>
+                  <dt>Evolucao medida</dt><dd>{progress.score ? `${progress.score}/100` : 'Aguardando mais dados'}</dd>
                   <dt>Principal evolucao</dt><dd>{progress.evolution}</dd>
                   <dt>Ponto para reforcar</dt><dd>{progress.reinforcement}</dd>
                 </dl>
@@ -393,6 +457,7 @@ export function StudentLessonHistoryPanel() {
         <p>Veja em timeline apenas os relatorios publicados pelo professor.</p>
       </div>
       <StatusMessage error={error} loading={loading} />
+      <StudentEvolutionChart reports={reports} />
       <div className="student-timeline">
         {reports.length === 0 && (
           <div className="empty-smart-editor">

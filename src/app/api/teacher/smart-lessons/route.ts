@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     const { data: history, error: historyError } = await supabaseAdmin
       .from('lesson_reports')
-      .select('summary, reinforcement_points, homework, next_recommendation, learning_progress, next_lesson_suggestion, published_at, class_schedules!inner(subject)')
+      .select('summary, reinforcement_points, homework, next_recommendation, learning_progress, next_lesson_suggestion, detected_doubts, learning_score, learning_evidence, published_at, class_schedules!inner(subject)')
       .eq('student_id', lesson.student_id)
       .eq('teacher_id', user.id)
       .eq('status', 'PUBLISHED')
