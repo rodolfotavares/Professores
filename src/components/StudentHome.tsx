@@ -14,7 +14,7 @@ function usePanelLoad(load: () => Promise<void>, interval = 15000) {
 }
 
 function formatDate(date?: string) {
-  if (!date) return 'Data nÃ£o definida';
+  if (!date) return 'Data não definida';
   return new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(new Date(`${date}T00:00:00`));
 }
 
@@ -26,7 +26,7 @@ function scoreOfReport(report: LessonReport, index: number) {
   if (typeof report.learning_score === 'number') return Math.max(0, Math.min(100, report.learning_score));
   const text = `${report.learning_progress || ''} ${report.reinforcement_points || ''} ${report.detected_doubts || ''}`.toLowerCase();
   if (text.includes('dificuldade recorrente')) return Math.max(28, 58 - index * 2);
-  if (text.includes('duvida') || text.includes('dificuldade')) return 60;
+  if (text.includes('duvida') || text.includes('dúvida') || text.includes('dificuldade')) return 60;
   return Math.min(90, 62 + index * 5);
 }
 
@@ -61,20 +61,20 @@ function StudentEvolutionCard({ reports, studentName }: { reports: LessonReport[
     <section className="student-evolution-home-card">
       <div className="student-evolution-home-head">
         <div>
-          <span>Evolucao do aluno</span>
+          <span>Evolução do aluno</span>
           <h2>{studentName}</h2>
-          <p>Analise baseada nos relatorios publicados pelo professor.</p>
+          <p>Análise baseada nos relatórios publicados pelo professor.</p>
         </div>
         <strong>{evolution.currentScore ? `${evolution.currentScore}%` : '--'}</strong>
       </div>
       <div className="student-evolution-home-metrics">
         <article><small>Aulas analisadas</small><b>{reports.length}</b></article>
         <article><small>Tendencia</small><b>{evolution.trend >= 0 ? `+${evolution.trend}` : evolution.trend}</b></article>
-        <article><small>Pontos de atencao</small><b>{evolution.attention}</b></article>
+        <article><small>Pontos de atenção</small><b>{evolution.attention}</b></article>
       </div>
       <div className="student-evolution-chart-wrap">
         {evolution.points.length ? (
-          <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Grafico de evolucao do aluno">
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Gráfico de evolução do aluno">
             <path className="evolution-grid" d="M0 20H100 M0 40H100 M0 60H100 M0 80H100" />
             <path className="evolution-area" d={area} />
             <path className="evolution-line" d={path} />
@@ -89,7 +89,7 @@ function StudentEvolutionCard({ reports, studentName }: { reports: LessonReport[
             })}
           </svg>
         ) : (
-          <div className="student-evolution-empty">A evolucao aparece aqui quando houver relatorios de aula.</div>
+          <div className="student-evolution-empty">A evolução aparece aqui quando houver relatórios de aula.</div>
         )}
       </div>
       <div className="student-evolution-labels">
@@ -97,7 +97,7 @@ function StudentEvolutionCard({ reports, studentName }: { reports: LessonReport[
       </div>
       <div className="student-evolution-ai-box">
         <strong>Leitura da IA</strong>
-        <p>{latest?.learning_evidence || latest?.learning_progress || 'A IA ainda precisa de mais relatorios para medir a evolucao com seguranca.'}</p>
+        <p>{latest?.learning_evidence || latest?.learning_progress || 'A IA ainda precisa de mais relatórios para medir a evolução com segurança.'}</p>
       </div>
     </section>
   );
@@ -154,8 +154,8 @@ export function StudentHome() {
   });
   const timeRows = ['08:00', '10:00', '14:00', '16:00', '18:00'];
   const continueItems = [
-    { title: student?.subject || 'Aulas', note: 'Conteudo da proxima aula', progress: progress || 35, tone: 'blue' },
-    { title: 'Historico inteligente', note: `${reports.length} relatorio${reports.length === 1 ? '' : 's'} analisado${reports.length === 1 ? '' : 's'}`, progress: Math.min(100, reports.length * 12), tone: 'green' },
+    { title: student?.subject || 'Aulas', note: 'Conteúdo da próxima aula', progress: progress || 35, tone: 'blue' },
+    { title: 'Histórico inteligente', note: `${reports.length} relatório${reports.length === 1 ? '' : 's'} analisado${reports.length === 1 ? '' : 's'}`, progress: Math.min(100, reports.length * 12), tone: 'green' },
   ];
 
   async function confirmNextClass() {
@@ -169,25 +169,25 @@ export function StudentHome() {
       <StatusMessage error={error} loading={loading} />
       <section className="student-main-area">
         <div className="student-greeting">
-          <h1>OlÃ¡, {firstName}</h1>
+          <h1>Olá, {firstName}</h1>
           <p>Sua semana de estudos</p>
         </div>
 
         <div className="student-summary-grid">
           <article className="student-summary-card">
-            <div className="student-summary-icon">â–£</div>
+            <div className="student-summary-icon">▣</div>
             <div>
-              <span>PrÃ³xima aula</span>
+              <span>Próxima aula</span>
               <strong>{nextClass?.subject || student?.subject || 'Aula'}</strong>
               <p>{nextClass ? `${nextClass.class_date === todayKey ? 'Hoje' : formatDate(nextClass.class_date)}, ${nextClass.class_time?.slice(0, 5)}` : 'Nenhuma aula agendada'}</p>
             </div>
           </article>
           <article className="student-summary-card">
-            <div className="student-summary-icon green">âœ“</div>
+            <div className="student-summary-icon green">✓</div>
             <div>
               <span>Aulas registradas</span>
               <strong>{classes.length}</strong>
-              <a href="/student/lesson-history">Ver historico</a>
+              <a href="/student/lesson-history">Ver histórico</a>
             </div>
           </article>
           <article className="student-summary-card progress-card">
@@ -196,8 +196,8 @@ export function StudentHome() {
             </div>
             <div>
               <span>Seu progresso</span>
-              <strong>{progress >= 70 ? 'ParabÃ©ns!' : 'Continue assim!'}</strong>
-              <p>{reports.length ? `${reports.length} relatorios analisados` : 'Aguardando relatorios'}</p>
+              <strong>{progress >= 70 ? 'Parabéns!' : 'Continue assim!'}</strong>
+              <p>{reports.length ? `${reports.length} relatórios analisados` : 'Aguardando relatórios'}</p>
             </div>
           </article>
         </div>
@@ -206,9 +206,9 @@ export function StudentHome() {
           <div className="student-week-head">
             <h2>Esta semana</h2>
             <div className="student-week-actions">
-              <button type="button">â€¹</button>
+              <button type="button">‹</button>
               <button type="button">Hoje</button>
-              <button type="button">â€º</button>
+              <button type="button">›</button>
             </div>
           </div>
           <div className="student-week-grid">
@@ -246,7 +246,7 @@ export function StudentHome() {
           <h2>Continuar estudando</h2>
           {continueItems.map((item) => (
             <div className="continue-row" key={item.title}>
-              <div className={`continue-icon ${item.tone}`}>{item.tone === 'blue' ? 'â–¡' : 'â—‡'}</div>
+              <div className={`continue-icon ${item.tone}`}>{item.tone === 'blue' ? '□' : '◇'}</div>
               <div>
                 <strong>{item.title}</strong>
                 <small>{item.note}</small>
@@ -260,7 +260,7 @@ export function StudentHome() {
       </section>
 
       <aside className="student-side-panel">
-        <button className="student-side-close" type="button" aria-label="Fechar">Ã—</button>
+        <button className="student-side-close" type="button" aria-label="Fechar">×</button>
         <div className="student-profile-card">
           <div className="student-photo">{firstName.slice(0, 1).toUpperCase()}</div>
           <div>
@@ -269,9 +269,9 @@ export function StudentHome() {
           </div>
         </div>
         <div className="student-next-details">
-          <p>{nextClass ? `${nextClass.class_date === todayKey ? 'Hoje' : formatDate(nextClass.class_date)} - ${nextClass.class_time?.slice(0, 5)}` : 'Sem prÃ³xima aula'}</p>
+          <p>{nextClass ? `${nextClass.class_date === todayKey ? 'Hoje' : formatDate(nextClass.class_date)} - ${nextClass.class_time?.slice(0, 5)}` : 'Sem próxima aula'}</p>
           <p>{nextClass?.duration_minutes || student?.duration_minutes || 60} minutos</p>
-          <p>{nextClass?.subject || student?.subject || 'MatÃ©ria nÃ£o definida'}</p>
+          <p>{nextClass?.subject || student?.subject || 'Matéria não definida'}</p>
         </div>
         <button className="btn student side-primary" type="button" onClick={confirmNextClass} disabled={!nextClass || nextClass.student_confirmed}>
           {nextClass?.student_confirmed ? 'Confirmada' : 'Confirmar aula'}
@@ -281,19 +281,19 @@ export function StudentHome() {
           <label className="student-today-task">
             <input type="checkbox" readOnly />
             <span>
-              <strong>Revisar a ultima aula</strong>
-              <small>Use o historico inteligente para acompanhar sua evolucao.</small>
+              <strong>Revisar a última aula</strong>
+              <small>Use o histórico inteligente para acompanhar sua evolução.</small>
             </span>
           </label>
           <label className="student-today-task">
             <input type="checkbox" readOnly />
             <span>
-              <strong>Preparar duvidas</strong>
-              <small>Anote o que quer perguntar ao professor na proxima aula.</small>
+              <strong>Preparar dúvidas</strong>
+              <small>Anote o que quer perguntar ao professor na próxima aula.</small>
             </span>
           </label>
         </div>
-        <a className="student-material-link" href="/student/lesson-history">Ver historico da aula</a>
+        <a className="student-material-link" href="/student/lesson-history">Ver histórico da aula</a>
       </aside>
     </div>
   );

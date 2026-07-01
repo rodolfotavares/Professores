@@ -16,7 +16,7 @@ export function TeacherNav() {
         </div>
       </div>
       <nav className="sidebar-nav icon-nav">
-        <NavIcon href="/teacher" label="InÃ­cio" icon="home" />
+        <NavIcon href="/teacher" label="Início" icon="home" />
         <NavIcon href="/teacher/students" label="Alunos" icon="users" />
         <NavIcon href="/teacher/smart-lesson" label="Aula Inteligente" icon="smart" />
         <NavIcon href="/teacher/messages" label="Mensagens" icon="message" />
@@ -39,8 +39,8 @@ export function StudentNav() {
         </div>
       </div>
       <nav className="sidebar-nav icon-nav">
-        <NavIcon href="/student" label="InÃ­cio" icon="home" />
-        <NavIcon href="/student/lesson-history" label="HistÃ³rico" icon="smart" />
+        <NavIcon href="/student" label="Início" icon="home" />
+        <NavIcon href="/student/lesson-history" label="Histórico" icon="smart" />
         <NavIcon href="/student/messages" label="Mensagens" icon="message" />
         <NavIcon href="/student/settings" label="Perfil" icon="users" />
       </nav>

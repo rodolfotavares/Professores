@@ -147,10 +147,10 @@ export function TeacherFinanceBoard() {
         {isTrial && (
           <div className="finance-app-subscription trial">
             <div>
-              <strong>Teste gratis ativo</strong>
+              <strong>Teste grátis ativo</strong>
               <span>
-                Voce ainda tem {subscription?.trial_days_left || 0} dia{subscription?.trial_days_left === 1 ? '' : 's'} gratis.
-                Depois disso, a mensalidade de R$ 39,90 sera necessaria para continuar usando o app.
+                Você ainda tem {subscription?.trial_days_left || 0} dia{subscription?.trial_days_left === 1 ? '' : 's'} grátis.
+                Depois disso, a mensalidade de R$ 39,90 será necessária para continuar usando o app.
               </span>
             </div>
             <button type="button" onClick={createMercadoPagoCheckout} disabled={checkoutLoading}>
@@ -163,7 +163,7 @@ export function TeacherFinanceBoard() {
           <div className="finance-app-subscription">
             <div>
               <strong>Assinatura LuminaAI Pro</strong>
-              <span>Seu teste gratis terminou. Para usar o app, regularize a mensalidade de R$ 39,90.</span>
+              <span>Seu teste grátis terminou. Para usar o app, regularize a mensalidade de R$ 39,90.</span>
             </div>
             <button type="button" onClick={createMercadoPagoCheckout} disabled={checkoutLoading}>
               {checkoutLoading ? 'Gerando...' : 'Pagar assinatura'}
@@ -203,7 +203,7 @@ export function TeacherFinanceBoard() {
             <h2>Ganhos no mês</h2>
             <div><button className="active" type="button">Mês</button><button type="button">Ano</button></div>
           </div>
-          <div className="finance-chart-area">
+          <div className="finance-chart-área">
             <div className="finance-y-axis">
               {[5000, 4000, 3000, 2000, 1000, 0].map((value) => <span key={value}>{money(value)}</span>)}
             </div>
@@ -222,10 +222,10 @@ export function TeacherFinanceBoard() {
                   return [x, y] as const;
                 });
                 const path = coords.map(([x, y], index) => `${index === 0 ? 'M' : 'L'} ${x} ${y}`).join(' ');
-                const area = `${path} L 760 260 L 0 260 Z`;
+                const área = `${path} L 760 260 L 0 260 Z`;
                 return (
                   <>
-                    <path className="finance-area-path" d={area} />
+                    <path className="finance-área-path" d={área} />
                     <path className="finance-line-path" d={path} />
                     {coords.map(([x, y]) => <circle key={`${x}-${y}`} cx={x} cy={y} r="5" />)}
                   </>

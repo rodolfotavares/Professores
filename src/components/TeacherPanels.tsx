@@ -315,7 +315,7 @@ export function TeacherFinancePanel() {
   const unpaidTotal = Math.max(0, total - paidTotal);
   const max = Math.max(...rows.map((student) => student.monthly), 1);
   const subscriptionActive = subscription?.status === 'paid' || subscription?.status === 'exempt' || subscription?.status === 'trial';
-  const subscriptionLabel = subscription?.status === 'exempt' ? 'Isento' : subscription?.status === 'paid' ? 'Pago' : subscription?.status === 'trial' ? 'Teste gratis' : 'Pendente';
+  const subscriptionLabel = subscription?.status === 'exempt' ? 'Isento' : subscription?.status === 'paid' ? 'Pago' : subscription?.status === 'trial' ? 'Teste grátis' : 'Pendente';
   const subscriptionStatusLabel = subscription?.status === 'exempt' ? 'Liberada' : subscription?.status === 'paid' ? 'Ativa' : subscription?.status === 'trial' ? 'Liberada' : 'Pendente';
 
   function downloadReceipt(student: typeof rows[number]) {
@@ -326,7 +326,7 @@ export function TeacherFinancePanel() {
       `Aulas por semana: ${student.weeklyClasses}`,
       `Valor por aula: ${(student.price_per_class || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
       `Total mensal: ${student.monthly.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
-      `Status: ${student.payment === 'paid' ? 'Pago' : 'Nao pago'}`,
+      `Status: ${student.payment === 'paid' ? 'Pago' : 'Não pago'}`,
       `Emitido em: ${new Date().toLocaleString('pt-BR')}`,
     ].join('\n');
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
@@ -362,7 +362,7 @@ export function TeacherFinancePanel() {
 
   return (
     <div className="stack">
-      <PanelHeader eyebrow="Receita" title="Financeiro" text="Veja a previsão mensal por aluno." />
+      <PanelHeader eyebrow="Receita" title="Financeiro" text="Vejá a previsão mensal por aluno." />
       <StatusMessage error={error} loading={loading} />
       <div className="card stack app-subscription-card">
         <div className="glass-card-head">
@@ -374,14 +374,14 @@ export function TeacherFinancePanel() {
             {subscriptionLabel}
           </span>
         </div>
-        <p className="muted">O professor paga apenas pelo uso do LuminaAI. Os alunos nao pagam assinatura do app.</p>
+        <p className="muted">O professor paga apenas pelo uso do LuminaAI. Os alunos não pagam assinatura do app.</p>
         <div className="grid grid-3">
           <div className="metric"><p className="muted">Mensalidade</p><h2>R$ 39,90</h2></div>
           <div className="metric"><p className="muted">Mes</p><h2>{paymentMonth}</h2></div>
           <div className="metric"><p className="muted">Status</p><h2>{subscriptionStatusLabel}</h2></div>
         </div>
         <button className="btn primary" onClick={createMercadoPagoCheckout} disabled={checkoutLoading || subscriptionActive}>
-          {checkoutLoading ? 'Gerando...' : subscription?.status === 'exempt' ? 'Professor isento' : subscription?.status === 'paid' ? 'Assinatura paga' : subscription?.status === 'trial' ? 'Teste gratis ativo' : 'Pagar R$ 39,90'}
+          {checkoutLoading ? 'Gerando...' : subscription?.status === 'exempt' ? 'Professor isento' : subscription?.status === 'paid' ? 'Assinatura paga' : subscription?.status === 'trial' ? 'Teste grátis ativo' : 'Pagar R$ 39,90'}
         </button>
       </div>
       <div className="grid grid-3">
@@ -547,7 +547,7 @@ export function StudentsPanel() {
         throw new Error('Informe um WhatsApp brasileiro valido com DDD, usando 10 ou 11 digitos.');
       }
       if (form.guardian_whatsapp && !isValidBrazilPhone(form.guardian_whatsapp)) {
-        throw new Error('Informe um WhatsApp brasileiro valido para o responsavel com DDD, usando 10 ou 11 digitos.');
+        throw new Error('Informe um WhatsApp brasileiro valido para o responsável com DDD, usando 10 ou 11 digitos.');
       }
       const cleanForm = {
         ...form,
@@ -637,7 +637,7 @@ export function StudentsPanel() {
         <Input label="Nome" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
         <Input label="E-mail" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
         <Input label="WhatsApp" value={form.whatsapp} onChange={(v) => setForm({ ...form, whatsapp: formatBrazilWhatsapp(v) })} inputMode="numeric" placeholder="(11) 99999-9999" required={false} />
-        <Input label="WhatsApp do responsavel" value={form.guardian_whatsapp} onChange={(v) => setForm({ ...form, guardian_whatsapp: formatBrazilWhatsapp(v) })} inputMode="numeric" placeholder="(11) 99999-9999" required={false} />
+        <Input label="WhatsApp do responsável" value={form.guardian_whatsapp} onChange={(v) => setForm({ ...form, guardian_whatsapp: formatBrazilWhatsapp(v) })} inputMode="numeric" placeholder="(11) 99999-9999" required={false} />
         <Input label="Matéria" value={form.subject} onChange={(v) => setForm({ ...form, subject: v })} />
         <label className="label">Dias das aulas</label>
         <div className="segmented">
@@ -725,7 +725,7 @@ export function TeacherSchedulePanel() {
     const params = new URLSearchParams(window.location.search);
     const google = params.get('google');
     if (google === 'connected') setError('Google Agenda conectado com sucesso.');
-    if (google === 'error') setError('Nao foi possivel conectar o Google Agenda.');
+    if (google === 'error') setError('Não foi possivel conectar o Google Agenda.');
   }, []);
 
   async function connectGoogleCalendar() {
@@ -796,10 +796,10 @@ export function TeacherSchedulePanel() {
             <h2>{googleStatus?.connected ? 'Conta conectada' : 'Sincronizacao externa'}</h2>
           </div>
           <span className={`badge ${googleStatus?.connected ? 'status-success' : 'status-warning'}`}>
-            {googleStatus?.connected ? 'Conectado' : 'Nao conectado'}
+            {googleStatus?.connected ? 'Conectado' : 'Não conectado'}
           </span>
         </div>
-        <p className="muted">{googleStatus?.connected ? `Conectado em ${googleStatus.google_email || 'Google Agenda'}.` : 'Conecte sua conta Google para enviar as aulas agendadas para o calendario do professor.'}</p>
+        <p className="muted">{googleStatus?.connected ? `Conectado em ${googleStatus.google_email || 'Google Agenda'}.` : 'Conecte sua conta Google para enviar as aulas agendadas para o calendário do professor.'}</p>
         <div className="row">
           <button className="btn" onClick={connectGoogleCalendar} disabled={googleLoading}>{googleStatus?.connected ? 'Reconectar Google Agenda' : 'Conectar Google Agenda'}</button>
           <button className="btn primary" onClick={syncGoogleCalendar} disabled={googleLoading || !googleStatus?.connected}>{googleLoading ? 'Sincronizando...' : 'Sincronizar aulas'}</button>
@@ -819,7 +819,7 @@ export function TeacherSchedulePanel() {
       </form>
       <div className="stack">
         <StatusMessage error="" loading={loading} />
-        {!loading && classes.length === 0 && <EmptyState title="Agenda vazia" text="Crie um aluno com dias e horario ou agende uma aula manualmente." />}
+        {!loading && classes.length === 0 && <EmptyState title="Agenda vazia" text="Crie um aluno com dias e horário ou agende uma aula manualmente." />}
         {classes.map((item) => (
           <div className="card" key={item.id}>
             <div className="list-item">
@@ -966,7 +966,7 @@ export function TeacherActivitiesPanel() {
 
   return (
     <div className="stack">
-      <PanelHeader eyebrow="Tarefas" title="Atividades" text="Publique, receba arquivos e corrija entregas." />
+      <PanelHeader eyebrow="Tarefas" title="Atividades" text="Publique, receba arquivos e corrijá entregas." />
       <div className="panel-toolbar">
         <div>
           <span className="eyebrow">Central de atividades</span>
@@ -1179,7 +1179,7 @@ export function LessonPlannerPanel() {
         <button className="btn primary" disabled={loading}>{loading ? 'Gerando...' : 'Gerar plano'}</button>
       </form>
       <div className="stack">
-        {!plan && <EmptyState title="Plano pronto para montar" text="Informe materia, tema e objetivo para receber uma estrutura de aula." />}
+        {!plan && <EmptyState title="Plano pronto para montar" text="Informe matéria, tema e objetivo para receber uma estrutura de aula." />}
         {plan && (
           <div className="card stack">
             <div>

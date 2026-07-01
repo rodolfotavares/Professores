@@ -1,17 +1,17 @@
 ﻿const students = [
-  { name: 'Ana Beatriz', subject: 'Matematica', next: 'Hoje, 14:00', status: 'Em dia', progress: 85, tone: 'green' },
-  { name: 'Lucas Almeida', subject: 'Fisica', next: 'Amanha, 16:30', status: 'Atencao', progress: 58, tone: 'orange' },
-  { name: 'Sofia Ribeiro', subject: 'Redacao', next: 'Sexta, 18:00', status: 'Em dia', progress: 92, tone: 'green' },
+  { name: 'Ana Beatriz', subject: 'Matemática', next: 'Hoje, 14:00', status: 'Em dia', progress: 85, tone: 'green' },
+  { name: 'Lucas Almeida', subject: 'Física', next: 'Amanha, 16:30', status: 'Atenção', progress: 58, tone: 'orange' },
+  { name: 'Sofia Ribeiro', subject: 'Redação', next: 'Sexta, 18:00', status: 'Em dia', progress: 92, tone: 'green' },
   { name: 'Caio Henrique', subject: 'Quimica', next: 'Segunda, 10:00', status: 'Em dia', progress: 76, tone: 'blue' },
 ];
 
 const reports = [
-  { title: 'Aula de funcoes', student: 'Ana Beatriz', status: 'Relatorio pronto', progress: 'Evolucao 88%' },
-  { title: 'Revisao de fisica', student: 'Lucas Almeida', status: 'Ponto de atencao', progress: 'Evolucao 62%' },
-  { title: 'Redacao orientada', student: 'Sofia Ribeiro', status: 'Bom progresso', progress: 'Evolucao 91%' },
+  { title: 'Aula de funções', student: 'Ana Beatriz', status: 'Relatório pronto', progress: 'Evolução 88%' },
+  { title: 'Revisão de fisica', student: 'Lucas Almeida', status: 'Ponto de atenção', progress: 'Evolução 62%' },
+  { title: 'Redação orientada', student: 'Sofia Ribeiro', status: 'Bom progresso', progress: 'Evolução 91%' },
 ];
 
-const nav = ['Inicio', 'Alunos', 'Aula Inteligente', 'Mensagens', 'Financeiro', 'Suporte'];
+const nav = ['Início', 'Alunos', 'Aula Inteligente', 'Mensagens', 'Financeiro', 'Suporte'];
 
 export default function DemoTeacherPage() {
   return (
@@ -25,7 +25,7 @@ export default function DemoTeacherPage() {
           </div>
         </div>
         <nav>
-          {nav.map((item) => <span className={item === 'Inicio' ? 'active' : ''} key={item}>{item}</span>)}
+          {nav.map((item) => <span className={item === 'Início' ? 'active' : ''} key={item}>{item}</span>)}
         </nav>
         <small>Prof. Camila Rocha</small>
       </aside>
@@ -67,16 +67,16 @@ export default function DemoTeacherPage() {
           </article>
 
           <aside className="demo-real-card demo-focus-card">
-            <span className="demo-eyebrow">Proxima aula</span>
+            <span className="demo-eyebrow">Próxima aula</span>
             <div className="demo-student-focus">
               <span>AB</span>
               <div>
                 <strong>Ana Beatriz</strong>
-                <p>Matematica - funcoes</p>
+                <p>Matemática - funções</p>
               </div>
             </div>
             <button className="demo-primary">Iniciar aula</button>
-            <button>Gerar relatorio inteligente</button>
+            <button>Gerar relatório inteligente</button>
           </aside>
 
           <article className="demo-real-card demo-span-2">
@@ -97,7 +97,7 @@ export default function DemoTeacherPage() {
                       <small>{student.subject}</small>
                     </div>
                   </div>
-                  <p>Proxima aula: {student.next}</p>
+                  <p>Próxima aula: {student.next}</p>
                   <div className="demo-progress"><span style={{ width: `${student.progress}%` }} /></div>
                 </article>
               ))}
@@ -116,9 +116,9 @@ export default function DemoTeacherPage() {
             <div className="demo-section-head">
               <div>
                 <span className="demo-eyebrow">Aula Inteligente</span>
-                <h2>Relatorios recentes</h2>
+                <h2>Relatórios recentes</h2>
               </div>
-              <button>Novo relatorio</button>
+              <button>Novo relatório</button>
             </div>
             <div className="demo-activity-table">
               {reports.map((report) => (

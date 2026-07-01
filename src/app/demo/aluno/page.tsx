@@ -1,18 +1,18 @@
 ﻿const week = [
   { day: 'Seg', date: '22/06', lessons: [{ title: 'Portugues', time: '08:00', tone: 'blue' }] },
   { day: 'Ter', date: '23/06', lessons: [{ title: 'Ciencias', time: '10:00', tone: 'green' }] },
-  { day: 'Qua', date: '24/06', lessons: [{ title: 'Matematica', time: '14:00', tone: 'active' }] },
+  { day: 'Qua', date: '24/06', lessons: [{ title: 'Matemática', time: '14:00', tone: 'active' }] },
   { day: 'Qui', date: '25/06', lessons: [{ title: 'Geografia', time: '16:00', tone: 'purple' }] },
   { day: 'Sex', date: '26/06', lessons: [{ title: 'Ingles', time: '16:00', tone: 'gold' }] },
 ];
 
 const evolutionItems = [
-  { title: 'Funcoes do 1 grau', status: 'Evolucao 88%', date: 'Ultimas 4 aulas' },
-  { title: 'Interpretacao de problemas', status: 'Evolucao 76%', date: 'Ponto para reforcar' },
-  { title: 'Autonomia nos exercicios', status: 'Evolucao 91%', date: 'Bom progresso' },
+  { title: 'Funcoes do 1 grau', status: 'Evolução 88%', date: 'Últimas 4 aulas' },
+  { title: 'Interpretacao de problemas', status: 'Evolução 76%', date: 'Ponto para reforçar' },
+  { title: 'Autonomia nos exercicios', status: 'Evolução 91%', date: 'Bom progresso' },
 ];
 
-const nav = ['Inicio', 'Historico', 'Mensagens', 'Perfil'];
+const nav = ['Início', 'Histórico', 'Mensagens', 'Perfil'];
 
 export default function DemoStudentPage() {
   return (
@@ -26,7 +26,7 @@ export default function DemoStudentPage() {
           </div>
         </div>
         <nav>
-          {nav.map((item) => <span className={item === 'Inicio' ? 'active' : ''} key={item}>{item}</span>)}
+          {nav.map((item) => <span className={item === 'Início' ? 'active' : ''} key={item}>{item}</span>)}
         </nav>
         <small>Ana Beatriz</small>
       </aside>
@@ -48,19 +48,19 @@ export default function DemoStudentPage() {
           <div className="demo-student-main">
             <div className="demo-summary-row">
               <article>
-                <span>Proxima aula</span>
-                <strong>Matematica</strong>
+                <span>Próxima aula</span>
+                <strong>Matemática</strong>
                 <p>Hoje, 14:00 com Prof. Camila</p>
               </article>
               <article>
                 <span>Aulas registradas</span>
                 <strong>8</strong>
-                <p>Historico pronto para acompanhar sua evolucao.</p>
+                <p>Histórico pronto para acompanhar sua evolução.</p>
               </article>
               <article>
                 <span>Seu progresso</span>
                 <strong>84%</strong>
-                <p>Evolucao positiva nas ultimas aulas.</p>
+                <p>Evolução positiva nas últimas aulas.</p>
               </article>
             </div>
 
@@ -91,10 +91,10 @@ export default function DemoStudentPage() {
             <section className="demo-real-card">
               <div className="demo-section-head">
                 <div>
-                  <span className="demo-eyebrow">Evolucao</span>
-                  <h2>Analise por aula</h2>
+                  <span className="demo-eyebrow">Evolução</span>
+                  <h2>Análise por aula</h2>
                 </div>
-                <button>Ver historico</button>
+                <button>Ver histórico</button>
               </div>
               <div className="demo-student-activities">
                 {evolutionItems.map((item) => (
@@ -103,7 +103,7 @@ export default function DemoStudentPage() {
                       <strong>{item.title}</strong>
                       <span>{item.status}</span>
                     </summary>
-                    <p>A IA cruza os relatorios das aulas para mostrar onde o aluno evoluiu e onde ainda precisa de atencao.</p>
+                    <p>A IA cruza os relatórios das aulas para mostrar onde o aluno evoluiu e onde ainda precisa de atenção.</p>
                     <small>{item.date}</small>
                   </details>
                 ))}
@@ -116,15 +116,15 @@ export default function DemoStudentPage() {
             <div className="demo-student-focus">
               <span>AB</span>
               <div>
-                <strong>Matematica</strong>
+                <strong>Matemática</strong>
                 <p>Prof. Camila Rocha</p>
               </div>
             </div>
             <p>Hoje, 14:00 - 14:50</p>
             <button className="demo-primary">Confirmar aula</button>
             <div className="demo-ai-card">
-              <span>Evolucao por IA</span>
-              <p>As duvidas sobre funcoes diminuiram nos ultimos relatorios.</p>
+              <span>Evolução por IA</span>
+              <p>As dúvidas sobre funções diminuiram nos ultimos relatórios.</p>
             </div>
           </aside>
         </section>
