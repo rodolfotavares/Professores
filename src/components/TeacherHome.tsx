@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { StatusMessage } from '@/components/PanelState';
 import { apiFetch } from '@/lib/fetcher';
-import type { Activity, ActivitySubmission, ClassSchedule, Student } from '@/types';
+import type { ClassSchedule, Student } from '@/types';
 
 function usePanelLoad(load: () => Promise<void>, interval = 15000) {
   useEffect(() => {
@@ -51,8 +51,6 @@ export function TeacherHome() {
   const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<ClassSchedule[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [submissions, setSubmissions] = useState<ActivitySubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cursorDate, setCursorDate] = useState(() => new Date());
@@ -65,16 +63,12 @@ export function TeacherHome() {
   async function load() {
     try {
       setError('');
-      const [studentData, scheduleData, activityData, submissionData] = await Promise.all([
+      const [studentData, scheduleData] = await Promise.all([
         apiFetch<{ students: Student[] }>('/api/teacher/students'),
         apiFetch<{ classes: ClassSchedule[] }>('/api/teacher/schedule'),
-        apiFetch<{ activities: Activity[] }>('/api/teacher/activities'),
-        apiFetch<{ submissions: ActivitySubmission[] }>('/api/teacher/submissions'),
       ]);
       setStudents(studentData.students);
       setClasses(scheduleData.classes);
-      setActivities(activityData.activities);
-      setSubmissions(submissionData.submissions);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao carregar painel.');
     } finally {
@@ -96,7 +90,7 @@ export function TeacherHome() {
     sortedClasses[0];
   const selectedStudent = students.find((student) => student.id === selectedClass?.student_id) || students[0];
   const activeStudents = students.filter((student) => student.status !== 'inactive');
-  const pendingActivities = activities.filter((activity) => !submissions.some((submission) => submission.activity_id === activity.id)).length;
+  const scheduledClasses = classes.filter((item) => item.status === 'scheduled').length;
   const monthlyRevenue = activeStudents.reduce((total, student) => {
     const monthlyClasses = student.classes_per_month || (student.classes_per_week || 0) * 4;
     return total + monthlyClasses * Number(student.price_per_class || 0);
@@ -149,14 +143,10 @@ export function TeacherHome() {
     setActionLoading(action);
     setError('');
     try {
-      const data = await apiFetch<{ class: ClassSchedule }>(`/api/teacher/schedule/${selectedClass.id}/smart`, {
+      await apiFetch<{ class: ClassSchedule }>(`/api/teacher/schedule/${selectedClass.id}/smart`, {
         method: 'PATCH',
         body: JSON.stringify({ action }),
       });
-      if (action === 'start') {
-        const startUrl = data.class.meeting_start_url || data.class.meeting_url;
-        if (startUrl) window.open(startUrl, '_blank', 'noopener,noreferrer');
-      }
       await load();
       if (action === 'finish') router.push(`/teacher/smart-lesson?lesson_id=${selectedClass.id}`);
     } catch (err) {
@@ -316,7 +306,7 @@ export function TeacherHome() {
         <div className="calendar-toolbar">
           <div>
             <h1>{monthLabel(cursorDate)}</h1>
-            <p>{activeStudents.length} alunos ativos · {pendingActivities} atividades pendentes · {money(monthlyRevenue)} previstos</p>
+            <p>{activeStudents.length} alunos ativos · {scheduledClasses} aulas agendadas · {money(monthlyRevenue)} previstos</p>
           </div>
           <div>
             <button type="button" onClick={() => setCursorDate(new Date(cursorDate.getFullYear(), cursorDate.getMonth() - 1, 1))}>‹</button>
@@ -372,13 +362,12 @@ export function TeacherHome() {
           <p><span>Data</span>{selectedClass ? new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(new Date(`${selectedClass.class_date}T00:00:00`)) : 'Nenhuma aula selecionada'}</p>
           <p><span>Horário</span>{selectedClass ? `${selectedClass.class_time.slice(0, 5)} · ${selectedClass.duration_minutes} min` : 'Horário não definido'}</p>
           <p><span>Matéria</span>{selectedClass?.subject || selectedStudent?.subject || 'Matéria não definida'}</p>
-          <p><span>Zoom</span>{selectedClass?.meeting_url ? 'Reunião criada' : 'Criada ao iniciar aula'}</p>
         </div>
         <div className="lesson-action-box">
           <h3>Ações da aula</h3>
           <div className="smart-lesson-actions-inline">
             <button type="button" className="outline-action" onClick={() => smartLessonAction('start')} disabled={!selectedClass || actionLoading === 'start'}>
-              {actionLoading === 'start' ? 'Criando Zoom...' : selectedClass?.meeting_start_url ? 'Abrir Zoom' : 'Iniciar aula'}
+              {actionLoading === 'start' ? 'Iniciando...' : 'Iniciar aula'}
             </button>
             <button type="button" className="side-primary" onClick={() => smartLessonAction('finish')} disabled={!selectedClass || actionLoading === 'finish'}>
               {actionLoading === 'finish' ? 'Finalizando...' : 'Finalizar aula'}
@@ -408,7 +397,7 @@ export function TeacherHome() {
         <a className="outline-action" href="/teacher/students">Administrar aluno</a>
         <div className="teacher-day-tasks">
           <h3>Para hoje</h3>
-          <label><input type="checkbox" readOnly /> Corrigir {submissions.filter((item) => item.status === 'submitted').length} atividades</label>
+          <label><input type="checkbox" readOnly /> Revisar agenda do dia</label>
           <label><input type="checkbox" readOnly /> Conferir presenças</label>
         </div>
       </aside>

@@ -1,15 +1,15 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 
 const demoLinks = [
   {
     title: 'Demo do professor',
-    description: 'Painel com agenda, alunos, atividades, financeiro e aula inteligente.',
+    description: 'Painel com agenda, alunos, financeiro e aula inteligente.',
     href: '/demo/professor',
     url: 'https://professores-nine.vercel.app/demo/professor',
   },
   {
     title: 'Demo do aluno',
-    description: 'Portal do aluno com inicio, atividades, progresso e mensagens.',
+    description: 'Portal do aluno com inicio, progresso, historico e mensagens.',
     href: '/demo/aluno',
     url: 'https://professores-nine.vercel.app/demo/aluno',
   },
@@ -40,3 +40,4 @@ export default function DemoHubPage() {
     </main>
   );
 }
+

@@ -8,7 +8,6 @@ import { apiFetch } from '@/lib/fetcher';
 const titles: Record<string, { title: string; eyebrow: string }> = {
   '/teacher': { title: 'Painel', eyebrow: 'Portal do Professor' },
   '/teacher/students': { title: 'Alunos', eyebrow: 'Gestão' },
-  '/teacher/activities': { title: 'Atividades', eyebrow: 'Tarefas' },
   '/teacher/schedule': { title: 'Agenda', eyebrow: 'Calendário' },
   '/teacher/finance': { title: 'Financeiro', eyebrow: 'Receita' },
   '/teacher/messages': { title: 'Mensagens', eyebrow: 'Comunicação' },
@@ -22,7 +21,6 @@ const titles: Record<string, { title: string; eyebrow: string }> = {
   '/teacher/grades': { title: 'Notas', eyebrow: 'Avaliação' },
   '/teacher/frequency': { title: 'Frequência', eyebrow: 'Presença' },
   '/student': { title: 'Painel', eyebrow: 'Portal do Aluno' },
-  '/student/activities': { title: 'Atividades', eyebrow: 'Tarefas' },
   '/student/schedule': { title: 'Agenda', eyebrow: 'Calendário' },
   '/student/messages': { title: 'Mensagens', eyebrow: 'Comunicação' },
   '/student/lesson-history': { title: 'Histórico de Aulas', eyebrow: 'Relatórios' },
@@ -64,7 +62,7 @@ export function AppLayout({ children, area }: { children: React.ReactNode; area:
 
         <div className="app-search" role="search">
           <SearchIcon />
-          <input aria-label="Buscar" placeholder={area === 'teacher' ? 'Buscar alunos, aulas, atividades...' : 'Buscar aulas, atividades, mensagens...'} />
+          <input aria-label="Buscar" placeholder={area === 'teacher' ? 'Buscar alunos, aulas, mensagens...' : 'Buscar aulas, mensagens...'} />
           <kbd>Ctrl K</kbd>
         </div>
 

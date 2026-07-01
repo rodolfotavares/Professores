@@ -1,17 +1,17 @@
-const students = [
+﻿const students = [
   { name: 'Ana Beatriz', subject: 'Matematica', next: 'Hoje, 14:00', status: 'Em dia', progress: 85, tone: 'green' },
   { name: 'Lucas Almeida', subject: 'Fisica', next: 'Amanha, 16:30', status: 'Atencao', progress: 58, tone: 'orange' },
   { name: 'Sofia Ribeiro', subject: 'Redacao', next: 'Sexta, 18:00', status: 'Em dia', progress: 92, tone: 'green' },
   { name: 'Caio Henrique', subject: 'Quimica', next: 'Segunda, 10:00', status: 'Em dia', progress: 76, tone: 'blue' },
 ];
 
-const activities = [
-  { title: 'Equacoes do 2 grau', student: 'Ana Beatriz', status: 'Para corrigir', progress: '5/8' },
-  { title: 'Funcoes do 1 grau', student: 'Lucas Almeida', status: 'Publicada', progress: '2/8' },
-  { title: 'Redacao argumentativa', student: 'Sofia Ribeiro', status: 'Concluida', progress: '8/8' },
+const reports = [
+  { title: 'Aula de funcoes', student: 'Ana Beatriz', status: 'Relatorio pronto', progress: 'Evolucao 88%' },
+  { title: 'Revisao de fisica', student: 'Lucas Almeida', status: 'Ponto de atencao', progress: 'Evolucao 62%' },
+  { title: 'Redacao orientada', student: 'Sofia Ribeiro', status: 'Bom progresso', progress: 'Evolucao 91%' },
 ];
 
-const nav = ['Inicio', 'Alunos', 'Atividades', 'Aula Inteligente', 'Mensagens', 'Financeiro', 'Suporte'];
+const nav = ['Inicio', 'Alunos', 'Aula Inteligente', 'Mensagens', 'Financeiro', 'Suporte'];
 
 export default function DemoTeacherPage() {
   return (
@@ -38,7 +38,7 @@ export default function DemoTeacherPage() {
           </div>
           <label>
             <span>Buscar</span>
-            <input readOnly value="Buscar alunos, aulas, atividades..." />
+            <input readOnly value="Buscar alunos, aulas, mensagens..." />
           </label>
           <div className="demo-user">Prof. Camila</div>
         </header>
@@ -115,18 +115,18 @@ export default function DemoTeacherPage() {
           <article className="demo-real-card demo-span-3">
             <div className="demo-section-head">
               <div>
-                <span className="demo-eyebrow">Atividades</span>
-                <h2>Entregas recentes</h2>
+                <span className="demo-eyebrow">Aula Inteligente</span>
+                <h2>Relatorios recentes</h2>
               </div>
-              <button>Criar atividade</button>
+              <button>Novo relatorio</button>
             </div>
             <div className="demo-activity-table">
-              {activities.map((activity) => (
-                <div key={activity.title}>
-                  <strong>{activity.title}</strong>
-                  <span>{activity.student}</span>
-                  <em>{activity.status}</em>
-                  <small>{activity.progress} entregues</small>
+              {reports.map((report) => (
+                <div key={report.title}>
+                  <strong>{report.title}</strong>
+                  <span>{report.student}</span>
+                  <em>{report.status}</em>
+                  <small>{report.progress}</small>
                 </div>
               ))}
             </div>
@@ -136,3 +136,4 @@ export default function DemoTeacherPage() {
     </main>
   );
 }
+

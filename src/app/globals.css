@@ -705,6 +705,167 @@ button:disabled {
   font-size: 17px;
 }
 
+.student-evolution-home-card {
+  display: grid;
+  gap: 18px;
+  border: 1px solid #dfe7f1;
+  border-radius: 20px;
+  padding: 22px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 46px rgba(16, 40, 82, 0.08);
+}
+
+.student-evolution-home-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.student-evolution-home-head span {
+  color: #7c3aed;
+  font-weight: 950;
+}
+
+.student-evolution-home-head h2 {
+  margin: 4px 0;
+  color: #071832;
+  font-size: clamp(24px, 3vw, 34px);
+}
+
+.student-evolution-home-head p {
+  margin: 0;
+  color: #526174;
+}
+
+.student-evolution-home-head > strong {
+  color: #16a34a;
+  font-size: 42px;
+  line-height: 1;
+}
+
+.student-evolution-home-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.student-evolution-home-metrics article {
+  border: 1px solid #e4ebf5;
+  border-radius: 14px;
+  padding: 14px;
+  background: #fbfdff;
+}
+
+.student-evolution-home-metrics small {
+  display: block;
+  color: #526174;
+  font-weight: 850;
+}
+
+.student-evolution-home-metrics b {
+  display: block;
+  margin-top: 4px;
+  color: #0b64e9;
+  font-size: 24px;
+}
+
+.student-evolution-chart-wrap {
+  min-height: 260px;
+  border: 1px solid #e4ebf5;
+  border-radius: 16px;
+  padding: 14px;
+  background: linear-gradient(180deg, #fff, #f8fbff);
+}
+
+.student-evolution-chart-wrap svg {
+  width: 100%;
+  height: 260px;
+  overflow: visible;
+}
+
+.student-evolution-chart-wrap .evolution-grid {
+  fill: none;
+  stroke: #dfe7f1;
+  stroke-width: 0.5;
+  stroke-dasharray: 2 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.student-evolution-chart-wrap .evolution-area {
+  fill: rgba(124, 58, 237, 0.13);
+}
+
+.student-evolution-chart-wrap .evolution-line {
+  fill: none;
+  stroke: #7c3aed;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3.8;
+  vector-effect: non-scaling-stroke;
+}
+
+.student-evolution-chart-wrap circle {
+  fill: #7c3aed;
+  stroke: #fff;
+  stroke-width: 2.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.student-evolution-chart-wrap text {
+  fill: #351a86;
+  font-size: 5px;
+  font-weight: 950;
+  text-anchor: middle;
+}
+
+.student-evolution-empty {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  color: #526174;
+  text-align: center;
+  font-weight: 850;
+}
+
+.student-evolution-labels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 8px;
+}
+
+.student-evolution-labels span {
+  padding: 10px;
+  border-radius: 12px;
+  background: #f2f6ff;
+  color: #071832;
+  font-weight: 900;
+}
+
+.student-evolution-labels small {
+  display: block;
+  margin-top: 3px;
+  color: #526174;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.student-evolution-ai-box {
+  border-radius: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f5f0ff, #ffffff);
+  color: #203454;
+}
+
+.student-evolution-ai-box strong {
+  color: #7c3aed;
+}
+
+.student-evolution-ai-box p {
+  margin: 8px 0 0;
+  line-height: 1.55;
+}
+
 .student-evolution-kpis {
   display: grid;
   grid-template-columns: minmax(280px, 1.6fr) repeat(4, minmax(170px, 1fr));

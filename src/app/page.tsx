@@ -1,25 +1,25 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 
 const calendarItems = [
-  { day: 6, title: 'Inglês', time: '09:00', tone: 'green' },
-  { day: 7, title: 'Matemática', time: '14:00', tone: 'purple' },
-  { day: 8, title: 'Física', time: '10:30', tone: 'yellow' },
-  { day: 9, title: 'Redação', time: '16:00', tone: 'blue' },
-  { day: 13, title: 'Inglês', time: '09:00', tone: 'green' },
-  { day: 14, title: 'Matemática', time: '14:00', tone: 'purple' },
-  { day: 15, title: 'Física', time: '10:30', tone: 'yellow' },
-  { day: 16, title: 'Redação', time: '16:00', tone: 'blue' },
-  { day: 20, title: 'Inglês', time: '09:00', tone: 'green' },
-  { day: 21, title: 'Matemática', time: '14:00', tone: 'purple active' },
-  { day: 22, title: 'Física', time: '10:30', tone: 'yellow' },
-  { day: 23, title: 'Redação', time: '16:00', tone: 'blue' },
-  { day: 27, title: 'Inglês', time: '09:00', tone: 'green' },
-  { day: 28, title: 'Matemática', time: '14:00', tone: 'purple' },
+  { day: 6, title: 'InglÃªs', time: '09:00', tone: 'green' },
+  { day: 7, title: 'MatemÃ¡tica', time: '14:00', tone: 'purple' },
+  { day: 8, title: 'FÃ­sica', time: '10:30', tone: 'yellow' },
+  { day: 9, title: 'RedaÃ§Ã£o', time: '16:00', tone: 'blue' },
+  { day: 13, title: 'InglÃªs', time: '09:00', tone: 'green' },
+  { day: 14, title: 'MatemÃ¡tica', time: '14:00', tone: 'purple' },
+  { day: 15, title: 'FÃ­sica', time: '10:30', tone: 'yellow' },
+  { day: 16, title: 'RedaÃ§Ã£o', time: '16:00', tone: 'blue' },
+  { day: 20, title: 'InglÃªs', time: '09:00', tone: 'green' },
+  { day: 21, title: 'MatemÃ¡tica', time: '14:00', tone: 'purple active' },
+  { day: 22, title: 'FÃ­sica', time: '10:30', tone: 'yellow' },
+  { day: 23, title: 'RedaÃ§Ã£o', time: '16:00', tone: 'blue' },
+  { day: 27, title: 'InglÃªs', time: '09:00', tone: 'green' },
+  { day: 28, title: 'MatemÃ¡tica', time: '14:00', tone: 'purple' },
 ];
 
 const benefits = [
-  ['Agenda inteligente', 'Organize aulas e receba lembretes automáticos.', 'calendar'],
-  ['Atividades conectadas', 'Crie, atribua e acompanhe atividades em poucos cliques.', 'tasks'],
+  ['Agenda inteligente', 'Organize aulas e receba lembretes automÃ¡ticos.', 'calendar'],
+  ['Aulas conectadas', 'Organize aulas e acompanhe a evolucao em poucos cliques.', 'tasks'],
   ['Financeiro simples', 'Controle pagamentos e acompanhe recebimentos com facilidade.', 'money'],
 ];
 
@@ -32,7 +32,7 @@ export default function HomePage() {
           <strong>LuminaAI</strong>
         </Link>
         <nav>
-          <Link href="/login">Já tenho uma conta</Link>
+          <Link href="/login">JÃ¡ tenho uma conta</Link>
           <Link className="flow-login-button" href="/login">Entrar</Link>
         </nav>
       </header>
@@ -40,30 +40,30 @@ export default function HomePage() {
       <section className="flow-hero">
         <div className="flow-copy">
           <h1>Sua rotina de aulas, mais simples.</h1>
-          <p>Organize agenda, alunos, atividades e pagamentos em um só lugar.</p>
+          <p>Organize agenda, alunos, aulas e pagamentos em um sÃ³ lugar.</p>
 
           <div className="flow-role-grid">
             <Link className="flow-role-card" href="/register/teacher">
               <TeacherCardIcon />
               <strong>Sou professor</strong>
               <span>Gerencie seus alunos e aulas com facilidade.</span>
-              <em>→</em>
+              <em>â†’</em>
             </Link>
             <Link className="flow-role-card" href="/register/student">
               <StudentCardIcon />
               <strong>Sou aluno</strong>
-              <span>Acompanhe suas aulas e atividades.</span>
-              <em>→</em>
+              <span>Acompanhe suas aulas e evolucao.</span>
+              <em>â†’</em>
             </Link>
           </div>
 
-          <Link className="flow-create-link" href="/register/teacher">Criar conta gratuita <span>›</span></Link>
+          <Link className="flow-create-link" href="/register/teacher">Criar conta gratuita <span>â€º</span></Link>
         </div>
 
-        <div className="flow-preview" aria-label="Prévia do painel LuminaAI">
+        <div className="flow-preview" aria-label="PrÃ©via do painel LuminaAI">
           <aside className="flow-preview-sidebar">
             <div className="flow-preview-brand"><CalendarLogo /> <strong>LuminaAI</strong></div>
-            {['Agenda', 'Alunos', 'Atividades', 'Financeiro', 'Mensagens', 'Relatórios', 'Configurações'].map((item, index) => (
+            {['Agenda', 'Alunos', 'Aula Inteligente', 'Financeiro', 'Mensagens', 'RelatÃ³rios', 'ConfiguraÃ§Ãµes'].map((item, index) => (
               <span className={index === 0 ? 'active' : ''} key={item}><PreviewIcon /> {item}</span>
             ))}
             <small>Ajuda</small>
@@ -73,14 +73,14 @@ export default function HomePage() {
             <div className="flow-calendar-head">
               <h2>Maio de 2025</h2>
               <div>
-                <button>‹</button>
-                <button>›</button>
+                <button>â€¹</button>
+                <button>â€º</button>
                 <button>Hoje</button>
               </div>
-              <button>Mês⌄</button>
+              <button>MÃªsâŒ„</button>
             </div>
             <div className="flow-weekdays">
-              {['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'].map((day) => <span key={day}>{day}</span>)}
+              {['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÃB'].map((day) => <span key={day}>{day}</span>)}
             </div>
             <div className="flow-calendar-grid">
               {Array.from({ length: 35 }).map((_, index) => {
@@ -95,7 +95,7 @@ export default function HomePage() {
               })}
             </div>
             <div className="flow-legend">
-              {['Inglês', 'Matemática', 'Física', 'Redação'].map((item) => <span key={item}>{item}</span>)}
+              {['InglÃªs', 'MatemÃ¡tica', 'FÃ­sica', 'RedaÃ§Ã£o'].map((item) => <span key={item}>{item}</span>)}
             </div>
           </section>
 
@@ -103,7 +103,7 @@ export default function HomePage() {
             <div className="flow-date-card">
               <strong>Quarta-feira, 21 de maio</strong>
               <div>
-                <b>Matemática</b>
+                <b>MatemÃ¡tica</b>
                 <span>14:00 - 15:00</span>
                 <small>Aula particular</small>
               </div>
@@ -111,19 +111,19 @@ export default function HomePage() {
             <div className="flow-student-card">
               <span>AC</span>
               <strong>Ana Clara Souza</strong>
-              <small>9º ano - Ensino Fundamental</small>
+              <small>9Âº ano - Ensino Fundamental</small>
               <button>Ver perfil do aluno</button>
             </div>
             <div className="flow-small-card">
-              <strong>Próxima atividade</strong>
-              <span>Lista de exercícios - Funções</span>
+              <strong>Proximo relatorio</strong>
+              <span>Lista de exercÃ­cios - FunÃ§Ãµes</span>
             </div>
             <div className="flow-small-card">
               <strong>Pagamento</strong>
               <b>R$ 180,00</b>
               <small>Em dia</small>
             </div>
-            <button className="flow-class-button">Entrar na aula</button>
+            <button className="flow-class-button">Confirmar aula</button>
           </aside>
         </div>
       </section>
@@ -175,3 +175,4 @@ function BenefitIcon({ name }: { name: string }) {
   if (name === 'tasks') return <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M9 8h6M9 12h6M9 16h3" /></svg>;
   return <CalendarLogo />;
 }
+

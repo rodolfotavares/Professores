@@ -78,67 +78,6 @@ function LanguagePreferenceCard() {
   );
 }
 
-function ZoomConnectionCard() {
-  const [status, setStatus] = useState<{ connected: boolean; zoom_email: string | null } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [connecting, setConnecting] = useState(false);
-  const [message, setMessage] = useState('');
-
-  async function load() {
-    try {
-      const data = await apiFetch<{ connected: boolean; zoom_email: string | null }>('/api/zoom/status');
-      setStatus(data);
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Falha ao verificar Zoom.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  usePanelLoad(load, 30000);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const zoom = params.get('zoom');
-    if (zoom === 'connected') setMessage('Zoom conectado com sucesso.');
-    if (zoom === 'error') setMessage('Nao foi possivel conectar o Zoom.');
-    if (zoom === 'invalid_state') setMessage('A conexao do Zoom expirou. Tente novamente.');
-  }, []);
-
-  async function connectZoom() {
-    setConnecting(true);
-    setMessage('');
-    try {
-      const data = await apiFetch<{ url: string }>('/api/zoom/auth');
-      window.location.href = data.url;
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Falha ao iniciar conexao com Zoom.');
-      setConnecting(false);
-    }
-  }
-
-  return (
-    <GlassCard className="portal-summary-card zoom-connection-card">
-      <div className="glass-card-head">
-        <div>
-          <span className="eyebrow">Aula online</span>
-          <h2>Zoom</h2>
-        </div>
-        <StatusBadge tone={status?.connected ? 'success' : 'warning'}>{status?.connected ? 'Conectado' : 'Nao conectado'}</StatusBadge>
-      </div>
-      <p className="muted">
-        {status?.connected
-          ? `Conectado em ${status.zoom_email || 'sua conta Zoom'}. Ao iniciar uma aula, o LuminaAI cria a reuniao e libera o link para professor e aluno.`
-          : 'Conecte sua conta Zoom para criar reunioes automaticamente ao iniciar a Aula Inteligente.'}
-      </p>
-      {message && <p className="panel-note">{message}</p>}
-      <button className="btn primary" type="button" onClick={connectZoom} disabled={loading || connecting}>
-        {connecting ? 'Conectando...' : status?.connected ? 'Reconectar Zoom' : 'Conectar Zoom'}
-      </button>
-    </GlassCard>
-  );
-}
-
 const supportAnswers = [
   {
     keywords: ['aluno', 'vincular', 'codigo', 'código', 'cadastro'],
@@ -147,10 +86,6 @@ const supportAnswers = [
   {
     keywords: ['agenda', 'aula', 'horario', 'horário', 'presenca', 'presença'],
     answer: 'A agenda nasce dos dias e horarios cadastrados no aluno. O professor acompanha e ajusta aulas no cadastro do aluno, e o aluno visualiza os proximos encontros no Inicio do portal.',
-  },
-  {
-    keywords: ['atividade', 'tarefa', 'corrigir', 'nota', 'feedback'],
-    answer: 'As atividades ficam na aba Atividades. Entregas novas aparecem em Para corrigir, atividades sem entrega ficam em Pendentes e avaliações concluídas ficam em Corrigidas.',
   },
   {
     keywords: ['mensagem', 'recado', 'chat'],
@@ -170,12 +105,12 @@ function supportReply(question: string) {
   const normalized = question.toLowerCase();
   const match = supportAnswers.find((item) => item.keywords.some((keyword) => normalized.includes(keyword)));
   if (match) return match.answer;
-  return 'Posso ajudar somente com funcoes do LuminaAI: alunos, aulas, atividades, mensagens, financeiro, instalacao, suporte e configuracoes.';
+  return 'Posso ajudar somente com funcoes do LuminaAI: alunos, aulas, mensagens, financeiro, instalacao, suporte e configuracoes.';
 }
 
 export function TeacherSupportPanel() {
   const [messages, setMessages] = useState([
-    { role: 'assistant', text: 'Ola! Sou o assistente do LuminaAI. Posso ajudar com funcoes do app, como alunos, aulas, atividades, mensagens e financeiro.' },
+    { role: 'assistant', text: 'Ola! Sou o assistente do LuminaAI. Posso ajudar com funcoes do app, como alunos, aulas, mensagens e financeiro.' },
   ]);
   const [question, setQuestion] = useState('');
 
@@ -220,7 +155,6 @@ export function TeacherSupportPanel() {
       </div>
       <div className="grid grid-2">
         <LanguagePreferenceCard />
-        <ZoomConnectionCard />
       </div>
       <GlassCard className="support-shortcuts-card">
         <div className="glass-card-head">
@@ -492,7 +426,7 @@ export function TeacherSettingsPanel() {
         <GlassCard className="portal-summary-card">
           <span className="eyebrow">Professor</span>
           <h2>{profile?.full_name || 'Professor'}</h2>
-          <p className="muted">Seu portal está conectado ao Supabase e sincroniza alunos, agenda, atividades e mensagens.</p>
+          <p className="muted">Seu portal esta conectado ao Supabase e sincroniza alunos, agenda e mensagens.</p>
         </GlassCard>
         <GlassCard className="portal-summary-card access-code-card">
           <span className="eyebrow">Código do professor</span>

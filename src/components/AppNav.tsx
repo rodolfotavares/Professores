@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -16,9 +16,8 @@ export function TeacherNav() {
         </div>
       </div>
       <nav className="sidebar-nav icon-nav">
-        <NavIcon href="/teacher" label="Início" icon="home" />
+        <NavIcon href="/teacher" label="InÃ­cio" icon="home" />
         <NavIcon href="/teacher/students" label="Alunos" icon="users" />
-        <NavIcon href="/teacher/activities" label="Atividades" icon="tasks" />
         <NavIcon href="/teacher/smart-lesson" label="Aula Inteligente" icon="smart" />
         <NavIcon href="/teacher/messages" label="Mensagens" icon="message" />
         <NavIcon href="/teacher/finance" label="Financeiro" icon="chart" />
@@ -40,9 +39,8 @@ export function StudentNav() {
         </div>
       </div>
       <nav className="sidebar-nav icon-nav">
-        <NavIcon href="/student" label="Início" icon="home" />
-        <NavIcon href="/student/activities" label="Atividades" icon="tasks" />
-        <NavIcon href="/student/lesson-history" label="Histórico" icon="smart" />
+        <NavIcon href="/student" label="InÃ­cio" icon="home" />
+        <NavIcon href="/student/lesson-history" label="HistÃ³rico" icon="smart" />
         <NavIcon href="/student/messages" label="Mensagens" icon="message" />
         <NavIcon href="/student/settings" label="Perfil" icon="users" />
       </nav>
@@ -152,3 +150,4 @@ function Icon({ name }: { name: IconName }) {
   if (name === 'smart') return <svg {...common}><path d="M12 3a6 6 0 0 0-6 6c0 2.1 1.1 3.4 2 4.5.7.8 1 1.5 1 2.5h6c0-1 .3-1.7 1-2.5.9-1.1 2-2.4 2-4.5a6 6 0 0 0-6-6Z" /><path d="M9 19h6" /><path d="M10 22h4" /></svg>;
   return <svg {...common}><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z" /></svg>;
 }
+

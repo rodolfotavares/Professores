@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { GlassCard } from '@/components/AppShell';
 
@@ -51,7 +51,7 @@ export function InstallTutorialPanel() {
         </div>
         <p className="muted">
           No iPhone, use o Safari. No Android, use o Chrome. Depois de instalado, o LuminaAI abre em tela cheia,
-          como um aplicativo comum, mantendo login, agenda, atividades e mensagens sincronizados.
+          como um aplicativo comum, mantendo login, agenda, evolução e mensagens sincronizados.
         </p>
       </GlassCard>
     </div>
@@ -75,3 +75,4 @@ function TutorialCard({ title, subtitle, steps }: { title: string; subtitle: str
     </GlassCard>
   );
 }
+

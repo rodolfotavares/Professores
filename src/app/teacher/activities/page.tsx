@@ -1,5 +1,5 @@
-import { TeacherActivitiesBoard } from '@/components/TeacherActivitiesBoard';
+import { redirect } from 'next/navigation';
 
 export default function TeacherActivitiesPage() {
-  return <TeacherActivitiesBoard />;
+  redirect('/teacher');
 }

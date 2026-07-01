@@ -1,4 +1,4 @@
-const week = [
+﻿const week = [
   { day: 'Seg', date: '22/06', lessons: [{ title: 'Portugues', time: '08:00', tone: 'blue' }] },
   { day: 'Ter', date: '23/06', lessons: [{ title: 'Ciencias', time: '10:00', tone: 'green' }] },
   { day: 'Qua', date: '24/06', lessons: [{ title: 'Matematica', time: '14:00', tone: 'active' }] },
@@ -6,13 +6,13 @@ const week = [
   { day: 'Sex', date: '26/06', lessons: [{ title: 'Ingles', time: '16:00', tone: 'gold' }] },
 ];
 
-const activities = [
-  { title: 'Resolver exercicios sobre funcoes', status: 'Pendente', date: 'Hoje, 18:00' },
-  { title: 'Enviar resumo da aula', status: 'Em andamento', date: 'Amanha, 20:00' },
-  { title: 'Revisao de grafico', status: 'Corrigida', date: 'Nota 9,0' },
+const evolutionItems = [
+  { title: 'Funcoes do 1 grau', status: 'Evolucao 88%', date: 'Ultimas 4 aulas' },
+  { title: 'Interpretacao de problemas', status: 'Evolucao 76%', date: 'Ponto para reforcar' },
+  { title: 'Autonomia nos exercicios', status: 'Evolucao 91%', date: 'Bom progresso' },
 ];
 
-const nav = ['Inicio', 'Atividades', 'Historico', 'Mensagens', 'Perfil'];
+const nav = ['Inicio', 'Historico', 'Mensagens', 'Perfil'];
 
 export default function DemoStudentPage() {
   return (
@@ -39,7 +39,7 @@ export default function DemoStudentPage() {
           </div>
           <label>
             <span>Buscar</span>
-            <input readOnly value="Buscar aulas, atividades, mensagens..." />
+            <input readOnly value="Buscar aulas, mensagens..." />
           </label>
           <div className="demo-user">Ana</div>
         </header>
@@ -53,9 +53,9 @@ export default function DemoStudentPage() {
                 <p>Hoje, 14:00 com Prof. Camila</p>
               </article>
               <article>
-                <span>Atividades pendentes</span>
-                <strong>2</strong>
-                <p>Toque para responder e anexar arquivos.</p>
+                <span>Aulas registradas</span>
+                <strong>8</strong>
+                <p>Historico pronto para acompanhar sua evolucao.</p>
               </article>
               <article>
                 <span>Seu progresso</span>
@@ -91,20 +91,20 @@ export default function DemoStudentPage() {
             <section className="demo-real-card">
               <div className="demo-section-head">
                 <div>
-                  <span className="demo-eyebrow">Atividades</span>
-                  <h2>Responder tarefas</h2>
+                  <span className="demo-eyebrow">Evolucao</span>
+                  <h2>Analise por aula</h2>
                 </div>
-                <button>Ver todas</button>
+                <button>Ver historico</button>
               </div>
               <div className="demo-student-activities">
-                {activities.map((activity) => (
-                  <details key={activity.title}>
+                {evolutionItems.map((item) => (
+                  <details key={item.title}>
                     <summary>
-                      <strong>{activity.title}</strong>
-                      <span>{activity.status}</span>
+                      <strong>{item.title}</strong>
+                      <span>{item.status}</span>
                     </summary>
-                    <p>Campo de resposta, upload de arquivo e feedback ficam organizados dentro da atividade expandida.</p>
-                    <small>{activity.date}</small>
+                    <p>A IA cruza os relatorios das aulas para mostrar onde o aluno evoluiu e onde ainda precisa de atencao.</p>
+                    <small>{item.date}</small>
                   </details>
                 ))}
               </div>
@@ -132,3 +132,4 @@ export default function DemoStudentPage() {
     </main>
   );
 }
+

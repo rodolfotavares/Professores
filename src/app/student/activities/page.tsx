@@ -1,5 +1,5 @@
-import { StudentActivitiesPanel } from '@/components/StudentPanels';
+import { redirect } from 'next/navigation';
 
 export default function StudentActivitiesPage() {
-  return <StudentActivitiesPanel />;
+  redirect('/student');
 }
