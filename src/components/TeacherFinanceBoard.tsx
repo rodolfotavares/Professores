@@ -203,15 +203,15 @@ export function TeacherFinanceBoard() {
             <h2>Ganhos no mês</h2>
             <div><button className="active" type="button">Mês</button><button type="button">Ano</button></div>
           </div>
-          <div className="finance-chart-área">
+          <div className="finance-chart-area">
             <div className="finance-y-axis">
               {[5000, 4000, 3000, 2000, 1000, 0].map((value) => <span key={value}>{money(value)}</span>)}
             </div>
             <svg className="finance-svg-chart" viewBox="0 0 760 260" preserveAspectRatio="none" aria-label="Gráfico de ganhos">
               <defs>
                 <linearGradient id="financeArea" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#0b64e9" stopOpacity="0.26" />
-                  <stop offset="100%" stopColor="#0b64e9" stopOpacity="0.02" />
+                  <stop offset="0%" stopColor="#7dd3fc" stopOpacity="0.34" />
+                  <stop offset="100%" stopColor="#7dd3fc" stopOpacity="0.04" />
                 </linearGradient>
               </defs>
               {[0, 52, 104, 156, 208, 260].map((y) => <line key={y} x1="0" x2="760" y1={y} y2={y} />)}
@@ -222,10 +222,10 @@ export function TeacherFinanceBoard() {
                   return [x, y] as const;
                 });
                 const path = coords.map(([x, y], index) => `${index === 0 ? 'M' : 'L'} ${x} ${y}`).join(' ');
-                const área = `${path} L 760 260 L 0 260 Z`;
+                const area = `${path} L 760 260 L 0 260 Z`;
                 return (
                   <>
-                    <path className="finance-área-path" d={área} />
+                    <path className="finance-area-path" d={area} />
                     <path className="finance-line-path" d={path} />
                     {coords.map(([x, y]) => <circle key={`${x}-${y}`} cx={x} cy={y} r="5" />)}
                   </>

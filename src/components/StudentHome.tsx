@@ -51,10 +51,10 @@ function buildStudentEvolution(reports: LessonReport[]) {
 function StudentEvolutionCard({ reports, studentName }: { reports: LessonReport[]; studentName: string }) {
   const evolution = buildStudentEvolution(reports);
   const path = evolution.points.map((point, index) => {
-    const y = 100 - point.score;
+    const y = 52 - (point.score / 100) * 44;
     return `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${y.toFixed(2)}`;
   }).join(' ');
-  const area = path ? `${path} L 100 100 L 0 100 Z` : '';
+  const area = path ? `${path} L 100 56 L 0 56 Z` : '';
   const latest = evolution.points.at(-1)?.report;
 
   return (
@@ -69,21 +69,22 @@ function StudentEvolutionCard({ reports, studentName }: { reports: LessonReport[
       </div>
       <div className="student-evolution-home-metrics">
         <article><small>Aulas analisadas</small><b>{reports.length}</b></article>
-        <article><small>Tendencia</small><b>{evolution.trend >= 0 ? `+${evolution.trend}` : evolution.trend}</b></article>
+        <article><small>Tendência</small><b>{evolution.trend >= 0 ? `+${evolution.trend}` : evolution.trend}</b></article>
         <article><small>Pontos de atenção</small><b>{evolution.attention}</b></article>
       </div>
       <div className="student-evolution-chart-wrap">
         {evolution.points.length ? (
-          <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Gráfico de evolução do aluno">
-            <path className="evolution-grid" d="M0 20H100 M0 40H100 M0 60H100 M0 80H100" />
+          <svg viewBox="0 0 100 56" preserveAspectRatio="none" aria-label="Gráfico de evolução do aluno">
+            <path className="evolution-grid" d="M0 8H100 M0 20H100 M0 32H100 M0 44H100" />
             <path className="evolution-area" d={area} />
             <path className="evolution-line" d={path} />
             {evolution.points.map((point) => {
-              const y = 100 - point.score;
+              const y = 52 - (point.score / 100) * 44;
               return (
                 <g key={point.report.id}>
-                  <circle cx={point.x} cy={y} r="2.6" />
-                  <text x={point.x} y={Math.max(7, y - 7)}>{point.score}</text>
+                  <circle cx={point.x} cy={y} r="1.8" />
+                  <text className="score-label" x={point.x} y={Math.max(5, y - 4)}>{point.score}%</text>
+                  <text className="lesson-label" x={point.x} y="54">{point.label}</text>
                 </g>
               );
             })}

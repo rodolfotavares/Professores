@@ -771,16 +771,16 @@ button:disabled {
 }
 
 .student-evolution-chart-wrap {
-  min-height: 260px;
+  min-height: 230px;
   border: 1px solid #e4ebf5;
   border-radius: 16px;
-  padding: 14px;
+  padding: 18px 18px 12px;
   background: linear-gradient(180deg, #fff, #f8fbff);
 }
 
 .student-evolution-chart-wrap svg {
   width: 100%;
-  height: 260px;
+  height: 220px;
   overflow: visible;
 }
 
@@ -793,30 +793,41 @@ button:disabled {
 }
 
 .student-evolution-chart-wrap .evolution-area {
-  fill: rgba(124, 58, 237, 0.13);
+  fill: rgba(59, 130, 246, 0.11);
 }
 
 .student-evolution-chart-wrap .evolution-line {
   fill: none;
-  stroke: #7c3aed;
+  stroke: #3b82f6;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 3.8;
+  stroke-width: 2.8;
   vector-effect: non-scaling-stroke;
 }
 
 .student-evolution-chart-wrap circle {
-  fill: #7c3aed;
+  fill: #3b82f6;
   stroke: #fff;
-  stroke-width: 2.5;
+  stroke-width: 2;
   vector-effect: non-scaling-stroke;
 }
 
 .student-evolution-chart-wrap text {
-  fill: #351a86;
-  font-size: 5px;
+  fill: #102a56;
+  font-size: 3.4px;
   font-weight: 950;
   text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.student-evolution-chart-wrap .lesson-label {
+  fill: #64748b;
+  font-size: 3.1px;
+  font-weight: 800;
+}
+
+.student-evolution-chart-wrap .score-label {
+  fill: #1d4ed8;
 }
 
 .student-evolution-empty {
@@ -7149,14 +7160,14 @@ select.input option {
 
 .finance-line-path {
   fill: none;
-  stroke: #0b64e9;
-  stroke-width: 4;
+  stroke: #4f9fd8;
+  stroke-width: 3.5;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
 .finance-svg-chart circle {
-  fill: #0b64e9;
+  fill: #4f9fd8;
   stroke: #fff;
   stroke-width: 2;
 }
