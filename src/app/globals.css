@@ -3438,6 +3438,116 @@ select.input option {
   line-height: 1.45;
 }
 
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(7, 24, 50, 0.38);
+  backdrop-filter: blur(10px);
+}
+
+.onboarding-card {
+  width: min(520px, 100%);
+  border: 1px solid rgba(11, 100, 233, 0.18);
+  border-radius: 26px;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(11, 100, 233, 0.12), transparent 32%),
+    rgba(255, 255, 255, 0.98);
+  box-shadow: 0 28px 90px rgba(7, 24, 50, 0.28);
+}
+
+.onboarding-head,
+.onboarding-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.onboarding-head span {
+  color: #0b64e9;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+}
+
+.onboarding-head button,
+.onboarding-actions button {
+  border: 1px solid #dbe5f2;
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: #fff;
+  color: #203454;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.onboarding-progress {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 18px 0 20px;
+}
+
+.student-portal .onboarding-progress {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.onboarding-progress span {
+  height: 6px;
+  border-radius: 999px;
+  background: #e7eef8;
+}
+
+.onboarding-progress span.active {
+  background: linear-gradient(90deg, #0b64e9, #46c4ff);
+}
+
+.onboarding-card h2 {
+  margin: 0;
+  color: #071832;
+  font-size: clamp(26px, 4vw, 36px);
+  line-height: 1.08;
+}
+
+.onboarding-card p {
+  margin: 14px 0 0;
+  color: #334765;
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.onboarding-card small {
+  display: block;
+  margin-top: 14px;
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: #eff6ff;
+  color: #0b4eb8;
+  font-weight: 800;
+}
+
+.onboarding-actions {
+  margin-top: 22px;
+}
+
+.onboarding-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.onboarding-actions .primary {
+  border-color: transparent;
+  background: linear-gradient(135deg, #0b64e9, #0749c9);
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(11, 100, 233, 0.25);
+}
+
 .install-note-card {
   min-height: auto;
 }
@@ -6860,6 +6970,15 @@ select.input option {
 .finance-app-subscription span {
   margin-top: 5px;
   color: #60708a;
+}
+
+.finance-app-subscription.trial {
+  border-color: #bfdbfe;
+  background: linear-gradient(135deg, #eff6ff, #ffffff);
+}
+
+.finance-app-subscription.trial strong {
+  color: #0759d1;
 }
 
 .finance-app-subscription button {

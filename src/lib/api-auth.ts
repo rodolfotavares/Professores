@@ -13,6 +13,17 @@ export function currentSubscriptionMonth() {
   return new Date().toISOString().slice(0, 7);
 }
 
+function trialInfo(createdAt?: string | null) {
+  const start = createdAt ? new Date(createdAt) : new Date();
+  const endsAt = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const msLeft = endsAt.getTime() - Date.now();
+  return {
+    trial_ends_at: endsAt.toISOString(),
+    trial_days_left: Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000))),
+    trial_expired: msLeft <= 0,
+  };
+}
+
 export async function getTeacherSubscriptionStatus(teacherId: string, monthReference = currentSubscriptionMonth()) {
   const { data: teacherProfile } = await supabaseAdmin
     .from('teacher_profiles')
@@ -32,10 +43,43 @@ export async function getTeacherSubscriptionStatus(teacherId: string, monthRefer
 
   const { data } = await supabaseAdmin
     .from('app_subscriptions')
-    .select('status, paid_at, month_reference, amount')
+    .select('status, paid_at, month_reference, amount, created_at')
     .eq('teacher_id', teacherId)
     .eq('month_reference', monthReference)
     .maybeSingle();
+
+  if (data?.status === 'trial') {
+    const trial = trialInfo(data.created_at);
+    if (!trial.trial_expired) {
+      return { ...data, ...trial, exempt: false };
+    }
+
+    return {
+      ...data,
+      status: 'pending',
+      paid_at: null,
+      ...trial,
+      exempt: false,
+    };
+  }
+
+  if (!data) {
+    const { data: latestTrial } = await supabaseAdmin
+      .from('app_subscriptions')
+      .select('status, paid_at, month_reference, amount, created_at')
+      .eq('teacher_id', teacherId)
+      .eq('status', 'trial')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (latestTrial) {
+      const trial = trialInfo(latestTrial.created_at);
+      if (!trial.trial_expired) {
+        return { ...latestTrial, month_reference: monthReference, ...trial, exempt: false };
+      }
+    }
+  }
 
   return data || {
     status: 'pending',
@@ -60,9 +104,9 @@ async function assertTeacherSubscription(req: NextRequest, user: ApiUser) {
   if (canTeacherUseApi(req.nextUrl.pathname)) return;
 
   const subscription = await getTeacherSubscriptionStatus(user.id);
-  if (subscription.status !== 'paid' && subscription.status !== 'exempt') {
+  if (subscription.status !== 'paid' && subscription.status !== 'exempt' && subscription.status !== 'trial') {
     throw new Response(JSON.stringify({
-      error: 'Sua assinatura mensal do LuminaAI esta pendente. Acesse Financeiro e pague a mensalidade para liberar o app.',
+      error: 'Seu teste gratis de 7 dias terminou. Acesse Financeiro e pague a mensalidade para liberar o app.',
       code: 'SUBSCRIPTION_REQUIRED',
     }), { status: 402 });
   }

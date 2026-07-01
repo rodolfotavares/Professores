@@ -15,7 +15,12 @@ type AuthProfile = {
 
 function portalPath(profile: AuthProfile) {
   if (profile.role === 'student') return '/student';
-  if (profile.role === 'teacher' && profile.subscription?.status !== 'paid' && profile.subscription?.status !== 'exempt') {
+  if (
+    profile.role === 'teacher'
+    && profile.subscription?.status !== 'paid'
+    && profile.subscription?.status !== 'exempt'
+    && profile.subscription?.status !== 'trial'
+  ) {
     return '/teacher/finance';
   }
   return '/teacher';
@@ -230,7 +235,9 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
           : 'Cadastro criado, mas o perfil nÃ£o foi reconhecido como professor. Entre em contato com o suporte.');
       }
 
-      router.push(portalPath(profile));
+      const destination = portalPath(profile);
+      window.localStorage.setItem(`lumina-onboarding-${mode}`, 'pending');
+      router.push(`${destination}${destination.includes('?') ? '&' : '?'}welcome=1`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro inesperado.');
     } finally {

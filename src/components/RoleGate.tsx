@@ -26,10 +26,11 @@ export function RoleGate({ expected, children }: { expected: Role; children: Rea
           const subscriptionPending = expected === 'teacher'
             && profile.role === 'teacher'
             && profile.subscription?.status !== 'paid'
-            && profile.subscription?.status !== 'exempt';
+            && profile.subscription?.status !== 'exempt'
+            && profile.subscription?.status !== 'trial';
           if (subscriptionPending && pathname !== '/teacher/finance') {
             setStatus('blocked');
-            setMessage('Sua assinatura mensal do LuminaAI esta pendente. Acesse Financeiro e pague a mensalidade para liberar o app.');
+            setMessage('Seu teste gratis de 7 dias terminou. Acesse Financeiro e pague a mensalidade para liberar o app.');
             window.setTimeout(() => router.replace('/teacher/finance'), 900);
             return;
           }

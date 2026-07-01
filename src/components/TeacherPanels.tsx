@@ -314,9 +314,9 @@ export function TeacherFinancePanel() {
   const paidTotal = rows.filter((student) => student.payment === 'paid').reduce((sum, student) => sum + student.monthly, 0);
   const unpaidTotal = Math.max(0, total - paidTotal);
   const max = Math.max(...rows.map((student) => student.monthly), 1);
-  const subscriptionActive = subscription?.status === 'paid' || subscription?.status === 'exempt';
-  const subscriptionLabel = subscription?.status === 'exempt' ? 'Isento' : subscription?.status === 'paid' ? 'Pago' : 'Pendente';
-  const subscriptionStatusLabel = subscription?.status === 'exempt' ? 'Liberada' : subscription?.status === 'paid' ? 'Ativa' : 'Pendente';
+  const subscriptionActive = subscription?.status === 'paid' || subscription?.status === 'exempt' || subscription?.status === 'trial';
+  const subscriptionLabel = subscription?.status === 'exempt' ? 'Isento' : subscription?.status === 'paid' ? 'Pago' : subscription?.status === 'trial' ? 'Teste gratis' : 'Pendente';
+  const subscriptionStatusLabel = subscription?.status === 'exempt' ? 'Liberada' : subscription?.status === 'paid' ? 'Ativa' : subscription?.status === 'trial' ? 'Liberada' : 'Pendente';
 
   function downloadReceipt(student: typeof rows[number]) {
     const content = [
@@ -381,7 +381,7 @@ export function TeacherFinancePanel() {
           <div className="metric"><p className="muted">Status</p><h2>{subscriptionStatusLabel}</h2></div>
         </div>
         <button className="btn primary" onClick={createMercadoPagoCheckout} disabled={checkoutLoading || subscriptionActive}>
-          {checkoutLoading ? 'Gerando...' : subscription?.status === 'exempt' ? 'Professor isento' : subscription?.status === 'paid' ? 'Assinatura paga' : 'Pagar R$ 39,90'}
+          {checkoutLoading ? 'Gerando...' : subscription?.status === 'exempt' ? 'Professor isento' : subscription?.status === 'paid' ? 'Assinatura paga' : subscription?.status === 'trial' ? 'Teste gratis ativo' : 'Pagar R$ 39,90'}
         </button>
       </div>
       <div className="grid grid-3">

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { apiError, getApiUser, json } from '@/lib/api-auth';
+import { apiError, getApiUser, getTeacherSubscriptionStatus, json } from '@/lib/api-auth';
 import { createMercadoPagoPreference, upsertAppSubscription } from '@/lib/mercadopago';
 
 const schema = z.object({
@@ -20,12 +20,15 @@ export async function POST(req: NextRequest) {
     const monthReference = body.month_reference || new Date().toISOString().slice(0, 7);
 
     const externalReference = ['app', user.id, monthReference].join('|');
-    await upsertAppSubscription({
-      teacherId: user.id,
-      monthReference,
-      amount: appMonthlyPrice,
-      status: 'pending',
-    });
+    const currentSubscription = await getTeacherSubscriptionStatus(user.id, monthReference);
+    if (currentSubscription.status !== 'trial') {
+      await upsertAppSubscription({
+        teacherId: user.id,
+        monthReference,
+        amount: appMonthlyPrice,
+        status: 'pending',
+      });
+    }
 
     const preference = await createMercadoPagoPreference({
       title: `Assinatura LuminaAI - ${monthReference}`,

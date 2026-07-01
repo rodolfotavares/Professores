@@ -36,7 +36,14 @@ export function TeacherFinanceBoard() {
   const [students, setStudents] = useState<Student[]>([]);
   const [paymentMonth, setPaymentMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [paymentStatus, setPaymentStatus] = useState<Record<string, 'paid' | 'unpaid' | 'late'>>({});
-  const [subscription, setSubscription] = useState<{ month_reference: string; amount: number; status: string; paid_at: string | null } | null>(null);
+  const [subscription, setSubscription] = useState<{
+    month_reference: string;
+    amount: number;
+    status: string;
+    paid_at: string | null;
+    trial_ends_at?: string;
+    trial_days_left?: number;
+  } | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -45,7 +52,7 @@ export function TeacherFinanceBoard() {
   async function load() {
     try {
       setError('');
-      const subscriptionData = await apiFetch<{ subscription: { month_reference: string; amount: number; status: string; paid_at: string | null } }>(`/api/teacher/subscription?month=${paymentMonth}`);
+      const subscriptionData = await apiFetch<{ subscription: { month_reference: string; amount: number; status: string; paid_at: string | null; trial_ends_at?: string; trial_days_left?: number } }>(`/api/teacher/subscription?month=${paymentMonth}`);
       setSubscription(subscriptionData.subscription);
 
       try {
@@ -53,7 +60,7 @@ export function TeacherFinanceBoard() {
         setStudents(studentData.students);
       } catch (err) {
         setStudents([]);
-        if (subscriptionData.subscription.status === 'paid' || subscriptionData.subscription.status === 'exempt') throw err;
+        if (['paid', 'exempt', 'trial'].includes(subscriptionData.subscription.status)) throw err;
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao carregar financeiro.');
@@ -113,7 +120,8 @@ export function TeacherFinanceBoard() {
   const forecastTotal = paidTotal + pendingTotal + lateTotal;
   const chartPoints = [0.22, 0.48, 0.68, 0.86, 0.94].map((factor, index) => Math.round(forecastTotal * factor + index * 120));
   const maxChart = Math.max(...chartPoints, 5000);
-  const subscriptionActive = subscription?.status === 'paid' || subscription?.status === 'exempt';
+  const subscriptionActive = subscription?.status === 'paid' || subscription?.status === 'exempt' || subscription?.status === 'trial';
+  const isTrial = subscription?.status === 'trial';
 
   return (
     <div className="finance-reference-page">
@@ -136,11 +144,26 @@ export function TeacherFinanceBoard() {
         </div>
         <StatusMessage error={error} loading={loading} />
 
+        {isTrial && (
+          <div className="finance-app-subscription trial">
+            <div>
+              <strong>Teste gratis ativo</strong>
+              <span>
+                Voce ainda tem {subscription?.trial_days_left || 0} dia{subscription?.trial_days_left === 1 ? '' : 's'} gratis.
+                Depois disso, a mensalidade de R$ 39,90 sera necessaria para continuar usando o app.
+              </span>
+            </div>
+            <button type="button" onClick={createMercadoPagoCheckout} disabled={checkoutLoading}>
+              {checkoutLoading ? 'Gerando...' : 'Pagar agora'}
+            </button>
+          </div>
+        )}
+
         {!subscriptionActive && (
           <div className="finance-app-subscription">
             <div>
               <strong>Assinatura LuminaAI Pro</strong>
-              <span>Para usar o app, regularize a mensalidade de R$ 39,90.</span>
+              <span>Seu teste gratis terminou. Para usar o app, regularize a mensalidade de R$ 39,90.</span>
             </div>
             <button type="button" onClick={createMercadoPagoCheckout} disabled={checkoutLoading}>
               {checkoutLoading ? 'Gerando...' : 'Pagar assinatura'}

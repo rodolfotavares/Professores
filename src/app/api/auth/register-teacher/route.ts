@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       teacher_id: userId,
       month_reference: currentSubscriptionMonth(),
       amount: 39.9,
-      status: 'pending',
+      status: 'trial',
     });
 
     if (subscriptionError) throw subscriptionError;

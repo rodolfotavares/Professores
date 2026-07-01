@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server';
-import { apiError, getApiUser, json } from '@/lib/api-auth';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { apiError, getApiUser, getTeacherSubscriptionStatus, json } from '@/lib/api-auth';
 
 const appMonthlyPrice = 39.9;
 
@@ -12,21 +11,9 @@ export async function GET(req: NextRequest) {
     }
 
     const monthReference = new URL(req.url).searchParams.get('month') || new Date().toISOString().slice(0, 7);
-    const { data } = await supabaseAdmin
-      .from('app_subscriptions')
-      .select('*')
-      .eq('teacher_id', user.id)
-      .eq('month_reference', monthReference)
-      .maybeSingle();
+    const subscription = await getTeacherSubscriptionStatus(user.id, monthReference);
 
-    return json({
-      subscription: data || {
-        month_reference: monthReference,
-        amount: appMonthlyPrice,
-        status: 'pending',
-        paid_at: null,
-      },
-    });
+    return json({ subscription: { ...subscription, amount: subscription.amount ?? appMonthlyPrice } });
   } catch (error) {
     return apiError(error);
   }

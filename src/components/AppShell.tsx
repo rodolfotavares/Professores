@@ -105,7 +105,113 @@ export function AppLayout({ children, area }: { children: React.ReactNode; area:
       </header>
 
       <div className="app-content">{children}</div>
+      <OnboardingGuide area={area} />
     </section>
+  );
+}
+
+const onboardingSteps = {
+  teacher: [
+    {
+      title: 'Bem-vindo ao LuminaAI',
+      text: 'Voce tem 7 dias gratis para testar o app. Depois desse periodo, a mensalidade de R$ 39,90 libera o acesso completo.',
+      hint: 'Use esse tempo para cadastrar alunos e validar sua rotina.',
+    },
+    {
+      title: 'Cadastre seus alunos',
+      text: 'Entre em Alunos para criar o perfil, definir dias, horarios, valor por aula e dados do responsavel.',
+      hint: 'Esses dados alimentam agenda, financeiro e relatorios.',
+    },
+    {
+      title: 'Organize a agenda',
+      text: 'No Inicio, arraste aulas no calendario, confirme, reagende ou desmarque encontros sem sair da tela principal.',
+      hint: 'A agenda e o centro do uso diario do professor.',
+    },
+    {
+      title: 'Use a Aula Inteligente',
+      text: 'Ao fim da aula, registre o resumo. A IA ajuda a gerar relatorio, mensagem para responsavel e evolucao do aluno.',
+      hint: 'Quanto melhor o relato, mais fiel fica a analise.',
+    },
+    {
+      title: 'Acompanhe o financeiro',
+      text: 'Em Financeiro voce controla pagamentos dos alunos e tambem paga a assinatura do app quando o teste acabar.',
+      hint: 'Professores ja cadastrados como isentos continuam liberados.',
+    },
+  ],
+  student: [
+    {
+      title: 'Bem-vindo ao LuminaAI',
+      text: 'Seu portal mostra aulas, mensagens e sua evolucao conforme o professor registra os relatorios.',
+      hint: 'Alunos nao pagam assinatura do app.',
+    },
+    {
+      title: 'Veja sua proxima aula',
+      text: 'No Inicio voce acompanha horario, materia e status da proxima aula cadastrada pelo professor.',
+      hint: 'Use o botao de confirmar aula quando estiver tudo certo.',
+    },
+    {
+      title: 'Acompanhe sua evolucao',
+      text: 'O grafico mostra a evolucao calculada a partir dos relatorios de aula publicados pelo professor.',
+      hint: 'Ele melhora conforme mais aulas sao registradas.',
+    },
+    {
+      title: 'Converse com o professor',
+      text: 'Use Mensagens para tirar duvidas, enviar combinados e manter o historico organizado.',
+      hint: 'Tudo fica vinculado ao seu professor.',
+    },
+  ],
+} as const;
+
+function OnboardingGuide({ area }: { area: 'teacher' | 'student' }) {
+  const [open, setOpen] = useState(false);
+  const [step, setStep] = useState(0);
+  const steps = onboardingSteps[area];
+  const storageKey = `lumina-onboarding-${area}`;
+
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get('welcome') === '1';
+    const pending = window.localStorage.getItem(storageKey) === 'pending';
+    const done = window.localStorage.getItem(`${storageKey}-done`) === '1';
+    if ((requested || pending) && !done) {
+      setStep(0);
+      setOpen(true);
+    }
+  }, [storageKey]);
+
+  function closeTutorial() {
+    window.localStorage.setItem(`${storageKey}-done`, '1');
+    window.localStorage.removeItem(storageKey);
+    setOpen(false);
+  }
+
+  if (!open) return null;
+
+  const current = steps[step];
+  const isLast = step === steps.length - 1;
+
+  return (
+    <div className="onboarding-overlay" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+      <section className="onboarding-card">
+        <div className="onboarding-head">
+          <span>Guia rapido</span>
+          <button type="button" onClick={closeTutorial} aria-label="Pular tutorial">Pular</button>
+        </div>
+        <div className="onboarding-progress" aria-label={`Etapa ${step + 1} de ${steps.length}`}>
+          {steps.map((item, index) => (
+            <span className={index <= step ? 'active' : ''} key={item.title} />
+          ))}
+        </div>
+        <h2 id="onboarding-title">{current.title}</h2>
+        <p>{current.text}</p>
+        <small>{current.hint}</small>
+        <div className="onboarding-actions">
+          <button type="button" onClick={() => setStep((value) => Math.max(0, value - 1))} disabled={step === 0}>Voltar</button>
+          <button className="primary" type="button" onClick={() => (isLast ? closeTutorial() : setStep((value) => value + 1))}>
+            {isLast ? 'Comecar a usar' : 'Proximo'}
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }
 
