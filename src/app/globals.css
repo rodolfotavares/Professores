@@ -9804,3 +9804,345 @@ select.input option {
     grid-template-columns: 1fr;
   }
 }
+
+/* Simplified mobile app experience */
+.teacher-mobile-quick-panel {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .teacher-portal .clean-shell,
+  .student-portal .clean-shell {
+    min-height: 100vh;
+  }
+
+  .teacher-portal .teacher-icon-sidebar,
+  .student-portal .teacher-icon-sidebar,
+  .teacher-portal:has(.teacher-agenda-home) .teacher-icon-sidebar,
+  .teacher-portal:has(.students-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.finance-reference-page) .teacher-icon-sidebar,
+  .student-portal:has(.student-home) .teacher-icon-sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    height: 68px;
+    min-height: 68px;
+    padding: 8px 10px;
+    border-right: 0;
+    border-bottom: 1px solid #e4ebf5;
+    box-shadow: 0 10px 26px rgba(8, 22, 48, 0.08);
+  }
+
+  .teacher-portal .compact-brand,
+  .student-portal .compact-brand {
+    width: auto;
+    min-width: 42px;
+    flex: 0 0 auto;
+  }
+
+  .teacher-portal .compact-brand > div:not(.brand-mark),
+  .student-portal .compact-brand > div:not(.brand-mark),
+  .teacher-portal .sidebar-actions,
+  .student-portal .sidebar-actions {
+    display: none;
+  }
+
+  .teacher-portal .icon-nav,
+  .student-portal .icon-nav,
+  .teacher-portal:has(.teacher-agenda-home) .icon-nav,
+  .teacher-portal:has(.students-reference-page) .icon-nav,
+  .teacher-portal:has(.finance-reference-page) .icon-nav,
+  .student-portal:has(.student-home) .icon-nav {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 52px;
+    gap: 6px;
+    width: 100%;
+    overflow-x: auto;
+    padding: 0 2px 4px;
+    scrollbar-width: none;
+  }
+
+  .teacher-portal .icon-nav::-webkit-scrollbar,
+  .student-portal .icon-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .teacher-portal .icon-nav a,
+  .student-portal .icon-nav a,
+  .teacher-portal:has(.teacher-agenda-home) .icon-nav a,
+  .teacher-portal:has(.students-reference-page) .icon-nav a,
+  .teacher-portal:has(.finance-reference-page) .icon-nav a,
+  .student-portal:has(.student-home) .icon-nav a {
+    width: 52px;
+    height: 48px;
+    border-radius: 16px;
+    padding: 0;
+    flex: 0 0 52px;
+    background: #f8fbff;
+  }
+
+  .teacher-portal .icon-nav a span,
+  .student-portal .icon-nav a span,
+  .teacher-portal:has(.teacher-agenda-home) .icon-nav a span,
+  .teacher-portal:has(.students-reference-page) .icon-nav a span,
+  .teacher-portal:has(.finance-reference-page) .icon-nav a span,
+  .student-portal:has(.student-home) .icon-nav a span {
+    display: none;
+  }
+
+  .teacher-portal .icon-nav a:nth-child(6) {
+    display: none;
+  }
+
+  .teacher-portal .app-content,
+  .student-portal .app-content {
+    padding: 12px;
+  }
+
+  .teacher-portal:has(.teacher-agenda-home) .app-content {
+    padding: 10px;
+  }
+
+  .teacher-portal:has(.teacher-agenda-home) .teacher-agenda-home {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .teacher-mobile-quick-panel {
+    display: grid;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid #dce7f6;
+    border-radius: 24px;
+    background: #ffffff;
+    box-shadow: 0 18px 45px rgba(8, 22, 48, 0.1);
+  }
+
+  .mobile-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .mobile-section-head span {
+    display: block;
+    color: #0b64e9;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .mobile-section-head h2 {
+    margin: 2px 0 0;
+    color: #071832;
+    font-size: 24px;
+    letter-spacing: 0;
+  }
+
+  .mobile-section-head a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 14px;
+    border-radius: 14px;
+    background: #0b64e9;
+    color: #fff;
+    font-weight: 800;
+    text-decoration: none;
+    box-shadow: 0 12px 24px rgba(11, 100, 233, 0.24);
+  }
+
+  .teacher-mobile-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .teacher-mobile-stats article {
+    min-width: 0;
+    padding: 12px 10px;
+    border: 1px solid #e4ebf5;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #f8fbff, #ffffff);
+  }
+
+  .teacher-mobile-stats span,
+  .mobile-agenda-item small,
+  .mobile-empty-state span {
+    color: #58708f;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .teacher-mobile-stats strong {
+    display: block;
+    margin-top: 4px;
+    color: #071832;
+    font-size: clamp(18px, 5vw, 24px);
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+  }
+
+  .mobile-agenda-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .mobile-agenda-item {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 54px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid #dce7f6;
+    border-radius: 20px;
+    background: #fbfdff;
+    color: #071832;
+    text-align: left;
+    box-shadow: 0 10px 24px rgba(8, 22, 48, 0.06);
+  }
+
+  .mobile-agenda-item.active {
+    border-color: #0b64e9;
+    background: #eef5ff;
+    box-shadow: 0 14px 30px rgba(11, 100, 233, 0.16);
+  }
+
+  .mobile-date-pill {
+    display: grid;
+    place-items: center;
+    width: 54px;
+    height: 54px;
+    border-radius: 18px;
+    background: #0b64e9;
+    color: #fff;
+  }
+
+  .mobile-date-pill strong {
+    font-size: 19px;
+    line-height: 1;
+  }
+
+  .mobile-date-pill small {
+    color: rgba(255, 255, 255, 0.86);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .mobile-agenda-item > span:nth-child(2) {
+    min-width: 0;
+    display: grid;
+    gap: 4px;
+  }
+
+  .mobile-agenda-item > span:nth-child(2) strong {
+    overflow: hidden;
+    color: #071832;
+    font-size: 15px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-agenda-item em {
+    padding: 8px 10px;
+    border-radius: 999px;
+    background: #e9f2ff;
+    color: #0b64e9;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 800;
+  }
+
+  .mobile-empty-state {
+    display: grid;
+    gap: 4px;
+    padding: 16px;
+    border: 1px dashed #c6d6ec;
+    border-radius: 18px;
+    background: #f8fbff;
+  }
+
+  .teacher-portal:has(.teacher-agenda-home) .teacher-student-rail,
+  .teacher-portal:has(.teacher-agenda-home) .calendar-toolbar,
+  .teacher-portal:has(.teacher-agenda-home) .month-grid-clean,
+  .teacher-portal:has(.teacher-agenda-home) .teacher-calendar-board {
+    display: none;
+  }
+
+  .teacher-portal:has(.teacher-agenda-home) .teacher-detail-panel {
+    position: static;
+    display: grid;
+    gap: 14px;
+    width: 100%;
+    min-height: auto;
+    padding: 16px;
+    border: 1px solid #dce7f6;
+    border-radius: 24px;
+    background: #ffffff;
+    box-shadow: 0 18px 45px rgba(8, 22, 48, 0.1);
+  }
+
+  .teacher-portal:has(.teacher-agenda-home) .student-side-close {
+    display: none;
+  }
+
+  .teacher-portal:has(.teacher-agenda-home) .detail-profile {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+  }
+
+  .teacher-portal:has(.teacher-agenda-home) .detail-photo {
+    width: 58px;
+    height: 58px;
+    border-radius: 20px;
+  }
+
+  .teacher-portal:has(.teacher-agenda-home) .detail-lines {
+    display: grid;
+    gap: 8px;
+  }
+
+  .teacher-portal:has(.teacher-agenda-home) .detail-lines p {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0;
+    padding: 12px;
+    border: 1px solid #e4ebf5;
+    border-radius: 16px;
+    background: #f8fbff;
+  }
+
+  .teacher-portal:has(.teacher-agenda-home) .lesson-action-box {
+    gap: 10px;
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .teacher-portal:has(.teacher-agenda-home) .smart-lesson-actions-inline {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-portal:has(.teacher-agenda-home) .lesson-action-box button,
+  .teacher-portal:has(.teacher-agenda-home) .lesson-action-box input,
+  .teacher-portal:has(.teacher-agenda-home) .outline-action,
+  .teacher-portal:has(.teacher-agenda-home) .side-primary {
+    min-height: 48px;
+    border-radius: 16px;
+    font-size: 15px;
+  }
+
+  .teacher-portal:has(.teacher-agenda-home) .teacher-day-tasks {
+    display: none;
+  }
+}

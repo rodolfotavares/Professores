@@ -95,6 +95,10 @@ export function TeacherHome() {
     const monthlyClasses = student.classes_per_month || (student.classes_per_week || 0) * 4;
     return total + monthlyClasses * Number(student.price_per_class || 0);
   }, 0);
+  const mobileUpcomingClasses = useMemo(
+    () => sortedClasses.filter((item) => item.status === 'scheduled' && item.class_date >= todayKey).slice(0, 8),
+    [sortedClasses, todayKey],
+  );
 
   const monthDays = useMemo(() => {
     const year = cursorDate.getFullYear();
@@ -270,6 +274,63 @@ export function TeacherHome() {
   return (
     <div className="teacher-agenda-home">
       <StatusMessage error={error} loading={loading} />
+      <section className="teacher-mobile-quick-panel" aria-label="Agenda simplificada">
+        <div className="mobile-section-head">
+          <div>
+            <span>Hoje</span>
+            <h2>Agenda rápida</h2>
+          </div>
+          <a href="/teacher/students">Novo aluno</a>
+        </div>
+        <div className="teacher-mobile-stats">
+          <article>
+            <span>Alunos</span>
+            <strong>{activeStudents.length}</strong>
+          </article>
+          <article>
+            <span>Aulas</span>
+            <strong>{scheduledClasses}</strong>
+          </article>
+          <article>
+            <span>Previsão</span>
+            <strong>{money(monthlyRevenue)}</strong>
+          </article>
+        </div>
+        <div className="mobile-agenda-list">
+          {mobileUpcomingClasses.length === 0 && (
+            <div className="mobile-empty-state">
+              <strong>Nenhuma aula futura</strong>
+              <span>Arraste alunos no calendário pelo computador ou crie uma aula pelo cadastro do aluno.</span>
+            </div>
+          )}
+          {mobileUpcomingClasses.map((item) => {
+            const student = students.find((studentItem) => studentItem.id === item.student_id);
+            const isSelected = item.id === selectedClass?.id;
+            return (
+              <button
+                type="button"
+                className={`mobile-agenda-item ${isSelected ? 'active' : ''}`}
+                key={item.id}
+                onClick={() => {
+                  setSelectedClassId(item.id);
+                  setRescheduleDate(item.class_date);
+                  setRescheduleTime(item.class_time.slice(0, 5));
+                }}
+              >
+                <span className="mobile-date-pill">
+                  <strong>{new Intl.DateTimeFormat('pt-BR', { day: '2-digit' }).format(new Date(`${item.class_date}T00:00:00`))}</strong>
+                  <small>{new Intl.DateTimeFormat('pt-BR', { weekday: 'short' }).format(new Date(`${item.class_date}T00:00:00`)).replace('.', '')}</small>
+                </span>
+                <span>
+                  <strong>{student?.full_name || item.students?.full_name || 'Aluno'}</strong>
+                  <small>{item.subject || student?.subject || 'Aula particular'} • {item.class_time.slice(0, 5)}</small>
+                </span>
+                <em>{isSelected ? 'Selecionada' : 'Abrir'}</em>
+              </button>
+            );
+          })}
+        </div>
+      </section>
       <aside className="teacher-student-rail">
         <div className="rail-head">
           <h2>Alunos</h2>
