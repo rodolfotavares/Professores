@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       await upsertAppSubscription({
         teacherId,
         monthReference,
-        amount: payment.transaction_amount || 39.9,
+        amount: payment.transaction_amount || 19.9,
         status: paymentStatus(payment.status),
         mercadoPagoPaymentId: String(payment.id),
         paidAt: payment.status === 'approved' ? new Date().toISOString() : null,

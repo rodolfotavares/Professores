@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { apiError, getApiUser, getTeacherSubscriptionStatus, json } from '@/lib/api-auth';
 
-const appMonthlyPrice = 39.9;
+const appMonthlyPrice = 19.9;
 
 export async function GET(req: NextRequest) {
   try {

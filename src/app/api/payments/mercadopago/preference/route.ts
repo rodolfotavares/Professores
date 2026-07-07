@@ -7,7 +7,7 @@ const schema = z.object({
   month_reference: z.string().min(4).optional(),
 });
 
-const appMonthlyPrice = 39.9;
+const appMonthlyPrice = 19.9;
 
 export async function POST(req: NextRequest) {
   try {

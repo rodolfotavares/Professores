@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     const { error: subscriptionError } = await supabaseAdmin.from('app_subscriptions').insert({
       teacher_id: userId,
       month_reference: currentSubscriptionMonth(),
-      amount: 39.9,
+      amount: 19.9,
       status: 'trial',
     });
 

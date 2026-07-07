@@ -483,7 +483,7 @@ Object.assign(dictionary, {
   'Liberada': 'Unlocked',
   'Professor isento': 'Teacher exempt',
   'Assinatura paga': 'Subscription paid',
-  'Pagar R$ 39,90': 'Pay R$ 39.90',
+  'Pagar R$ 19,90': 'Pay R$ 19.90',
   'Gerando...': 'Generating...',
   'Falha ao gerar pagamento.': 'Failed to create payment.',
   'Mercado Pago nao configurado.': 'Mercado Pago is not configured.',

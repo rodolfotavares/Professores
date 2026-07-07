@@ -376,12 +376,12 @@ export function TeacherFinancePanel() {
         </div>
         <p className="muted">O professor paga apenas pelo uso do LuminaAI. Os alunos não pagam assinatura do app.</p>
         <div className="grid grid-3">
-          <div className="metric"><p className="muted">Mensalidade</p><h2>R$ 39,90</h2></div>
+          <div className="metric"><p className="muted">Mensalidade</p><h2>R$ 19,90</h2></div>
           <div className="metric"><p className="muted">Mes</p><h2>{paymentMonth}</h2></div>
           <div className="metric"><p className="muted">Status</p><h2>{subscriptionStatusLabel}</h2></div>
         </div>
         <button className="btn primary" onClick={createMercadoPagoCheckout} disabled={checkoutLoading || subscriptionActive}>
-          {checkoutLoading ? 'Gerando...' : subscription?.status === 'exempt' ? 'Professor isento' : subscription?.status === 'paid' ? 'Assinatura paga' : subscription?.status === 'trial' ? 'Teste grátis ativo' : 'Pagar R$ 39,90'}
+          {checkoutLoading ? 'Gerando...' : subscription?.status === 'exempt' ? 'Professor isento' : subscription?.status === 'paid' ? 'Assinatura paga' : subscription?.status === 'trial' ? 'Teste grátis ativo' : 'Pagar R$ 19,90'}
         </button>
       </div>
       <div className="grid grid-3">

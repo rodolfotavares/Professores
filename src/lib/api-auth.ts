@@ -85,7 +85,7 @@ export async function getTeacherSubscriptionStatus(teacherId: string, monthRefer
     status: 'pending',
     paid_at: null,
     month_reference: monthReference,
-    amount: 39.9,
+    amount: 19.9,
     exempt: false,
   };
 }

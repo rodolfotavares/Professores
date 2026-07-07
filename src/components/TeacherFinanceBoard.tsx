@@ -156,7 +156,7 @@ export function TeacherFinanceBoard() {
               <strong>Teste grátis ativo</strong>
               <span>
                 Você ainda tem {subscription?.trial_days_left || 0} dia{subscription?.trial_days_left === 1 ? '' : 's'} grátis.
-                Depois disso, a mensalidade de R$ 39,90 será necessária para continuar usando o app.
+                Depois disso, a mensalidade de R$ 19,90 será necessária para continuar usando o app.
               </span>
             </div>
             <button type="button" onClick={createMercadoPagoCheckout} disabled={checkoutLoading}>
@@ -169,7 +169,7 @@ export function TeacherFinanceBoard() {
           <div className="finance-app-subscription">
             <div>
               <strong>Assinatura LuminaAI Pro</strong>
-              <span>Seu teste grátis terminou. Para usar o app, regularize a mensalidade de R$ 39,90.</span>
+              <span>Seu teste grátis terminou. Para usar o app, regularize a mensalidade de R$ 19,90.</span>
             </div>
             <button type="button" onClick={createMercadoPagoCheckout} disabled={checkoutLoading}>
               {checkoutLoading ? 'Gerando...' : 'Pagar assinatura'}

@@ -115,7 +115,7 @@ const onboardingSteps = {
   teacher: [
     {
       title: 'Bem-vindo ao LuminaAI',
-      text: 'Você tem 7 dias grátis para testar o app. Depois desse período, a mensalidade de R$ 39,90 libera o acesso completo.',
+      text: 'Você tem 7 dias grátis para testar o app. Depois desse período, a mensalidade de R$ 19,90 libera o acesso completo.',
       hint: 'Use esse tempo para cadastrar alunos e validar sua rotina.',
     },
     {
