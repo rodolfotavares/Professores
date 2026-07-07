@@ -43,6 +43,7 @@ export function StudentNav() {
         <NavIcon href="/student/lesson-history" label="Histórico" icon="smart" />
         <NavIcon href="/student/messages" label="Mensagens" icon="message" />
         <NavIcon href="/student/settings" label="Perfil" icon="users" />
+        <NavIcon href="/student/support" label="Suporte" icon="support" />
       </nav>
       <SidebarActions />
     </aside>

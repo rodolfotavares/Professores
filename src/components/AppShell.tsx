@@ -25,6 +25,7 @@ const titles: Record<string, { title: string; eyebrow: string }> = {
   '/student/messages': { title: 'Mensagens', eyebrow: 'Comunicação' },
   '/student/lesson-history': { title: 'Histórico de Aulas', eyebrow: 'Relatórios' },
   '/student/settings': { title: 'Perfil', eyebrow: 'Conta' },
+  '/student/support': { title: 'Suporte', eyebrow: 'Ajuda' },
   '/student/tutorial': { title: 'Tutorial', eyebrow: 'Instalação' },
   '/student/classes': { title: 'Minhas aulas', eyebrow: 'Aulas' },
   '/student/grades': { title: 'Notas', eyebrow: 'Desempenho' },

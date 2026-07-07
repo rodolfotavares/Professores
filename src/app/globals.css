@@ -10697,3 +10697,121 @@ select.input option {
     display: none;
   }
 }
+
+/* Navigation reliability pass */
+.teacher-portal .teacher-icon-sidebar,
+.student-portal .teacher-icon-sidebar {
+  isolation: isolate;
+}
+
+.teacher-portal .icon-nav,
+.student-portal .icon-nav,
+.teacher-portal .sidebar-actions,
+.student-portal .sidebar-actions {
+  position: relative;
+  z-index: 2;
+}
+
+@media (min-width: 761px) {
+  .teacher-portal .teacher-icon-sidebar,
+  .student-portal .teacher-icon-sidebar {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .teacher-portal .sidebar-actions,
+  .student-portal .sidebar-actions {
+    display: grid;
+    margin-top: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .teacher-portal .teacher-icon-sidebar,
+  .student-portal .teacher-icon-sidebar,
+  .teacher-portal:has(.teacher-agenda-home) .teacher-icon-sidebar,
+  .teacher-portal:has(.students-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.activities-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.finance-reference-page) .teacher-icon-sidebar,
+  .student-portal:has(.student-home) .teacher-icon-sidebar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 50px;
+    gap: 6px;
+    overflow: visible;
+  }
+
+  .teacher-portal .icon-nav,
+  .student-portal .icon-nav,
+  .teacher-portal:has(.teacher-agenda-home) .icon-nav,
+  .teacher-portal:has(.students-reference-page) .icon-nav,
+  .teacher-portal:has(.activities-reference-page) .icon-nav,
+  .teacher-portal:has(.finance-reference-page) .icon-nav,
+  .student-portal:has(.student-home) .icon-nav {
+    min-width: 0;
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    overflow: visible;
+  }
+
+  .teacher-portal .icon-nav a,
+  .student-portal .icon-nav a,
+  .teacher-portal .icon-nav a:nth-child(6),
+  .teacher-portal:has(.teacher-agenda-home) .icon-nav a:nth-child(6),
+  .teacher-portal:has(.students-reference-page) .icon-nav a:nth-child(6),
+  .teacher-portal:has(.activities-reference-page) .icon-nav a:nth-child(6),
+  .teacher-portal:has(.finance-reference-page) .icon-nav a:nth-child(6) {
+    display: grid !important;
+    place-items: center;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    height: 50px;
+    flex: 1 1 0;
+  }
+
+  .teacher-portal .sidebar-actions,
+  .student-portal .sidebar-actions,
+  .teacher-portal:has(.finance-reference-page) .sidebar-actions,
+  .student-portal:has(.student-home) .sidebar-actions {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    margin: 0;
+  }
+
+  .teacher-portal .share-app,
+  .student-portal .share-app {
+    display: none !important;
+  }
+
+  .teacher-portal .sidebar-action-button,
+  .student-portal .sidebar-action-button,
+  .teacher-portal .logout,
+  .student-portal .logout {
+    display: grid !important;
+    place-items: center;
+    width: 50px;
+    min-width: 50px;
+    height: 50px;
+    padding: 0;
+    border-radius: 18px;
+    color: #0b1f45;
+    background: #f8fbff;
+  }
+
+  .teacher-portal .sidebar-action-button span,
+  .student-portal .sidebar-action-button span {
+    display: none !important;
+  }
+
+  .teacher-portal .icon-nav a svg,
+  .student-portal .icon-nav a svg,
+  .teacher-portal .sidebar-action-button svg,
+  .student-portal .sidebar-action-button svg {
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+  }
+}

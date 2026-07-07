@@ -178,6 +178,76 @@ export function TeacherSupportPanel() {
   );
 }
 
+export function StudentSupportPanel() {
+  const [messages, setMessages] = useState([
+    { role: 'assistant', text: 'Olá! Sou o assistente do LuminaAI. Posso ajudar com aulas, mensagens, evolução, instalação e perfil.' },
+  ]);
+  const [question, setQuestion] = useState('');
+
+  function sendQuestion(event: FormEvent) {
+    event.preventDefault();
+    const text = question.trim();
+    if (!text) return;
+    setMessages((current) => [
+      ...current,
+      { role: 'user', text },
+      { role: 'assistant', text: supportReply(text) },
+    ]);
+    setQuestion('');
+  }
+
+  return (
+    <div className="stack portal-tab">
+      <SectionIntro title="Suporte" text="Ajuda rápida para usar o portal do aluno no LuminaAI." />
+      <div className="grid grid-2">
+        <GlassCard className="support-contact-card">
+          <span className="eyebrow">WhatsApp</span>
+          <h2>Atendimento LuminaAI</h2>
+          <p className="muted">Fale com o suporte pelo WhatsApp para dúvidas sobre uso do app.</p>
+          <a className="btn primary" href="https://wa.me/14023667683" target="_blank">Chamar no WhatsApp</a>
+          <p className="support-phone">+1 (402) 366-7683</p>
+        </GlassCard>
+        <GlassCard className="support-chat-card">
+          <span className="eyebrow">Chat IA</span>
+          <h2>Ajuda sobre o app</h2>
+          <div className="support-chat-window">
+            {messages.map((message, index) => (
+              <div className={`support-message ${message.role}`} key={`${message.role}-${index}`}>
+                {message.text}
+              </div>
+            ))}
+          </div>
+          <form className="support-chat-form" onSubmit={sendQuestion}>
+            <input className="input" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Pergunte sobre uma função do LuminaAI" />
+            <button className="btn primary">Enviar</button>
+          </form>
+        </GlassCard>
+      </div>
+      <div className="grid grid-2">
+        <LanguagePreferenceCard />
+      </div>
+      <GlassCard className="support-shortcuts-card">
+        <div className="glass-card-head">
+          <div>
+            <span className="eyebrow">Ajuda</span>
+            <strong>Atalhos úteis</strong>
+          </div>
+        </div>
+        <div className="support-shortcuts">
+          <Link className="support-shortcut" href="/student/tutorial">
+            <strong>Tutorial de instalação</strong>
+            <small>Como colocar o app na tela inicial.</small>
+          </Link>
+          <Link className="support-shortcut" href="/student/settings">
+            <strong>Perfil</strong>
+            <small>Dados e preferências do portal do aluno.</small>
+          </Link>
+        </div>
+      </GlassCard>
+    </div>
+  );
+}
+
 export function TeacherClassesPanel() {
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<ClassSchedule[]>([]);
