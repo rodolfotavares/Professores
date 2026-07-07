@@ -134,6 +134,7 @@ export function StudentHome() {
   const todayKey = today.toISOString().slice(0, 10);
   const sortedClasses = [...classes].sort((a, b) => `${a.class_date} ${a.class_time}`.localeCompare(`${b.class_date} ${b.class_time}`));
   const nextClass = sortedClasses.find((item) => item.status === 'scheduled' && item.class_date >= todayKey) || sortedClasses.find((item) => item.status === 'scheduled') || sortedClasses[0];
+  const mobileUpcomingClasses = sortedClasses.filter((item) => item.status === 'scheduled' && item.class_date >= todayKey).slice(0, 6);
   const evolution = buildStudentEvolution(reports);
   const progress = evolution.currentScore;
   const firstName = student?.full_name?.split(' ')[0] || 'aluno';
@@ -202,6 +203,39 @@ export function StudentHome() {
             </div>
           </article>
         </div>
+
+        <section className="student-mobile-agenda-card" aria-label="Agenda simplificada">
+          <div className="mobile-section-head">
+            <div>
+              <span>Agenda</span>
+              <h2>Próximas aulas</h2>
+            </div>
+            <button className="side-primary" type="button" onClick={confirmNextClass} disabled={!nextClass || nextClass.student_confirmed}>
+              {nextClass?.student_confirmed ? 'Confirmada' : 'Confirmar'}
+            </button>
+          </div>
+          <div className="mobile-agenda-list">
+            {mobileUpcomingClasses.length === 0 && (
+              <div className="mobile-empty-state">
+                <strong>Nenhuma aula futura</strong>
+                <span>Quando o professor marcar uma aula, ela aparecerá aqui.</span>
+              </div>
+            )}
+            {mobileUpcomingClasses.map((item) => (
+              <article className={`mobile-agenda-item ${item.id === nextClass?.id ? 'active' : ''}`} key={item.id}>
+                <span className="mobile-date-pill">
+                  <strong>{new Intl.DateTimeFormat('pt-BR', { day: '2-digit' }).format(new Date(`${item.class_date}T00:00:00`))}</strong>
+                  <small>{new Intl.DateTimeFormat('pt-BR', { weekday: 'short' }).format(new Date(`${item.class_date}T00:00:00`)).replace('.', '')}</small>
+                </span>
+                <span>
+                  <strong>{item.subject || student?.subject || 'Aula particular'}</strong>
+                  <small>{item.class_time?.slice(0, 5)} • {item.duration_minutes || 60} min</small>
+                </span>
+                <em>{item.student_confirmed ? 'OK' : 'Pendente'}</em>
+              </article>
+            ))}
+          </div>
+        </section>
 
         <section className="student-week-card">
           <div className="student-week-head">

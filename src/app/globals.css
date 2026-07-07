@@ -10146,3 +10146,554 @@ select.input option {
     display: none;
   }
 }
+
+/* Mobile clean mode: compact, touch-first portals */
+@media (max-width: 760px) {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .teacher-portal,
+  .student-portal,
+  .app-glass-shell,
+  .clean-shell,
+  .app-content,
+  .portal-tab,
+  .stack,
+  .card,
+  .glass-card,
+  .students-reference-page,
+  .activities-reference-page,
+  .finance-reference-page,
+  .smart-lesson-page,
+  .student-home,
+  .student-main-area,
+  .teacher-agenda-home {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .teacher-portal,
+  .student-portal,
+  .teacher-portal:has(.teacher-agenda-home),
+  .teacher-portal:has(.students-reference-page),
+  .teacher-portal:has(.activities-reference-page),
+  .teacher-portal:has(.finance-reference-page),
+  .student-portal:has(.student-home) {
+    display: block;
+    padding-bottom: 86px;
+    background: #f8fbff;
+  }
+
+  .teacher-portal .teacher-icon-sidebar,
+  .student-portal .teacher-icon-sidebar,
+  .teacher-portal:has(.teacher-agenda-home) .teacher-icon-sidebar,
+  .teacher-portal:has(.students-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.activities-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.finance-reference-page) .teacher-icon-sidebar,
+  .student-portal:has(.student-home) .teacher-icon-sidebar {
+    position: fixed;
+    inset: auto 10px 10px;
+    z-index: 80;
+    width: auto;
+    max-width: none;
+    min-width: 0;
+    height: 66px;
+    min-height: 66px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid rgba(207, 220, 238, 0.9);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 18px 44px rgba(8, 22, 48, 0.16);
+    backdrop-filter: blur(18px);
+    overflow: hidden;
+  }
+
+  .teacher-portal .compact-brand,
+  .student-portal .compact-brand,
+  .teacher-portal .sidebar-actions,
+  .student-portal .sidebar-actions {
+    display: none;
+  }
+
+  .teacher-portal .icon-nav,
+  .student-portal .icon-nav,
+  .teacher-portal:has(.teacher-agenda-home) .icon-nav,
+  .teacher-portal:has(.students-reference-page) .icon-nav,
+  .teacher-portal:has(.activities-reference-page) .icon-nav,
+  .teacher-portal:has(.finance-reference-page) .icon-nav,
+  .student-portal:has(.student-home) .icon-nav {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    gap: 4px;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .teacher-portal .icon-nav a,
+  .student-portal .icon-nav a,
+  .teacher-portal:has(.teacher-agenda-home) .icon-nav a,
+  .teacher-portal:has(.students-reference-page) .icon-nav a,
+  .teacher-portal:has(.activities-reference-page) .icon-nav a,
+  .teacher-portal:has(.finance-reference-page) .icon-nav a,
+  .student-portal:has(.student-home) .icon-nav a {
+    width: 50px;
+    min-width: 44px;
+    max-width: 54px;
+    height: 50px;
+    flex: 1 1 44px;
+    padding: 0;
+    border-radius: 18px;
+    background: transparent;
+  }
+
+  .teacher-portal .icon-nav a:hover,
+  .student-portal .icon-nav a:hover {
+    transform: translateY(-2px);
+  }
+
+  .teacher-portal .icon-nav a span,
+  .student-portal .icon-nav a span,
+  .teacher-portal .icon-nav a::after,
+  .student-portal .icon-nav a::after {
+    display: none !important;
+  }
+
+  .teacher-portal .icon-nav a:nth-child(6) {
+    display: none;
+  }
+
+  .teacher-portal .clean-shell,
+  .student-portal .clean-shell {
+    display: block;
+    min-height: 100vh;
+    padding: 0;
+    background: transparent;
+  }
+
+  .teacher-portal .clean-topbar,
+  .student-portal .clean-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid #e6edf7;
+    background: rgba(248, 251, 255, 0.96);
+    backdrop-filter: blur(16px);
+  }
+
+  .teacher-portal .app-title-block h1,
+  .student-portal .app-title-block h1 {
+    font-size: 26px;
+    line-height: 1.05;
+  }
+
+  .teacher-portal .app-title-block .eyebrow,
+  .student-portal .app-title-block .eyebrow {
+    font-size: 11px;
+  }
+
+  .teacher-portal .app-search,
+  .student-portal .app-search,
+  .teacher-portal .profile-chip span,
+  .student-portal .profile-chip span,
+  .teacher-portal .header-message-button,
+  .student-portal .header-message-button {
+    display: none;
+  }
+
+  .teacher-portal .app-header-actions,
+  .student-portal .app-header-actions {
+    gap: 8px;
+  }
+
+  .teacher-portal .app-content,
+  .student-portal .app-content,
+  .teacher-portal:has(.teacher-agenda-home) .app-content {
+    width: 100%;
+    padding: 12px;
+  }
+
+  .panel-header,
+  .section-intro,
+  .students-reference-header,
+  .activities-reference-header,
+  .finance-reference-header,
+  .smart-header,
+  .student-greeting {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .panel-header h1,
+  .section-intro h2,
+  .students-reference-header h1,
+  .activities-reference-header h1,
+  .finance-reference-header h1,
+  .smart-header h1,
+  .student-greeting h1 {
+    font-size: clamp(28px, 9vw, 38px);
+    line-height: 1.04;
+  }
+
+  .panel-header p,
+  .section-intro p,
+  .students-reference-header p,
+  .activities-reference-header p,
+  .finance-reference-header p,
+  .smart-header p,
+  .student-greeting p {
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  .grid,
+  .grid-2,
+  .grid-3,
+  .portal-card-grid,
+  .student-insight-grid,
+  .student-summary-grid,
+  .student-evolution-kpis,
+  .student-evolution-layout,
+  .teacher-mobile-stats,
+  .students-reference-tools,
+  .activities-reference-tools,
+  .finance-header-actions,
+  .finance-summary-card,
+  .smart-metrics,
+  .smart-actions,
+  .correction-actions,
+  .student-edit-actions,
+  .support-shortcuts,
+  .language-options {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  .student-home,
+  .students-reference-page,
+  .activities-reference-page,
+  .finance-reference-page,
+  .smart-lesson-page,
+  .student-portal:has(.student-home) .student-home {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  .student-side-panel,
+  .student-edit-panel-ref,
+  .activity-correction-panel,
+  .smart-editor,
+  .teacher-detail-panel {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: auto !important;
+    height: auto !important;
+    border-left: 0 !important;
+    border-top: 1px solid #e4ebf5;
+    border-radius: 22px !important;
+    box-shadow: 0 14px 32px rgba(8, 22, 48, 0.08);
+  }
+
+  .student-side-close {
+    display: none;
+  }
+
+  .new-student-button,
+  .side-primary,
+  .outline-action,
+  .btn,
+  .finance-app-subscription button,
+  .activity-row-action,
+  .students-filter-tabs button,
+  .activity-filter-tabs button,
+  .smart-filter-row button,
+  .language-options button {
+    width: 100%;
+    min-height: 46px;
+    border-radius: 16px;
+    justify-content: center;
+    font-size: 15px;
+  }
+
+  input,
+  select,
+  textarea,
+  .input,
+  .students-search,
+  .finance-month-select,
+  .message-file-picker {
+    width: 100% !important;
+    max-width: 100%;
+    min-height: 46px;
+    font-size: 16px;
+  }
+
+  textarea,
+  .textarea {
+    min-height: 120px;
+  }
+
+  .students-filter-tabs,
+  .activity-filter-tabs,
+  .smart-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    overflow: visible;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .students-filter-tabs::-webkit-scrollbar,
+  .activity-filter-tabs::-webkit-scrollbar,
+  .smart-filter-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .students-filter-tabs button,
+  .activity-filter-tabs button,
+  .smart-filter-row button {
+    flex: 1 1 calc(50% - 8px);
+    width: auto;
+    padding: 0 14px;
+  }
+
+  .student-card-grid,
+  .finance-register-strip {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  .student-profile-card-ref,
+  .student-summary-card,
+  .student-profile-kpi,
+  .student-evolution-kpis article,
+  .finance-summary-card > div,
+  .smart-metrics article,
+  .portal-summary-card,
+  .glass-card,
+  .card {
+    border-radius: 20px;
+  }
+
+  .student-profile-card-ref {
+    min-height: auto;
+    padding: 14px;
+  }
+
+  .student-card-top {
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+  }
+
+  .student-card-top h2,
+  .student-card-top p,
+  .student-card-head strong,
+  .student-card-head small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .student-edit-form-ref,
+  .activity-create-panel,
+  .smart-generate-card,
+  .smart-editor-fields {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  .activity-table,
+  .finance-table,
+  .data-table,
+  .compact-data-table {
+    display: grid;
+    gap: 10px;
+    min-width: 0 !important;
+    width: 100%;
+    overflow: visible !important;
+  }
+
+  .activity-table-head,
+  .finance-table-head {
+    display: none !important;
+  }
+
+  .activity-table-row,
+  .finance-table-row,
+  .data-row {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+    width: 100%;
+    min-width: 0 !important;
+    padding: 14px;
+    border: 1px solid #e2ebf6;
+    border-radius: 18px;
+    background: #fff;
+    text-align: left;
+  }
+
+  .activity-table-row > span,
+  .finance-table-row > span,
+  .data-row > span {
+    min-width: 0;
+  }
+
+  .activity-doc-icon {
+    display: none;
+  }
+
+  .activity-title-cell strong,
+  .activity-title-cell small,
+  .finance-table-row strong,
+  .finance-table-row small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .activity-progress-cell i {
+    width: 100%;
+  }
+
+  .activity-correction-panel.is-closed {
+    min-height: auto;
+    padding: 12px;
+  }
+
+  .correction-selector-row,
+  .grade-control > div,
+  .smart-copy-row {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  .grade-control > div {
+    grid-template-columns: 46px minmax(0, 1fr) 46px auto !important;
+  }
+
+  .submitted-file-preview div,
+  .smart-report-preview,
+  .support-chat-window,
+  .message-thread,
+  .student-evolution-main-chart,
+  .finance-chart-card,
+  .student-activity-evolution,
+  .student-evolution-home-card {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .finance-chart-area,
+  .student-evolution-chart-wrap,
+  .student-evolution-main-chart svg,
+  .student-evolution-home-card svg {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .finance-y-axis {
+    display: none;
+  }
+
+  .finance-chart-area {
+    padding-left: 0;
+  }
+
+  .finance-svg-chart {
+    height: 220px;
+  }
+
+  .student-mobile-agenda-card {
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid #dce7f6;
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 14px 32px rgba(8, 22, 48, 0.08);
+  }
+
+  .mobile-section-head .side-primary {
+    width: auto;
+    min-width: 112px;
+    padding-inline: 14px;
+  }
+
+  .student-week-card {
+    display: none;
+  }
+
+  .student-evolution-home-labels,
+  .student-evolution-labels {
+    display: none;
+  }
+
+  .student-evolution-home-head,
+  .student-evolution-title,
+  .chart-panel-head,
+  .finance-section-head {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+
+  .student-evolution-home-head strong {
+    justify-self: start;
+  }
+
+  .continue-row {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .continue-row .continue-progress,
+  .continue-row em,
+  .continue-row a {
+    grid-column: 1 / -1;
+  }
+
+  .message-composer-card,
+  .message-compose-form {
+    display: grid;
+    gap: 10px;
+  }
+
+  .message-bubble,
+  .support-message {
+    max-width: 92%;
+  }
+
+  .notification-popover {
+    position: fixed;
+    inset: 64px 12px auto;
+    width: auto;
+    max-width: none;
+  }
+}
+
+@media (min-width: 761px) {
+  .student-mobile-agenda-card {
+    display: none;
+  }
+}
