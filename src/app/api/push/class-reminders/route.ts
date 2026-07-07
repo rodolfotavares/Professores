@@ -31,7 +31,11 @@ async function handleClassReminders(req: NextRequest) {
   try {
     const cronSecret = process.env.CRON_SECRET;
     const authHeader = req.headers.get('authorization') || '';
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!cronSecret) {
+      return json({ error: 'CRON_SECRET nao configurado.' }, { status: 503 });
+    }
+
+    if (authHeader !== `Bearer ${cronSecret}`) {
       return json({ error: 'Nao autorizado.' }, { status: 401 });
     }
 
