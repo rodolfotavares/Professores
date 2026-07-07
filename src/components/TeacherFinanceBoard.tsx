@@ -118,8 +118,14 @@ export function TeacherFinanceBoard() {
   const lateTotal = rows.filter((student) => student.payment === 'late').reduce((sum, student) => sum + student.monthly, 0);
   const pendingTotal = rows.filter((student) => student.payment === 'unpaid').reduce((sum, student) => sum + student.monthly, 0);
   const forecastTotal = paidTotal + pendingTotal + lateTotal;
-  const chartPoints = [0.22, 0.48, 0.68, 0.86, 0.94].map((factor, index) => Math.round(forecastTotal * factor + index * 120));
-  const maxChart = Math.max(...chartPoints, 5000);
+  const chartLabels = ['01', '05', '09', '13', '17', '21', '25', '29'];
+  const chartPoints = [0.14, 0.26, 0.38, 0.52, 0.66, 0.78, 0.9, 1].map((factor, index) => {
+    const base = forecastTotal || 0;
+    return Math.round(base * factor + (base > 0 ? index * 55 : index * 90));
+  });
+  const maxChart = Math.max(...chartPoints, forecastTotal, 1000);
+  const chartCeiling = Math.ceil(maxChart / 1000) * 1000;
+  const yAxisValues = Array.from({ length: 6 }, (_, index) => Math.round(chartCeiling - (chartCeiling / 5) * index));
   const subscriptionActive = subscription?.status === 'paid' || subscription?.status === 'exempt' || subscription?.status === 'trial';
   const isTrial = subscription?.status === 'trial';
 
@@ -205,35 +211,40 @@ export function TeacherFinanceBoard() {
           </div>
           <div className="finance-chart-area">
             <div className="finance-y-axis">
-              {[5000, 4000, 3000, 2000, 1000, 0].map((value) => <span key={value}>{money(value)}</span>)}
+              {yAxisValues.map((value) => <span key={value}>{money(value)}</span>)}
             </div>
-            <svg className="finance-svg-chart" viewBox="0 0 760 260" preserveAspectRatio="none" aria-label="Gráfico de ganhos">
+            <svg className="finance-svg-chart" viewBox="0 0 760 300" preserveAspectRatio="none" aria-label="Gráfico de ganhos">
               <defs>
                 <linearGradient id="financeArea" x1="0" x2="0" y1="0" y2="1">
                   <stop offset="0%" stopColor="#7dd3fc" stopOpacity="0.34" />
                   <stop offset="100%" stopColor="#7dd3fc" stopOpacity="0.04" />
                 </linearGradient>
               </defs>
-              {[0, 52, 104, 156, 208, 260].map((y) => <line key={y} x1="0" x2="760" y1={y} y2={y} />)}
+              {[24, 72, 120, 168, 216, 264].map((y) => <line key={y} x1="0" x2="760" y1={y} y2={y} />)}
               {(() => {
                 const coords = chartPoints.map((value, index) => {
-                  const x = index * 190;
-                  const y = 250 - Math.min(240, (value / maxChart) * 220);
+                  const x = chartPoints.length === 1 ? 380 : index * (760 / (chartPoints.length - 1));
+                  const y = 264 - Math.min(220, (value / chartCeiling) * 220);
                   return [x, y] as const;
                 });
                 const path = coords.map(([x, y], index) => `${index === 0 ? 'M' : 'L'} ${x} ${y}`).join(' ');
-                const area = `${path} L 760 260 L 0 260 Z`;
+                const area = `${path} L 760 284 L 0 284 Z`;
                 return (
                   <>
                     <path className="finance-area-path" d={area} />
                     <path className="finance-line-path" d={path} />
-                    {coords.map(([x, y]) => <circle key={`${x}-${y}`} cx={x} cy={y} r="5" />)}
+                    {coords.map(([x, y], index) => (
+                      <g key={`${x}-${y}`}>
+                        <circle cx={x} cy={y} r="5" />
+                        <text className="finance-point-value" x={x} y={Math.max(18, y - 12)}>{money(chartPoints[index]).replace('R$', '').trim()}</text>
+                      </g>
+                    ))}
                   </>
                 );
               })()}
             </svg>
             <div className="finance-x-axis">
-              <span>01 Jun</span><span>08 Jun</span><span>15 Jun</span><span>22 Jun</span><span>29 Jun</span>
+              {chartLabels.map((label) => <span key={label}>{label} {monthLabel(paymentMonth).slice(0, 3)}</span>)}
             </div>
           </div>
         </section>

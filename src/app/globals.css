@@ -7172,11 +7172,24 @@ select.input option {
   stroke-width: 2;
 }
 
+.finance-point-value {
+  fill: #0b1f45;
+  font-size: 13px;
+  font-weight: 800;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, 0.92);
+  stroke-width: 4px;
+}
+
 .finance-x-axis {
   grid-column: 2;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
   color: #40526f;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .finance-receivables-card {
@@ -10611,16 +10624,40 @@ select.input option {
     min-width: 0;
   }
 
-  .finance-y-axis {
-    display: none;
-  }
-
   .finance-chart-area {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    grid-template-rows: 236px 34px;
+    gap: 0 8px;
     padding-left: 0;
   }
 
+  .finance-y-axis {
+    display: grid;
+    align-content: space-between;
+    padding: 8px 0 34px;
+    font-size: 10px;
+    line-height: 1;
+  }
+
   .finance-svg-chart {
-    height: 220px;
+    height: 236px;
+  }
+
+  .finance-point-value {
+    font-size: 10px;
+    stroke-width: 3px;
+  }
+
+  .finance-x-axis {
+    grid-column: 2;
+    grid-template-columns: repeat(4, 1fr);
+    row-gap: 2px;
+    font-size: 10px;
+  }
+
+  .finance-x-axis span:nth-child(odd) {
+    display: none;
   }
 
   .student-mobile-agenda-card {
