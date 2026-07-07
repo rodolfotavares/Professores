@@ -10815,3 +10815,68 @@ select.input option {
     pointer-events: none;
   }
 }
+
+/* Mobile navigation grid alignment */
+@media (max-width: 760px) {
+  .teacher-portal .teacher-icon-sidebar,
+  .teacher-portal:has(.teacher-agenda-home) .teacher-icon-sidebar,
+  .teacher-portal:has(.students-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.activities-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.finance-reference-page) .teacher-icon-sidebar {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    align-items: center;
+    gap: 4px;
+    height: 66px;
+    padding: 8px;
+  }
+
+  .student-portal .teacher-icon-sidebar,
+  .student-portal:has(.student-home) .teacher-icon-sidebar {
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    align-items: center;
+    gap: 4px;
+    height: 66px;
+    padding: 8px;
+  }
+
+  .teacher-portal .icon-nav,
+  .student-portal .icon-nav,
+  .teacher-portal .sidebar-actions,
+  .student-portal .sidebar-actions,
+  .teacher-portal:has(.teacher-agenda-home) .icon-nav,
+  .teacher-portal:has(.students-reference-page) .icon-nav,
+  .teacher-portal:has(.activities-reference-page) .icon-nav,
+  .teacher-portal:has(.finance-reference-page) .icon-nav,
+  .student-portal:has(.student-home) .icon-nav {
+    display: contents !important;
+  }
+
+  .teacher-portal .icon-nav a,
+  .student-portal .icon-nav a,
+  .teacher-portal .sidebar-action-button,
+  .student-portal .sidebar-action-button,
+  .teacher-portal .logout,
+  .student-portal .logout {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: 50px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: grid !important;
+    place-items: center !important;
+    align-self: center;
+    justify-self: stretch;
+    border-radius: 16px;
+  }
+
+  .teacher-portal .icon-nav a svg,
+  .student-portal .icon-nav a svg,
+  .teacher-portal .sidebar-action-button svg,
+  .student-portal .sidebar-action-button svg {
+    display: block;
+    margin: 0 auto;
+  }
+}
