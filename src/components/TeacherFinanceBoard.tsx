@@ -117,13 +117,13 @@ export function TeacherFinanceBoard() {
   const paidTotal = rows.filter((student) => student.payment === 'paid').reduce((sum, student) => sum + student.monthly, 0);
   const lateTotal = rows.filter((student) => student.payment === 'late').reduce((sum, student) => sum + student.monthly, 0);
   const pendingTotal = rows.filter((student) => student.payment === 'unpaid').reduce((sum, student) => sum + student.monthly, 0);
-  const forecastTotal = paidTotal + pendingTotal + lateTotal;
   const chartLabels = ['01', '05', '09', '13', '17', '21', '25', '29'];
   const chartPoints = [0.14, 0.26, 0.38, 0.52, 0.66, 0.78, 0.9, 1].map((factor, index) => {
-    const base = forecastTotal || 0;
-    return Math.round(base * factor + (base > 0 ? index * 55 : index * 90));
+    if (paidTotal <= 0) return 0;
+    const paidBoost = Math.max(0, index - 1) * 35;
+    return Math.min(paidTotal, Math.round(paidTotal * factor + paidBoost));
   });
-  const maxChart = Math.max(...chartPoints, forecastTotal, 1000);
+  const maxChart = Math.max(...chartPoints, paidTotal, 1000);
   const chartCeiling = Math.ceil(maxChart / 1000) * 1000;
   const yAxisValues = Array.from({ length: 6 }, (_, index) => Math.round(chartCeiling - (chartCeiling / 5) * index));
   const subscriptionActive = subscription?.status === 'paid' || subscription?.status === 'exempt' || subscription?.status === 'trial';
