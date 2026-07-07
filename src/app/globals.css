@@ -4145,6 +4145,30 @@ select.input option {
   border-color: rgba(252, 165, 165, 0.25);
 }
 
+.telegram-connect-card {
+  gap: 18px;
+}
+
+.telegram-code-box {
+  display: grid;
+  gap: 5px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.12);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+}
+
+.telegram-code-box span,
+.telegram-code-box small {
+  color: #64748b;
+}
+
+.telegram-code-box strong {
+  color: #0f172a;
+  font-size: clamp(1.7rem, 4vw, 2.8rem);
+  letter-spacing: 0.08em;
+}
+
 .notification-dot {
   width: 10px;
   height: 10px;

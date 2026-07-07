@@ -94,6 +94,7 @@ function canTeacherUseApi(pathname: string) {
   return [
     '/api/me',
     '/api/teacher/subscription',
+    '/api/teacher/telegram',
     '/api/payments/mercadopago/preference',
     '/api/payments/mercadopago/webhook',
     '/api/push',

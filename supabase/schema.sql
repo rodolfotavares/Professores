@@ -246,6 +246,43 @@ create table public.push_subscriptions (
   updated_at timestamptz not null default now()
 );
 
+create table public.telegram_bot_connections (
+  id uuid primary key default gen_random_uuid(),
+  teacher_id uuid not null unique references public.profiles(id) on delete cascade,
+  telegram_user_id text unique,
+  telegram_username text,
+  telegram_first_name text,
+  telegram_chat_id text,
+  connection_code text not null unique,
+  code_expires_at timestamptz not null,
+  pending_action jsonb,
+  connected_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.telegram_bot_interaction_logs (
+  id uuid primary key default gen_random_uuid(),
+  teacher_id uuid references public.profiles(id) on delete set null,
+  telegram_user_id text,
+  telegram_chat_id text,
+  direction text not null check (direction in ('inbound', 'outbound')),
+  message text,
+  intent text,
+  status text not null default 'ok',
+  metadata jsonb,
+  created_at timestamptz not null default now()
+);
+
+create table public.bot_student_notes (
+  id uuid primary key default gen_random_uuid(),
+  teacher_id uuid not null references public.profiles(id) on delete cascade,
+  student_id uuid not null references public.students(id) on delete cascade,
+  note text not null,
+  source text not null default 'telegram',
+  created_at timestamptz not null default now()
+);
+
 create index students_teacher_id_idx on public.students(teacher_id);
 create index students_user_id_idx on public.students(user_id);
 create index class_schedules_teacher_student_idx on public.class_schedules(teacher_id, student_id);
@@ -256,6 +293,10 @@ create index activities_teacher_student_idx on public.activities(teacher_id, stu
 create index activity_submissions_teacher_student_idx on public.activity_submissions(teacher_id, student_id);
 create index messages_teacher_student_idx on public.messages(teacher_id, student_id);
 create index push_subscriptions_user_id_idx on public.push_subscriptions(user_id);
+create index telegram_bot_connections_teacher_idx on public.telegram_bot_connections(teacher_id);
+create index telegram_bot_connections_telegram_user_idx on public.telegram_bot_connections(telegram_user_id);
+create index telegram_bot_logs_teacher_idx on public.telegram_bot_interaction_logs(teacher_id, created_at desc);
+create index bot_student_notes_teacher_student_idx on public.bot_student_notes(teacher_id, student_id);
 
 alter table public.profiles enable row level security;
 alter table public.teacher_profiles enable row level security;
@@ -274,6 +315,9 @@ alter table public.zoom_oauth_states enable row level security;
 alter table public.zoom_connections enable row level security;
 alter table public.notifications enable row level security;
 alter table public.push_subscriptions enable row level security;
+alter table public.telegram_bot_connections enable row level security;
+alter table public.telegram_bot_interaction_logs enable row level security;
+alter table public.bot_student_notes enable row level security;
 
 create policy "profiles own read" on public.profiles for select using (auth.uid() = id);
 create policy "profiles own update" on public.profiles for update using (auth.uid() = id);
@@ -292,3 +336,6 @@ create policy "google connections teacher read" on public.google_calendar_connec
 create policy "google events teacher read" on public.google_calendar_events for select using (auth.uid() = teacher_id);
 create policy "notifications own read" on public.notifications for select using (auth.uid() = user_id);
 create policy "push subscriptions own read" on public.push_subscriptions for select using (auth.uid() = user_id);
+create policy "telegram connections teacher read" on public.telegram_bot_connections for select to authenticated using ((select auth.uid()) = teacher_id);
+create policy "telegram logs teacher read" on public.telegram_bot_interaction_logs for select to authenticated using ((select auth.uid()) = teacher_id);
+create policy "bot notes teacher read" on public.bot_student_notes for select to authenticated using ((select auth.uid()) = teacher_id);
