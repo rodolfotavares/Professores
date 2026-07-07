@@ -234,6 +234,18 @@ create table public.notifications (
   created_at timestamptz not null default now()
 );
 
+create table public.push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  role public.app_role not null,
+  endpoint text not null unique,
+  subscription jsonb not null,
+  user_agent text,
+  last_sent_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create index students_teacher_id_idx on public.students(teacher_id);
 create index students_user_id_idx on public.students(user_id);
 create index class_schedules_teacher_student_idx on public.class_schedules(teacher_id, student_id);
@@ -243,6 +255,7 @@ create index lesson_reports_lesson_idx on public.lesson_reports(lesson_id);
 create index activities_teacher_student_idx on public.activities(teacher_id, student_id);
 create index activity_submissions_teacher_student_idx on public.activity_submissions(teacher_id, student_id);
 create index messages_teacher_student_idx on public.messages(teacher_id, student_id);
+create index push_subscriptions_user_id_idx on public.push_subscriptions(user_id);
 
 alter table public.profiles enable row level security;
 alter table public.teacher_profiles enable row level security;
@@ -260,6 +273,7 @@ alter table public.google_calendar_events enable row level security;
 alter table public.zoom_oauth_states enable row level security;
 alter table public.zoom_connections enable row level security;
 alter table public.notifications enable row level security;
+alter table public.push_subscriptions enable row level security;
 
 create policy "profiles own read" on public.profiles for select using (auth.uid() = id);
 create policy "profiles own update" on public.profiles for update using (auth.uid() = id);
@@ -277,3 +291,4 @@ create policy "app subscriptions teacher read" on public.app_subscriptions for s
 create policy "google connections teacher read" on public.google_calendar_connections for select using (auth.uid() = teacher_id);
 create policy "google events teacher read" on public.google_calendar_events for select using (auth.uid() = teacher_id);
 create policy "notifications own read" on public.notifications for select using (auth.uid() = user_id);
+create policy "push subscriptions own read" on public.push_subscriptions for select using (auth.uid() = user_id);

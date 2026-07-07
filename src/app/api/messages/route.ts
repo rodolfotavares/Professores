@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { apiError, getApiUser, json } from '@/lib/api-auth';
+import { isPushConfigured, sendPushToUser } from '@/lib/push';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 const schema = z.object({
@@ -69,6 +70,16 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) throw error;
+
+    const recipientId = isStudent ? student.teacher_id : student.user_id;
+    if (recipientId && isPushConfigured()) {
+      await sendPushToUser(recipientId, {
+        title: 'Nova mensagem no LuminaAI',
+        body: body.text?.trim() || 'Voce recebeu um novo anexo.',
+        url: isStudent ? '/teacher/messages' : '/student/messages',
+      }).catch(() => undefined);
+    }
+
     return json({ message: data });
   } catch (error) {
     return apiError(error);

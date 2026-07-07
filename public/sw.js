@@ -1,4 +1,4 @@
-const CACHE_NAME = 'luminaai-v2';
+const CACHE_NAME = 'luminaai-v3';
 const STATIC_ASSETS = [
   '/manifest.webmanifest',
   '/icons/lumina-premium-192.png',
@@ -35,4 +35,39 @@ self.addEventListener('fetch', (event) => {
       caches.match(request).then((cached) => cached || fetch(request))
     );
   }
+});
+
+self.addEventListener('push', (event) => {
+  let payload = {};
+
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { body: event.data ? event.data.text() : '' };
+  }
+
+  const title = payload.title || 'LuminaAI';
+  const options = {
+    body: payload.body || payload.message || 'Voce tem um novo lembrete no LuminaAI.',
+    icon: '/icons/lumina-premium-192.png',
+    badge: '/icons/lumina-premium-192-maskable.png',
+    data: {
+      url: payload.url || '/',
+    },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientsList) => {
+      const matchingClient = clientsList.find((client) => client.url.includes(targetUrl));
+      if (matchingClient) return matchingClient.focus();
+      return self.clients.openWindow(targetUrl);
+    })
+  );
 });

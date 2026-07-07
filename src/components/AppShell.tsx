@@ -79,6 +79,7 @@ export function AppLayout({ children, area }: { children: React.ReactNode; area:
                   <strong>Central de lembretes</strong>
                   <small>{notifications.length} alerta{notifications.length === 1 ? '' : 's'}</small>
                 </div>
+                <PushNotificationButton />
                 {notifications.length === 0 ? (
                   <p className="muted">Nenhum lembrete urgente no momento.</p>
                 ) : (
@@ -108,6 +109,92 @@ export function AppLayout({ children, area }: { children: React.ReactNode; area:
       <div className="app-content">{children}</div>
       <OnboardingGuide area={area} />
     </section>
+  );
+}
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; i += 1) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+
+  return outputArray;
+}
+
+function PushNotificationButton() {
+  const [status, setStatus] = useState<'idle' | 'unsupported' | 'enabled' | 'blocked' | 'loading' | 'error'>('idle');
+  const [message, setMessage] = useState('Receba lembretes mesmo fora do app.');
+
+  useEffect(() => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+      setStatus('unsupported');
+      setMessage('Este navegador nao suporta push notification.');
+      return;
+    }
+
+    if (Notification.permission === 'granted') {
+      setStatus('enabled');
+      setMessage('Push ativado neste dispositivo.');
+    } else if (Notification.permission === 'denied') {
+      setStatus('blocked');
+      setMessage('Permissao bloqueada no navegador.');
+    }
+  }, []);
+
+  async function enablePush() {
+    try {
+      setStatus('loading');
+      setMessage('Preparando notificacoes...');
+
+      const keyData = await apiFetch<{ publicKey: string; configured: boolean }>('/api/push/public-key');
+      if (!keyData.configured || !keyData.publicKey) {
+        throw new Error('As chaves de push ainda nao foram configuradas no servidor.');
+      }
+
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        setStatus(permission === 'denied' ? 'blocked' : 'idle');
+        setMessage(permission === 'denied' ? 'Permissao bloqueada no navegador.' : 'Permissao nao concedida.');
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.getRegistration() || await navigator.serviceWorker.register('/sw.js');
+      const existingSubscription = await registration.pushManager.getSubscription();
+      const subscription = existingSubscription || await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(keyData.publicKey),
+      });
+
+      await apiFetch('/api/push/subscribe', {
+        method: 'POST',
+        body: JSON.stringify(subscription.toJSON()),
+      });
+
+      await apiFetch('/api/push/test', { method: 'POST' });
+      setStatus('enabled');
+      setMessage('Push ativado. Enviamos um teste para este dispositivo.');
+    } catch (error) {
+      setStatus('error');
+      setMessage(error instanceof Error ? error.message : 'Nao foi possivel ativar notificacoes.');
+    }
+  }
+
+  const disabled = status === 'loading' || status === 'enabled' || status === 'unsupported' || status === 'blocked';
+
+  return (
+    <div className={`push-enable-card ${status}`}>
+      <span>
+        <strong>Push notification</strong>
+        <small>{message}</small>
+      </span>
+      <button type="button" onClick={enablePush} disabled={disabled}>
+        {status === 'loading' ? 'Ativando...' : status === 'enabled' ? 'Ativo' : 'Ativar'}
+      </button>
+    </div>
   );
 }
 

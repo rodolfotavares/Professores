@@ -96,6 +96,7 @@ function canTeacherUseApi(pathname: string) {
     '/api/teacher/subscription',
     '/api/payments/mercadopago/preference',
     '/api/payments/mercadopago/webhook',
+    '/api/push',
   ].some((path) => pathname.startsWith(path));
 }
 
