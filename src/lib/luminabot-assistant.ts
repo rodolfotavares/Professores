@@ -193,6 +193,14 @@ type DetectedIntent = {
   needsClarification?: string;
 };
 
+type InterpretationResult = DetectedIntent & {
+  confidence: number;
+  source: 'local_rules' | 'training_example' | 'llm' | 'fallback';
+  missing_fields?: string[];
+  natural_response?: string;
+  training_example_id?: string;
+};
+
 type TeacherContext = {
   students: StudentLite[];
   classes: ClassLite[];
@@ -203,6 +211,7 @@ type TeacherContext = {
 export interface LLMProvider {
   isConfigured(): boolean;
   complete(input: { systemPrompt: string; userMessage: string; context: string }): Promise<string | null>;
+  interpret?(input: { message: string; normalizedMessage: string; context: string; localResult?: InterpretationResult | null }): Promise<InterpretationResult | null>;
 }
 
 class DisabledLLMProvider implements LLMProvider {
@@ -211,6 +220,10 @@ class DisabledLLMProvider implements LLMProvider {
   }
 
   async complete() {
+    return null;
+  }
+
+  async interpret() {
     return null;
   }
 }
@@ -549,6 +562,294 @@ export class IntentDetectionService {
   }
 }
 
+export class LocalRuleParser {
+  private detector = new IntentDetectionService();
+
+  parse(message: string): InterpretationResult {
+    const detected = this.detector.detect(message);
+    const missing = this.missingFields(detected);
+    return {
+      ...detected,
+      confidence: this.confidence(detected, missing),
+      source: 'local_rules',
+      missing_fields: missing,
+    };
+  }
+
+  private confidence(detected: DetectedIntent, missing: string[]) {
+    if (detected.intent === 'CONVERSA_GERAL') return 0.25;
+    if (detected.intent === 'PEDIR_AJUDA') return 0.95;
+    if (missing.length) return 0.88;
+    if (['CRIAR_AULA', 'ALTERAR_AULA', 'CANCELAR_AULA', 'REGISTRAR_PAGAMENTO', 'REGISTRAR_FALTA'].includes(detected.intent)) return 0.93;
+    return 0.9;
+  }
+
+  private missingFields(detected: DetectedIntent) {
+    const missing: string[] = [];
+    if (detected.intent === 'CRIAR_AULA') {
+      if (!detected.studentName) missing.push('studentName');
+      if (!detected.date) missing.push('date');
+      if (!detected.time) missing.push('time');
+    }
+    if (detected.intent === 'ALTERAR_AULA' && !detected.studentName) missing.push('studentName');
+    if (detected.intent === 'REGISTRAR_PAGAMENTO') {
+      if (!detected.studentName) missing.push('studentName');
+      if (!detected.amount) missing.push('amount');
+    }
+    if (detected.intent === 'REGISTRAR_FALTA' && !detected.studentName) missing.push('studentName');
+    if (detected.intent === 'GERAR_RELATORIO_ALUNO' && !detected.studentName) missing.push('studentName');
+    return missing;
+  }
+}
+
+type TrainingExampleRow = {
+  id: string;
+  teacher_id: string;
+  phrase: string;
+  normalized_phrase: string;
+  intent: ConversationIntent;
+  entities: Record<string, unknown> | null;
+  confidence: number | null;
+  status: string | null;
+};
+
+function tokenSet(value: string) {
+  return new Set(normalize(value).split(' ').filter((item) => item.length > 2));
+}
+
+function similarityScore(a: string, b: string) {
+  const left = tokenSet(a);
+  const right = tokenSet(b);
+  if (!left.size || !right.size) return 0;
+  let intersection = 0;
+  for (const item of left) if (right.has(item)) intersection += 1;
+  const union = new Set([...left, ...right]).size;
+  return intersection / union;
+}
+
+export class TrainingExampleService {
+  async findSimilar(teacherId: string, message: string): Promise<InterpretationResult | null> {
+    try {
+      const normalizedMessage = normalize(message);
+      const { data, error } = await supabaseAdmin
+        .from('luminabot_training_examples')
+        .select('id, teacher_id, phrase, normalized_phrase, intent, entities, confidence, status')
+        .eq('teacher_id', teacherId)
+        .in('status', ['approved', 'auto'])
+        .limit(80);
+      if (error) return null;
+      const examples = (data || []) as TrainingExampleRow[];
+      let best: { example: TrainingExampleRow; score: number } | null = null;
+      for (const example of examples) {
+        const score = example.normalized_phrase === normalizedMessage ? 1 : similarityScore(example.normalized_phrase, normalizedMessage);
+        if (!best || score > best.score) best = { example, score };
+      }
+      if (!best || best.score < 0.86) return null;
+      const entities = (best.example.entities || {}) as Partial<DetectedIntent>;
+      return {
+        intent: best.example.intent,
+        ...entities,
+        confidence: Math.max(best.score, Number(best.example.confidence || 0.9)),
+        source: 'training_example',
+        missing_fields: [],
+        training_example_id: best.example.id,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async save(input: {
+    teacherId: string;
+    phrase: string;
+    interpretation: InterpretationResult | DetectedIntent;
+    status?: 'auto' | 'pending_review' | 'approved' | 'rejected';
+    source?: string;
+  }) {
+    try {
+      const normalizedPhrase = normalize(input.phrase);
+      if (!normalizedPhrase || input.interpretation.intent === 'CONVERSA_GERAL') return;
+      const entities = { ...input.interpretation };
+      delete (entities as any).confidence;
+      delete (entities as any).source;
+      delete (entities as any).natural_response;
+      delete (entities as any).missing_fields;
+      const { data: existing } = await supabaseAdmin
+        .from('luminabot_training_examples')
+        .select('id')
+        .eq('teacher_id', input.teacherId)
+        .eq('normalized_phrase', normalizedPhrase)
+        .maybeSingle();
+      const row = {
+        teacher_id: input.teacherId,
+        phrase: input.phrase.slice(0, 500),
+        normalized_phrase: normalizedPhrase,
+        intent: input.interpretation.intent,
+        entities,
+        confidence: 'confidence' in input.interpretation ? Number((input.interpretation as InterpretationResult).confidence || 0.9) : 0.9,
+        source: input.source || ('source' in input.interpretation ? (input.interpretation as InterpretationResult).source : 'local_rules'),
+        status: input.status || 'auto',
+        updated_at: new Date().toISOString(),
+      };
+      if (existing?.id) {
+        await supabaseAdmin.from('luminabot_training_examples').update(row).eq('id', existing.id).eq('teacher_id', input.teacherId);
+      } else {
+        await supabaseAdmin.from('luminabot_training_examples').insert(row);
+      }
+    } catch {
+      // The bot must continue working even if the training table has not been migrated yet.
+    }
+  }
+}
+
+export class ExampleSimilarityMatcher {
+  constructor(private examples = new TrainingExampleService()) {}
+
+  match(teacherId: string, message: string) {
+    return this.examples.findSimilar(teacherId, message);
+  }
+}
+
+function coerceIntent(value: unknown): ConversationIntent {
+  const allowed: ConversationIntent[] = [
+    'CONSULTAR_AGENDA',
+    'CRIAR_AULA',
+    'ALTERAR_AULA',
+    'CANCELAR_AULA',
+    'REGISTRAR_PAGAMENTO',
+    'CONSULTAR_FINANCEIRO',
+    'GERAR_RELATORIO_FINANCEIRO',
+    'GERAR_RELATORIO_ALUNOS',
+    'LISTAR_PAGAMENTOS_PENDENTES',
+    'LISTAR_ALUNOS',
+    'LISTAR_PENDENCIAS',
+    'REGISTRAR_FALTA',
+    'CONSULTAR_ALUNO',
+    'GERAR_RELATORIO_ALUNO',
+    'CRIAR_ANOTACAO_AULA',
+    'GERAR_TEXTO_PARA_PAIS_OU_ALUNO',
+    'GERAR_MENSAGEM_PARA_RESPONSAVEL',
+    'ORGANIZAR_SEMANA',
+    'RESUMIR_DADOS',
+    'PEDIR_AJUDA',
+    'APAGAR_HISTORICO',
+    'CONVERSA_GERAL',
+  ];
+  return allowed.includes(value as ConversationIntent) ? (value as ConversationIntent) : 'CONVERSA_GERAL';
+}
+
+function validateLLMInterpretation(payload: any): InterpretationResult | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const entities = payload.entities && typeof payload.entities === 'object' ? payload.entities : {};
+  const confidence = Math.max(0, Math.min(1, Number(payload.confidence || 0)));
+  return {
+    intent: coerceIntent(payload.intent),
+    studentName: typeof entities.studentName === 'string' ? entities.studentName : typeof entities.student_name === 'string' ? entities.student_name : undefined,
+    date: typeof entities.date === 'string' ? entities.date : undefined,
+    time: typeof entities.time === 'string' ? entities.time : undefined,
+    amount: typeof entities.amount === 'number' ? entities.amount : undefined,
+    period: typeof entities.period === 'string' ? entities.period : undefined,
+    reportType: typeof entities.reportType === 'string' ? entities.reportType : typeof entities.report_type === 'string' ? entities.report_type : undefined,
+    note: typeof entities.note === 'string' ? entities.note : undefined,
+    topic: typeof entities.topic === 'string' ? entities.topic : undefined,
+    confidence,
+    source: 'llm',
+    missing_fields: Array.isArray(payload.missing_fields) ? payload.missing_fields.filter((item: unknown) => typeof item === 'string') : [],
+    natural_response: typeof payload.natural_response === 'string' ? payload.natural_response : undefined,
+  };
+}
+
+export class GroqLLMProvider implements LLMProvider {
+  private apiKey = process.env.GROQ_API_KEY || '';
+  private model = process.env.LLM_MODEL || 'llama-3.1-8b-instant';
+
+  isConfigured() {
+    return Boolean(this.apiKey && (process.env.LLM_PROVIDER || '').toLowerCase() === 'groq');
+  }
+
+  async complete() {
+    return null;
+  }
+
+  async interpret(input: { message: string; normalizedMessage: string; context: string; localResult?: InterpretationResult | null }) {
+    if (!this.isConfigured()) return null;
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: this.model,
+          temperature: 0,
+          response_format: { type: 'json_object' },
+          messages: [
+            {
+              role: 'system',
+              content:
+                'Voce interpreta mensagens de professores particulares para a LuminaAI. Responda somente JSON valido com: intent, entities, confidence, missing_fields e natural_response. Nunca execute acoes. Use apenas os dados fornecidos. Se tiver duvida, reduza a confidence.',
+            },
+            {
+              role: 'user',
+              content: JSON.stringify({
+                message: input.message,
+                normalized_message: input.normalizedMessage,
+                local_result: input.localResult,
+                context: input.context.slice(0, 6000),
+              }),
+            },
+          ],
+        }),
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      const content = data?.choices?.[0]?.message?.content;
+      if (!content) return null;
+      return validateLLMInterpretation(JSON.parse(content));
+    } catch {
+      return null;
+    }
+  }
+}
+
+export class NaturalLanguageInterpreterService {
+  private localParser = new LocalRuleParser();
+  private matcher = new ExampleSimilarityMatcher();
+
+  constructor(private llm: LLMProvider = createLLMProvider()) {}
+
+  async interpret(connection: BotConnection, message: string, context: TeacherContext): Promise<InterpretationResult> {
+    const normalizedMessage = normalize(message);
+    const local = this.localParser.parse(message);
+    if (local.confidence >= 0.85) return local;
+
+    const example = await this.matcher.match(connection.teacher_id, message);
+    if (example && example.confidence >= 0.85) return example;
+
+    const llmResult = await this.llm.interpret?.({
+      message,
+      normalizedMessage,
+      context: contextSummary(context),
+      localResult: local,
+    });
+    if (llmResult && llmResult.confidence >= 0.6) return llmResult;
+
+    return {
+      ...local,
+      source: 'fallback',
+      natural_response: this.llm.isConfigured()
+        ? 'Nao consegui interpretar com seguranca. Posso tentar de novo se voce enviar aluno, data, horario ou valor.'
+        : 'Estou usando apenas as regras locais no momento. Envie a mensagem com aluno, data, horario ou valor para eu entender melhor.',
+    };
+  }
+}
+
+function createLLMProvider(): LLMProvider {
+  if ((process.env.LLM_PROVIDER || '').toLowerCase() === 'groq') return new GroqLLMProvider();
+  return new DisabledLLMProvider();
+}
+
 export class LuminaDataContextService {
   async build(teacherId: string): Promise<TeacherContext> {
     const today = todayDate();
@@ -803,15 +1104,17 @@ export class BotActionExecutor {
 }
 
 export class ConversationalAssistantService {
-  private intentDetector = new IntentDetectionService();
+  private interpreter: NaturalLanguageInterpreterService;
   private dataContext = new LuminaDataContextService();
   private state = new BotConversationState();
   private actionExecutor = new BotActionExecutor();
   private interactionLog = new BotInteractionLog();
+  private trainingExamples = new TrainingExampleService();
   private llm: LLMProvider;
 
-  constructor(llm: LLMProvider = new DisabledLLMProvider()) {
+  constructor(llm: LLMProvider = createLLMProvider()) {
     this.llm = llm;
+    this.interpreter = new NaturalLanguageInterpreterService(llm);
   }
 
   async handleMessage(connection: BotConnection, message: string) {
@@ -820,15 +1123,25 @@ export class ConversationalAssistantService {
       if (pendingResponse) return pendingResponse;
     }
 
-    const detected = this.intentDetector.detect(message);
     const context = await this.dataContext.build(connection.teacher_id);
+    const detected = await this.interpreter.interpret(connection, message, context);
     const response = await this.respond(connection, detected, context, message);
+    if (detected.source === 'llm' && detected.intent !== 'CONVERSA_GERAL') {
+      await this.trainingExamples.save({
+        teacherId: connection.teacher_id,
+        phrase: message,
+        interpretation: detected,
+        status: 'pending_review',
+        source: 'llm',
+      });
+    }
     await this.interactionLog.record({
       teacherId: connection.teacher_id,
       telegramUserId: connection.telegram_user_id,
       message,
       response,
       intent: detected.intent,
+      metadata: { source: detected.source, confidence: detected.confidence, training_example_id: detected.training_example_id },
     });
     return response;
   }
@@ -905,6 +1218,21 @@ export class ConversationalAssistantService {
     }
 
     const result = await this.actionExecutor.execute(connection, action);
+    const originalMessage = typeof action.entities?.originalMessage === 'string' ? action.entities.originalMessage : '';
+    if (originalMessage) {
+      await this.trainingExamples.save({
+        teacherId: connection.teacher_id,
+        phrase: originalMessage,
+        interpretation: {
+          intent: action.intent,
+          ...(action.entities || {}),
+          confidence: 1,
+          source: 'local_rules',
+        } as InterpretationResult,
+        status: 'auto',
+        source: 'confirmed_action',
+      });
+    }
     await this.state.clear(connection);
     await this.interactionLog.record({
       teacherId: connection.teacher_id,
@@ -918,8 +1246,19 @@ export class ConversationalAssistantService {
     return result;
   }
 
-  private async respond(connection: BotConnection, detected: DetectedIntent, context: TeacherContext, originalMessage: string) {
+  private async respond(connection: BotConnection, detected: InterpretationResult, context: TeacherContext, originalMessage: string) {
     if (detected.intent === 'PEDIR_AJUDA') return this.help();
+    if (detected.source === 'fallback' && detected.natural_response) {
+      return botMessage([
+        detected.natural_response,
+        '',
+        '*Exemplo que eu entendo bem:*',
+        '- Marque a aula do Joao para amanha as 14h.',
+        '- Registre pagamento da Maria de 100 reais.',
+        '',
+        'Qual acao voce deseja fazer agora?',
+      ]);
+    }
     if (detected.intent === 'APAGAR_HISTORICO') return this.prepareDeleteHistory(connection);
     if (detected.intent === 'CONSULTAR_AGENDA') return this.agenda(context, detected.date || todayDate());
     if (detected.intent === 'ORGANIZAR_SEMANA') return this.organizeWeek(context);
@@ -932,12 +1271,19 @@ export class ConversationalAssistantService {
     if (detected.intent === 'CONSULTAR_ALUNO') return this.studentSummary(context, detected.studentName);
     if (detected.intent === 'GERAR_RELATORIO_ALUNO') return this.studentReport(context, detected.studentName);
     if (detected.intent === 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO' || detected.intent === 'GERAR_MENSAGEM_PARA_RESPONSAVEL') return this.parentText(context, detected.studentName, detected.topic || originalMessage);
-    if (detected.intent === 'CRIAR_AULA') return this.prepareCreateClass(connection, context, detected);
-    if (detected.intent === 'ALTERAR_AULA') return this.prepareUpdateClass(connection, context, detected);
-    if (detected.intent === 'CANCELAR_AULA') return this.prepareCancelClass(connection, context, detected);
-    if (detected.intent === 'REGISTRAR_PAGAMENTO') return this.preparePayment(connection, context, detected);
-    if (detected.intent === 'REGISTRAR_FALTA') return this.prepareAbsence(connection, context, detected);
+    if (detected.intent === 'CRIAR_AULA') return this.prepareCreateClass(connection, context, detected, originalMessage);
+    if (detected.intent === 'ALTERAR_AULA') return this.prepareUpdateClass(connection, context, detected, originalMessage);
+    if (detected.intent === 'CANCELAR_AULA') return this.prepareCancelClass(connection, context, detected, originalMessage);
+    if (detected.intent === 'REGISTRAR_PAGAMENTO') return this.preparePayment(connection, context, detected, originalMessage);
+    if (detected.intent === 'REGISTRAR_FALTA') return this.prepareAbsence(connection, context, detected, originalMessage);
     if (detected.intent === 'CRIAR_ANOTACAO_AULA') return this.prepareNote(connection, context, detected, originalMessage);
+    if (detected.source === 'llm' && detected.natural_response) {
+      return botMessage([
+        detected.natural_response,
+        '',
+        'Deseja que eu consulte agenda, alunos ou financeiro?',
+      ]);
+    }
 
     const llmAnswer = await this.llm.complete({
       systemPrompt: 'Voce e o LumiBot, assistente inteligente da LuminaAI. Sua funcao e ajudar professores particulares a organizar alunos, aulas, agenda, pagamentos, relatorios e rotina. Responda de forma clara, profissional, natural e objetiva. Separe informacoes por topicos, use quebras de linha e termine com uma proxima acao util. Use apenas os dados fornecidos pelo sistema. Nao invente informacoes. Quando o professor pedir uma acao sensivel, solicite confirmacao antes de executar.',
@@ -1279,7 +1625,7 @@ export class ConversationalAssistantService {
     ]);
   }
 
-  private async prepareCreateClass(connection: BotConnection, context: TeacherContext, detected: DetectedIntent) {
+  private async prepareCreateClass(connection: BotConnection, context: TeacherContext, detected: DetectedIntent, originalMessage: string) {
     if (!detected.studentName || !detected.date || !detected.time) {
       return botMessage([
         'Entendi que voce quer marcar uma aula.',
@@ -1299,7 +1645,7 @@ export class ConversationalAssistantService {
       intent: 'CRIAR_AULA',
       teacher_id: connection.teacher_id,
       telegram_user_id: connection.telegram_user_id,
-      entities: detected as Record<string, unknown>,
+      entities: { ...(detected as Record<string, unknown>), originalMessage },
       student_id: student.id,
       student_name: student.full_name,
       student_user_id: student.user_id,
@@ -1325,7 +1671,7 @@ export class ConversationalAssistantService {
     ]);
   }
 
-  private async prepareUpdateClass(connection: BotConnection, context: TeacherContext, detected: DetectedIntent) {
+  private async prepareUpdateClass(connection: BotConnection, context: TeacherContext, detected: DetectedIntent, originalMessage: string) {
     if (!detected.studentName) {
       return botMessage([
         'Entendi que voce quer remarcar uma aula.',
@@ -1357,7 +1703,7 @@ export class ConversationalAssistantService {
       intent: 'ALTERAR_AULA',
       teacher_id: connection.teacher_id,
       telegram_user_id: connection.telegram_user_id,
-      entities: detected as Record<string, unknown>,
+      entities: { ...(detected as Record<string, unknown>), originalMessage },
       class_id: currentClass.id,
       student_name: student.full_name,
       class_date: nextDate,
@@ -1379,7 +1725,7 @@ export class ConversationalAssistantService {
     ]);
   }
 
-  private async prepareCancelClass(connection: BotConnection, context: TeacherContext, detected: DetectedIntent) {
+  private async prepareCancelClass(connection: BotConnection, context: TeacherContext, detected: DetectedIntent, originalMessage: string) {
     const date = detected.date;
     let classes = context.classes.filter((item) => item.status === 'scheduled');
     let studentName = detected.studentName;
@@ -1413,7 +1759,7 @@ export class ConversationalAssistantService {
       intent: 'CANCELAR_AULA',
       teacher_id: connection.teacher_id,
       telegram_user_id: connection.telegram_user_id,
-      entities: detected as Record<string, unknown>,
+      entities: { ...(detected as Record<string, unknown>), originalMessage },
       class_ids: classes.map((item) => item.id),
       student_name: studentName,
       class_date: date,
@@ -1434,7 +1780,7 @@ export class ConversationalAssistantService {
     ]);
   }
 
-  private async preparePayment(connection: BotConnection, context: TeacherContext, detected: DetectedIntent) {
+  private async preparePayment(connection: BotConnection, context: TeacherContext, detected: DetectedIntent, originalMessage: string) {
     if (!detected.studentName || !detected.amount || detected.amount <= 0) {
       return botMessage([
         'Entendi que voce quer registrar um pagamento.',
@@ -1453,7 +1799,7 @@ export class ConversationalAssistantService {
       intent: 'REGISTRAR_PAGAMENTO',
       teacher_id: connection.teacher_id,
       telegram_user_id: connection.telegram_user_id,
-      entities: detected as Record<string, unknown>,
+      entities: { ...(detected as Record<string, unknown>), originalMessage },
       student_id: student.id,
       student_name: student.full_name,
       student_user_id: student.user_id,
@@ -1476,7 +1822,7 @@ export class ConversationalAssistantService {
     ]);
   }
 
-  private async prepareAbsence(connection: BotConnection, context: TeacherContext, detected: DetectedIntent) {
+  private async prepareAbsence(connection: BotConnection, context: TeacherContext, detected: DetectedIntent, originalMessage: string) {
     const { student, error } = this.dataContext.findStudent(context, detected.studentName);
     if (!student) return error || 'Nao encontrei esse aluno.';
     const date = detected.date || todayDate();
@@ -1485,7 +1831,7 @@ export class ConversationalAssistantService {
       intent: 'REGISTRAR_FALTA',
       teacher_id: connection.teacher_id,
       telegram_user_id: connection.telegram_user_id,
-      entities: detected as Record<string, unknown>,
+      entities: { ...(detected as Record<string, unknown>), originalMessage },
       student_id: student.id,
       student_name: student.full_name,
       class_date: date,
@@ -1514,7 +1860,7 @@ export class ConversationalAssistantService {
       intent: 'CRIAR_ANOTACAO_AULA',
       teacher_id: connection.teacher_id,
       telegram_user_id: connection.telegram_user_id,
-      entities: detected as Record<string, unknown>,
+      entities: { ...(detected as Record<string, unknown>), originalMessage },
       student_id: student.id,
       student_name: student.full_name,
       note,

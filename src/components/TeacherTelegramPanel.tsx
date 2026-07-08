@@ -23,9 +23,28 @@ type TelegramLinkResponse = {
   connect_token_expires_at: string;
 };
 
+type TrainingExample = {
+  id: string;
+  phrase: string;
+  intent: string;
+  entities: Record<string, unknown>;
+  confidence: number;
+  source: string;
+  status: string;
+  updated_at: string;
+};
+
+type TrainingResponse = {
+  examples: TrainingExample[];
+  table_ready: boolean;
+};
+
 export function TeacherTelegramPanel() {
   const [connection, setConnection] = useState<TelegramConnection | null>(null);
   const [botUsername, setBotUsername] = useState('');
+  const [examples, setExamples] = useState<TrainingExample[]>([]);
+  const [tableReady, setTableReady] = useState(true);
+  const [editingExample, setEditingExample] = useState<Record<string, { intent: string; entities: string }>>({});
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
@@ -37,6 +56,9 @@ export function TeacherTelegramPanel() {
       const data = await apiFetch<TelegramResponse>('/api/teacher/telegram');
       setConnection(data.connection);
       setBotUsername(data.bot_username || '');
+      const training = await apiFetch<TrainingResponse>('/api/teacher/luminabot-training');
+      setExamples(training.examples || []);
+      setTableReady(training.table_ready);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao carregar conexão do Telegram.');
     } finally {
@@ -82,6 +104,39 @@ export function TeacherTelegramPanel() {
     } finally {
       setActionLoading(false);
     }
+  }
+
+  async function updateExample(example: TrainingExample, status: string) {
+    setActionLoading(true);
+    setError('');
+    try {
+      const draft = editingExample[example.id];
+      await apiFetch('/api/teacher/luminabot-training', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          id: example.id,
+          intent: draft?.intent || example.intent,
+          entities: draft?.entities ? JSON.parse(draft.entities) : example.entities,
+          status,
+        }),
+      });
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao atualizar exemplo do LumiBot.');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  function updateDraft(example: TrainingExample, field: 'intent' | 'entities', value: string) {
+    setEditingExample((current) => ({
+      ...current,
+      [example.id]: {
+        intent: current[example.id]?.intent ?? example.intent,
+        entities: current[example.id]?.entities ?? JSON.stringify(example.entities || {}, null, 2),
+        [field]: value,
+      },
+    }));
   }
 
   return (
@@ -158,6 +213,58 @@ export function TeacherTelegramPanel() {
           <span className="support-shortcut"><strong>Marcar aula com Ana amanhã às 15h</strong><small>Cria aula após confirmação.</small></span>
           <span className="support-shortcut"><strong>Registrar pagamento do João de R$100</strong><small>Registra pagamento após confirmação.</small></span>
           <span className="support-shortcut"><strong>Maria faltou hoje</strong><small>Marca falta após confirmação.</small></span>
+        </div>
+      </GlassCard>
+
+      <GlassCard className="support-shortcuts-card">
+        <div className="glass-card-head">
+          <div>
+            <span className="eyebrow">Treinamento</span>
+            <strong>Exemplos aprendidos pelo LumiBot</strong>
+          </div>
+          <StatusBadge tone={tableReady ? 'success' : 'warning'}>
+            {tableReady ? 'Ativo' : 'Aguardando tabela'}
+          </StatusBadge>
+        </div>
+        <p className="muted">
+          Revise exemplos interpretados pelo bot. Quando aprovados, eles ajudam o LumiBot a responder melhor sem chamar inteligencia artificial externa.
+        </p>
+        {!tableReady && (
+          <p className="muted">A tabela de treinamento ainda precisa ser aplicada no Supabase para salvar novos exemplos.</p>
+        )}
+        <div className="mini-list">
+          {examples.length ? examples.slice(0, 12).map((example) => {
+            const draft = editingExample[example.id];
+            return (
+              <span key={example.id}>
+                <strong>{example.phrase}</strong>
+                <small>Intencao: {example.intent} | Confianca: {Math.round(Number(example.confidence || 0) * 100)}% | Status: {example.status}</small>
+                <input
+                  className="field-input"
+                  value={draft?.intent ?? example.intent}
+                  onChange={(event) => updateDraft(example, 'intent', event.target.value)}
+                  aria-label="Intencao do exemplo"
+                />
+                <textarea
+                  className="field-input"
+                  rows={3}
+                  value={draft?.entities ?? JSON.stringify(example.entities || {}, null, 2)}
+                  onChange={(event) => updateDraft(example, 'entities', event.target.value)}
+                  aria-label="Entidades do exemplo"
+                />
+                <div className="panel-actions">
+                  <button className="btn primary" type="button" disabled={actionLoading} onClick={() => updateExample(example, 'approved')}>Aprovar</button>
+                  <button className="btn" type="button" disabled={actionLoading} onClick={() => updateExample(example, example.status)}>Salvar correcao</button>
+                  <button className="btn danger" type="button" disabled={actionLoading} onClick={() => updateExample(example, 'rejected')}>Rejeitar</button>
+                </div>
+              </span>
+            );
+          }) : (
+            <span>
+              <strong>Nenhum exemplo salvo ainda</strong>
+              <small>Quando o LumiBot interpretar ou executar novas acoes, os exemplos aparecerao aqui.</small>
+            </span>
+          )}
         </div>
       </GlassCard>
     </div>
