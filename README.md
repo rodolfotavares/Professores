@@ -23,7 +23,7 @@ App para professores e alunos, feito fora do Base44 com Next.js e Supabase.
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `TELEGRAM_BOT_TOKEN` opcional para LuminaBot
    - `TELEGRAM_WEBHOOK_SECRET` opcional para proteger o webhook do Telegram
-   - `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL` opcionais para respostas de IA no LuminaBot
+   - `LLM_PROVIDER`, `LLM_API_KEY`, `GROQ_API_KEY`, `LLM_MODEL` opcionais para respostas de IA no LuminaBot
    - `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` opcional para exibir o link do bot no painel
 5. Instale e rode:
 
@@ -69,7 +69,17 @@ No painel do professor, abra `/teacher/telegram` e clique em **Conectar meu Tele
 
 Se o professor quiser remover o vinculo, use o botao **Desconectar Telegram** na mesma pagina.
 
-O LuminaBot tem uma camada conversacional preparada para IA. Sem `LLM_API_KEY`, ele continua funcionando por regras para agenda, alunos, pagamentos, textos para responsaveis, relatorios e acoes com confirmacao. Com `LLM_PROVIDER=openai` ou `openai-compatible`, ele usa `LLM_API_KEY`, `LLM_MODEL` e opcionalmente `LLM_API_URL` para respostas livres sem alterar a logica de seguranca.
+O LuminaBot tem uma camada conversacional preparada para IA. Sem chave de IA, ele continua funcionando por regras para agenda, alunos, pagamentos, textos para responsaveis, relatorios e acoes com confirmacao.
+
+Para usar Groq, configure:
+
+```bash
+LLM_PROVIDER=groq
+GROQ_API_KEY=<sua-chave-groq>
+LLM_MODEL=llama-3.3-70b-versatile
+```
+
+Tambem e possivel usar `LLM_PROVIDER=openai` ou `openai-compatible` com `LLM_API_KEY`, `LLM_MODEL` e opcionalmente `LLM_API_URL`. A IA melhora as respostas livres, mas a logica de seguranca continua igual: acoes sensiveis exigem confirmacao e o bot usa apenas dados do professor conectado.
 
 ## Primeiro teste recomendado
 

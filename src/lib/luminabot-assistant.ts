@@ -147,20 +147,45 @@ export interface LLMProvider {
 }
 
 class ConfigurableLLMProvider implements LLMProvider {
+  private provider() {
+    if (process.env.LLM_PROVIDER) return process.env.LLM_PROVIDER.toLowerCase();
+    if (process.env.GROQ_API_KEY) return 'groq';
+    if (process.env.LLM_API_KEY) return 'openai';
+    return '';
+  }
+
+  private apiKey(provider: string) {
+    if (provider === 'groq') return process.env.GROQ_API_KEY || process.env.LLM_API_KEY || '';
+    return process.env.LLM_API_KEY || '';
+  }
+
+  private model(provider: string) {
+    if (process.env.LLM_MODEL) return process.env.LLM_MODEL;
+    if (provider === 'groq') return 'llama-3.3-70b-versatile';
+    return 'gpt-4o-mini';
+  }
+
+  private endpoint(provider: string) {
+    if (process.env.LLM_API_URL) return process.env.LLM_API_URL;
+    if (provider === 'groq') return 'https://api.groq.com/openai/v1/chat/completions';
+    return 'https://api.openai.com/v1/chat/completions';
+  }
+
   isConfigured() {
-    return Boolean(process.env.LLM_PROVIDER && process.env.LLM_API_KEY);
+    const provider = this.provider();
+    return Boolean(provider && this.apiKey(provider));
   }
 
   async complete(input: { systemPrompt: string; userMessage: string; context: string }) {
     if (!this.isConfigured()) return null;
-    const provider = (process.env.LLM_PROVIDER || '').toLowerCase();
-    const model = process.env.LLM_MODEL || 'gpt-4o-mini';
-    const apiKey = process.env.LLM_API_KEY;
+    const provider = this.provider();
+    const model = this.model(provider);
+    const apiKey = this.apiKey(provider);
 
-    if (provider !== 'openai' && provider !== 'openai-compatible') return null;
+    if (!['openai', 'openai-compatible', 'groq'].includes(provider)) return null;
 
     try {
-      const response = await fetch(process.env.LLM_API_URL || 'https://api.openai.com/v1/chat/completions', {
+      const response = await fetch(this.endpoint(provider), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -174,6 +199,7 @@ class ConfigurableLLMProvider implements LLMProvider {
             { role: 'user', content: input.userMessage },
           ],
           temperature: 0.3,
+          max_tokens: 700,
         }),
       });
       if (!response.ok) return null;
