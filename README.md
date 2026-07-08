@@ -23,6 +23,7 @@ App para professores e alunos, feito fora do Base44 com Next.js e Supabase.
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `TELEGRAM_BOT_TOKEN` opcional para LuminaBot
    - `TELEGRAM_WEBHOOK_SECRET` opcional para proteger o webhook do Telegram
+   - `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL` opcionais para respostas de IA no LuminaBot
    - `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` opcional para exibir o link do bot no painel
 5. Instale e rode:
 
@@ -67,6 +68,8 @@ curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook" ^
 No painel do professor, abra `/teacher/telegram` e clique em **Conectar meu Telegram**. A LuminaAI gera um link seguro do tipo `https://t.me/<bot>?start=<token>`; esse token e temporario, expira em 10 minutos e so pode ser usado uma vez. Ao abrir o link, o LuminaBot valida o token, vincula o Telegram ID do professor e registra a conexao nos logs de auditoria. Depois disso, o professor pode usar comandos como `/agenda`, `/alunos`, `/pendentes`, `Marcar aula com Ana amanha as 15h`, `Registrar pagamento do Joao de R$100` e `Maria faltou hoje`.
 
 Se o professor quiser remover o vinculo, use o botao **Desconectar Telegram** na mesma pagina.
+
+O LuminaBot tem uma camada conversacional preparada para IA. Sem `LLM_API_KEY`, ele continua funcionando por regras para agenda, alunos, pagamentos, textos para responsaveis, relatorios e acoes com confirmacao. Com `LLM_PROVIDER=openai` ou `openai-compatible`, ele usa `LLM_API_KEY`, `LLM_MODEL` e opcionalmente `LLM_API_URL` para respostas livres sem alterar a logica de seguranca.
 
 ## Primeiro teste recomendado
 

@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'crypto';
+import { ConversationalAssistantService } from './luminabot-assistant';
 import { supabaseAdmin } from './supabase-admin';
 
 type TelegramUser = {
@@ -459,6 +460,8 @@ async function executePendingAction(connection: BotConnection) {
 }
 
 async function handleConnectedMessage(connection: BotConnection, text: string) {
+  return new ConversationalAssistantService().handleMessage(connection as any, text);
+
   const normalized = normalize(text);
   if (['sim', 's', 'confirmar', 'confirmo'].includes(normalized)) return executePendingAction(connection);
   if (['nao', 'não', 'n', 'cancelar'].includes(normalized)) {
@@ -466,7 +469,7 @@ async function handleConnectedMessage(connection: BotConnection, text: string) {
     return 'Tudo bem. Ação cancelada.';
   }
 
-  const intent = parseIntent(text);
+  const intent: any = parseIntent(text);
   if (intent.type === 'HELP') return helpText(true);
 
   if (intent.type === 'AGENDA') {
@@ -478,7 +481,7 @@ async function handleConnectedMessage(connection: BotConnection, text: string) {
       .order('class_time');
     if (error) throw error;
     if (!data?.length) return `Nenhuma aula encontrada para ${formatDate(intent.date)}.`;
-    return [`Agenda de ${formatDate(intent.date)}:`].concat(data.map((item: any) => {
+    return [`Agenda de ${formatDate(intent.date)}:`].concat((data || []).map((item: any) => {
       const student = Array.isArray(item.students) ? item.students[0] : item.students;
       return `${formatTime(item.class_time)} - ${student?.full_name || 'Aluno'} - ${item.subject || 'Aula'} (${item.status})`;
     })).join('\n');
@@ -488,7 +491,7 @@ async function handleConnectedMessage(connection: BotConnection, text: string) {
     const { data, error } = await supabaseAdmin.from('students').select('full_name, subject, status').eq('teacher_id', connection.teacher_id).order('full_name').limit(30);
     if (error) throw error;
     if (!data?.length) return 'Você ainda não tem alunos cadastrados.';
-    return ['Seus alunos:'].concat(data.map((item) => `${item.full_name} - ${item.subject || 'sem matéria'} - ${item.status}`)).join('\n');
+    return ['Seus alunos:'].concat((data || []).map((item) => `${item.full_name} - ${item.subject || 'sem matéria'} - ${item.status}`)).join('\n');
   }
 
   if (intent.type === 'COUNT_STUDENTS') {
@@ -520,34 +523,34 @@ async function handleConnectedMessage(connection: BotConnection, text: string) {
     if (!intent.time) return 'Não entendi o horário. Exemplo: Marcar aula com Ana amanhã às 15h.';
     const { student, error } = await studentForIntent(connection.teacher_id, intent.studentName);
     if (!student) return error || 'Aluno não encontrado.';
-    const action: PendingAction = { type: 'CREATE_CLASS', student_id: student.id, student_name: student.full_name, subject: student.subject, class_date: intent.date, class_time: intent.time };
+    const action: PendingAction = { type: 'CREATE_CLASS', student_id: student!.id, student_name: student!.full_name, subject: student!.subject, class_date: intent.date, class_time: intent.time };
     await setPendingAction(connection, action);
-    return `Encontrei ${student.full_name}. Confirma marcar aula para ${formatDate(intent.date)} às ${formatTime(intent.time)}? Responda SIM para confirmar ou NÃO para cancelar.`;
+    return `Encontrei ${student!.full_name}. Confirma marcar aula para ${formatDate(intent.date)} às ${formatTime(intent.time)}? Responda SIM para confirmar ou NÃO para cancelar.`;
   }
 
   if (intent.type === 'REGISTER_PAYMENT') {
     if (!Number.isFinite(intent.amount) || intent.amount <= 0) return 'Não entendi o valor do pagamento.';
     const { student, error } = await studentForIntent(connection.teacher_id, intent.studentName);
     if (!student) return error || 'Aluno não encontrado.';
-    const action: PendingAction = { type: 'REGISTER_PAYMENT', student_id: student.id, student_name: student.full_name, amount: intent.amount, month_reference: monthReference(), student_user_id: student.user_id };
+    const action: PendingAction = { type: 'REGISTER_PAYMENT', student_id: student!.id, student_name: student!.full_name, amount: intent.amount, month_reference: monthReference(), student_user_id: student!.user_id };
     await setPendingAction(connection, action);
-    return `Confirma registrar pagamento de R$ ${intent.amount.toFixed(2).replace('.', ',')} para ${student.full_name}? Responda SIM para confirmar ou NÃO para cancelar.`;
+    return `Confirma registrar pagamento de R$ ${intent.amount.toFixed(2).replace('.', ',')} para ${student!.full_name}? Responda SIM para confirmar ou NÃO para cancelar.`;
   }
 
   if (intent.type === 'REGISTER_ABSENCE') {
     const { student, error } = await studentForIntent(connection.teacher_id, intent.studentName);
     if (!student) return error || 'Aluno não encontrado.';
-    const action: PendingAction = { type: 'REGISTER_ABSENCE', student_id: student.id, student_name: student.full_name, class_date: intent.date };
+    const action: PendingAction = { type: 'REGISTER_ABSENCE', student_id: student!.id, student_name: student!.full_name, class_date: intent.date };
     await setPendingAction(connection, action);
-    return `Confirma registrar falta de ${student.full_name} em ${formatDate(intent.date)}? Responda SIM para confirmar ou NÃO para cancelar.`;
+    return `Confirma registrar falta de ${student!.full_name} em ${formatDate(intent.date)}? Responda SIM para confirmar ou NÃO para cancelar.`;
   }
 
   if (intent.type === 'CREATE_NOTE') {
     const { student, error } = await studentForIntent(connection.teacher_id, intent.studentName);
     if (!student) return error || 'Aluno não encontrado.';
-    const action: PendingAction = { type: 'CREATE_NOTE', student_id: student.id, student_name: student.full_name, note: intent.note };
+    const action: PendingAction = { type: 'CREATE_NOTE', student_id: student!.id, student_name: student!.full_name, note: intent.note };
     await setPendingAction(connection, action);
-    return `Confirma criar anotação para ${student.full_name}: "${intent.note}"? Responda SIM para confirmar ou NÃO para cancelar.`;
+    return `Confirma criar anotação para ${student!.full_name}: "${intent.note}"? Responda SIM para confirmar ou NÃO para cancelar.`;
   }
 
   return 'Não entendi esse comando. Envie /ajuda para ver exemplos.';
