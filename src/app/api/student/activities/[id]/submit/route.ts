@@ -5,7 +5,9 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 
 const schema = z.object({
   answer_text: z.string().optional(),
-  answer_file_url: z.string().optional(),
+  answer_file_url: z.string().url().optional(),
+}).refine((value) => Boolean(value.answer_text?.trim() || value.answer_file_url), {
+  message: 'Envie uma resposta ou um arquivo.',
 });
 
 export async function POST(req: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -33,17 +35,41 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
 
     const isLate = activity.due_date ? new Date() > new Date(`${activity.due_date}T23:59:59`) : false;
 
-    const { data, error } = await supabaseAdmin
+    const payload = {
+      activity_id: activity.id,
+      teacher_id: activity.teacher_id,
+      student_id: student.id,
+      student_user_id: user.id,
+      answer_text: body.answer_text?.trim() || '',
+      answer_file_url: body.answer_file_url || null,
+      is_late: isLate,
+      status: 'submitted',
+      grade: null,
+      feedback: '',
+    };
+
+    const { data: existing, error: existingError } = await supabaseAdmin
       .from('activity_submissions')
-      .insert({
-        activity_id: activity.id,
-        teacher_id: activity.teacher_id,
-        student_id: student.id,
-        student_user_id: user.id,
-        answer_text: body.answer_text || '',
-        answer_file_url: body.answer_file_url || null,
-        is_late: isLate,
-      })
+      .select('id')
+      .eq('activity_id', activity.id)
+      .eq('student_id', student.id)
+      .maybeSingle();
+    if (existingError) throw existingError;
+
+    const query = existing?.id
+      ? supabaseAdmin
+          .from('activity_submissions')
+          .update(payload)
+          .eq('id', existing.id)
+          .eq('student_id', student.id)
+      : supabaseAdmin
+          .from('activity_submissions')
+          .insert({
+            ...payload,
+            created_at: new Date().toISOString(),
+          });
+
+    const { data, error } = await query
       .select('*, activities(title)')
       .single();
 
