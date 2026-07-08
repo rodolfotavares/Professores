@@ -146,68 +146,13 @@ export interface LLMProvider {
   complete(input: { systemPrompt: string; userMessage: string; context: string }): Promise<string | null>;
 }
 
-class ConfigurableLLMProvider implements LLMProvider {
-  private provider() {
-    if (process.env.LLM_PROVIDER) return process.env.LLM_PROVIDER.toLowerCase();
-    if (process.env.GROQ_API_KEY) return 'groq';
-    if (process.env.LLM_API_KEY) return 'openai';
-    return '';
-  }
-
-  private apiKey(provider: string) {
-    if (provider === 'groq') return process.env.GROQ_API_KEY || process.env.LLM_API_KEY || '';
-    return process.env.LLM_API_KEY || '';
-  }
-
-  private model(provider: string) {
-    if (process.env.LLM_MODEL) return process.env.LLM_MODEL;
-    if (provider === 'groq') return 'llama-3.3-70b-versatile';
-    return 'gpt-4o-mini';
-  }
-
-  private endpoint(provider: string) {
-    if (process.env.LLM_API_URL) return process.env.LLM_API_URL;
-    if (provider === 'groq') return 'https://api.groq.com/openai/v1/chat/completions';
-    return 'https://api.openai.com/v1/chat/completions';
-  }
-
+class DisabledLLMProvider implements LLMProvider {
   isConfigured() {
-    const provider = this.provider();
-    return Boolean(provider && this.apiKey(provider));
+    return false;
   }
 
-  async complete(input: { systemPrompt: string; userMessage: string; context: string }) {
-    if (!this.isConfigured()) return null;
-    const provider = this.provider();
-    const model = this.model(provider);
-    const apiKey = this.apiKey(provider);
-
-    if (!['openai', 'openai-compatible', 'groq'].includes(provider)) return null;
-
-    try {
-      const response = await fetch(this.endpoint(provider), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: input.systemPrompt },
-            { role: 'system', content: `Dados disponiveis:\n${input.context}` },
-            { role: 'user', content: input.userMessage },
-          ],
-          temperature: 0.3,
-          max_tokens: 700,
-        }),
-      });
-      if (!response.ok) return null;
-      const data = await response.json();
-      return data?.choices?.[0]?.message?.content?.trim() || null;
-    } catch {
-      return null;
-    }
+  async complete() {
+    return null;
   }
 }
 
@@ -500,7 +445,7 @@ export class ConversationalAssistantService {
   private interactionLog = new BotInteractionLog();
   private llm: LLMProvider;
 
-  constructor(llm: LLMProvider = new ConfigurableLLMProvider()) {
+  constructor(llm: LLMProvider = new DisabledLLMProvider()) {
     this.llm = llm;
   }
 
