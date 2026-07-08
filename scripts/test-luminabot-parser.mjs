@@ -163,6 +163,18 @@ const payment = detector.detect('registrar pagamento da maria de 100 reais');
 assert.equal(payment.studentName, 'maria');
 assert.equal(payment.amount, 100);
 
+const financialSpreadsheet = detector.detect('me mande uma planilha com o relatorio financeiro mensal');
+assert.equal(financialSpreadsheet.intent, 'GERAR_RELATORIO_FINANCEIRO');
+assert.equal(financialSpreadsheet.artifactType, 'spreadsheet');
+
+const financialChart = detector.detect('cria um grafico dos meus recebimentos');
+assert.equal(financialChart.intent, 'GERAR_RELATORIO_FINANCEIRO');
+assert.equal(financialChart.artifactType, 'chart');
+
+const studentDocument = detector.detect('gera um documento com o desempenho do Joao');
+assert.equal(studentDocument.intent, 'GERAR_RELATORIO_ALUNO');
+assert.equal(studentDocument.artifactType, 'document');
+
 assert.equal(parser.parseTime('as 15h30'), '15:30:00');
 assert.equal(parser.parseTime('as duas da tarde'), '14:00:00');
 

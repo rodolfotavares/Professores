@@ -188,6 +188,7 @@ type DetectedIntent = {
   amount?: number;
   period?: string;
   reportType?: string;
+  artifactType?: 'spreadsheet' | 'chart' | 'document';
   note?: string;
   topic?: string;
   needsClarification?: string;
@@ -353,6 +354,98 @@ function bullet(label: string, value?: string | number | null) {
   return value === undefined || value === null || value === '' ? `- ${label}` : `- ${label}: ${value}`;
 }
 
+function escapeCsvCell(value: unknown) {
+  const text = String(value ?? '');
+  return /[";\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function csvContent(rows: unknown[][]) {
+  return rows.map((row) => row.map(escapeCsvCell).join(';')).join('\n');
+}
+
+function escapeXml(value: unknown) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function safeFilename(value: string) {
+  return (
+    normalize(value)
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80) || 'relatorio'
+  );
+}
+
+function detectArtifactType(text: string): DetectedIntent['artifactType'] {
+  if (text.includes('planilha') || text.includes('excel') || text.includes('csv')) return 'spreadsheet';
+  if (text.includes('grafico') || text.includes('imagem')) return 'chart';
+  if (text.includes('documento') || text.includes('arquivo') || text.includes('pdf')) return 'document';
+  return undefined;
+}
+
+function artifactLabel(type?: DetectedIntent['artifactType']) {
+  if (type === 'spreadsheet') return 'planilha';
+  if (type === 'chart') return 'grafico';
+  if (type === 'document') return 'documento';
+  return 'relatorio';
+}
+
+function artifactFormat(type?: DetectedIntent['artifactType']) {
+  if (type === 'spreadsheet') return 'CSV';
+  if (type === 'chart') return 'SVG';
+  if (type === 'document') return 'TXT';
+  return 'texto';
+}
+
+function simpleBarChartSvg(input: { title: string; rows: Array<{ label: string; value: number; color: string }> }) {
+  const width = 920;
+  const height = 420;
+  const max = Math.max(1, ...input.rows.map((row) => row.value));
+  const chartTop = 86;
+  const chartLeft = 170;
+  const barHeight = 44;
+  const gap = 34;
+  const chartWidth = 640;
+  const lines = input.rows.map((row, index) => {
+    const y = chartTop + index * (barHeight + gap);
+    const barWidth = Math.max(10, Math.round((row.value / max) * chartWidth));
+    return `
+      <text x="32" y="${y + 29}" fill="#0f172a" font-size="22" font-family="Arial">${escapeXml(row.label)}</text>
+      <rect x="${chartLeft}" y="${y}" width="${chartWidth}" height="${barHeight}" rx="14" fill="#e5edff"/>
+      <rect x="${chartLeft}" y="${y}" width="${barWidth}" height="${barHeight}" rx="14" fill="${escapeXml(row.color)}"/>
+      <text x="${chartLeft + barWidth + 18}" y="${y + 29}" fill="#0f172a" font-size="20" font-family="Arial">${escapeXml(currency(row.value))}</text>`;
+  });
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <rect width="100%" height="100%" rx="28" fill="#f8fbff"/>
+  <text x="32" y="48" fill="#06133a" font-size="30" font-weight="700" font-family="Arial">${escapeXml(input.title)}</text>
+  ${lines.join('\n')}
+</svg>`;
+}
+
+async function telegramSendDocument(
+  connection: BotConnection,
+  file: { filename: string; content: string; contentType: string; caption: string }
+) {
+  if (!connection.telegram_chat_id || !process.env.TELEGRAM_BOT_TOKEN) return false;
+  try {
+    const formData = new FormData();
+    formData.append('chat_id', connection.telegram_chat_id);
+    formData.append('caption', file.caption.slice(0, 1024));
+    formData.append('document', new Blob([file.content], { type: file.contentType }), file.filename);
+    const response = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendDocument`, {
+      method: 'POST',
+      body: formData,
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 function shortStatus(status?: string | null) {
   if (status === 'scheduled') return 'agendada';
   if (status === 'completed') return 'concluida';
@@ -374,6 +467,7 @@ export class EntityExtractionService {
       amount: this.amount(raw),
       period: this.period(text),
       reportType: this.reportType(text),
+      artifactType: detectArtifactType(text),
       note: this.note(raw),
       topic: raw,
     };
@@ -738,6 +832,10 @@ function coerceIntent(value: unknown): ConversationIntent {
   return allowed.includes(value as ConversationIntent) ? (value as ConversationIntent) : 'CONVERSA_GERAL';
 }
 
+function coerceArtifactType(value: unknown): DetectedIntent['artifactType'] {
+  return value === 'spreadsheet' || value === 'chart' || value === 'document' ? value : undefined;
+}
+
 function validateLLMInterpretation(payload: any): InterpretationResult | null {
   if (!payload || typeof payload !== 'object') return null;
   const entities = payload.entities && typeof payload.entities === 'object' ? payload.entities : {};
@@ -750,6 +848,7 @@ function validateLLMInterpretation(payload: any): InterpretationResult | null {
     amount: typeof entities.amount === 'number' ? entities.amount : undefined,
     period: typeof entities.period === 'string' ? entities.period : undefined,
     reportType: typeof entities.reportType === 'string' ? entities.reportType : typeof entities.report_type === 'string' ? entities.report_type : undefined,
+    artifactType: coerceArtifactType(entities.artifactType) || coerceArtifactType(entities.artifact_type),
     note: typeof entities.note === 'string' ? entities.note : undefined,
     topic: typeof entities.topic === 'string' ? entities.topic : undefined,
     confidence,
@@ -788,7 +887,7 @@ export class GroqLLMProvider implements LLMProvider {
             {
               role: 'system',
               content:
-                'Voce interpreta mensagens de professores particulares para a LuminaAI. Responda somente JSON valido com: intent, entities, confidence, missing_fields e natural_response. Nunca execute acoes. Use apenas os dados fornecidos. Se tiver duvida, reduza a confidence.',
+                'Voce interpreta mensagens de professores particulares para a LuminaAI. Responda somente JSON valido com: intent, entities, confidence, missing_fields e natural_response. Nunca execute acoes. Use apenas os dados fornecidos. Se o professor pedir planilha, grafico ou documento, preencha entities.artifactType com spreadsheet, chart ou document. Se tiver duvida, reduza a confidence.',
             },
             {
               role: 'user',
@@ -1265,11 +1364,11 @@ export class ConversationalAssistantService {
     if (detected.intent === 'LISTAR_PAGAMENTOS_PENDENTES' || detected.intent === 'LISTAR_PENDENCIAS') return this.pendingPayments(context);
     if (detected.intent === 'LISTAR_ALUNOS') return this.studentsList(context);
     if (detected.intent === 'CONSULTAR_FINANCEIRO') return this.financeSummary(context);
-    if (detected.intent === 'GERAR_RELATORIO_FINANCEIRO') return this.financeReport(context, detected.period || 'mes atual');
-    if (detected.intent === 'GERAR_RELATORIO_ALUNOS') return this.studentsReport(context, detected.period || 'mes atual');
+    if (detected.intent === 'GERAR_RELATORIO_FINANCEIRO') return this.financeReport(connection, context, detected.period || 'mes atual', detected.artifactType);
+    if (detected.intent === 'GERAR_RELATORIO_ALUNOS') return this.studentsReport(connection, context, detected.period || 'mes atual', detected.artifactType);
     if (detected.intent === 'RESUMIR_DADOS') return this.attentionSummary(context);
     if (detected.intent === 'CONSULTAR_ALUNO') return this.studentSummary(context, detected.studentName);
-    if (detected.intent === 'GERAR_RELATORIO_ALUNO') return this.studentReport(context, detected.studentName);
+    if (detected.intent === 'GERAR_RELATORIO_ALUNO') return this.studentReport(connection, context, detected.studentName, detected.artifactType);
     if (detected.intent === 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO' || detected.intent === 'GERAR_MENSAGEM_PARA_RESPONSAVEL') return this.parentText(context, detected.studentName, detected.topic || originalMessage);
     if (detected.intent === 'CRIAR_AULA') return this.prepareCreateClass(connection, context, detected, originalMessage);
     if (detected.intent === 'ALTERAR_AULA') return this.prepareUpdateClass(connection, context, detected, originalMessage);
@@ -1315,6 +1414,7 @@ export class ConversationalAssistantService {
       '- Alunos',
       '- Pagamentos',
       '- Relatorios',
+      '- Planilhas, graficos e documentos',
       '- Mensagens para responsaveis',
       '',
       '*Exemplos:*',
@@ -1324,6 +1424,8 @@ export class ConversationalAssistantService {
       '- Marque aula com Ana amanha as 15h.',
       '- O Pedro faltou hoje, registra pra mim.',
       '- Como foi a evolucao da Maria nas ultimas aulas?',
+      '- Me mande uma planilha com o relatorio financeiro mensal.',
+      '- Crie um grafico dos meus recebimentos.',
       '',
       'Quando uma acao alterar dados, eu sempre vou pedir confirmacao antes.',
       '',
@@ -1433,11 +1535,25 @@ export class ConversationalAssistantService {
     ]);
   }
 
-  private financeReport(context: TeacherContext, period: string) {
+  private async financeReport(connection: BotConnection, context: TeacherContext, period: string, artifactType?: DetectedIntent['artifactType']) {
     const paidRows = context.payments.filter((item) => item.status === 'paid');
     const pendingRows = this.pendingPaymentRows(context);
     const paid = paidRows.reduce((sum, item) => sum + Number(item.paid_amount || item.amount || 0), 0);
     const pending = pendingRows.reduce((sum, item) => sum + Number(item.amount || 0) - Number(item.paid_amount || 0), 0);
+    if (artifactType) {
+      const file = this.financeArtifact(period, artifactType, paidRows, pendingRows, paid, pending);
+      const sent = await telegramSendDocument(connection, file);
+      return botMessage([
+        sent ? `Preparei e enviei o ${artifactLabel(artifactType)} do relatorio financeiro.` : `Preparei o ${artifactLabel(artifactType)}, mas nao consegui enviar o arquivo pelo Telegram agora.`,
+        '',
+        '*Arquivo:*',
+        bullet('Tipo', artifactLabel(artifactType)),
+        bullet('Formato', artifactFormat(artifactType)),
+        bullet('Periodo', period),
+        '',
+        sent ? 'Deseja que eu gere outro formato tambem?' : 'Tente novamente em alguns minutos ou peca outro formato.',
+      ]);
+    }
     return botMessage([
       'Preparei seu relatorio financeiro.',
       '',
@@ -1462,6 +1578,65 @@ export class ConversationalAssistantService {
     ]);
   }
 
+  private financeArtifact(
+    period: string,
+    artifactType: DetectedIntent['artifactType'],
+    paidRows: PaymentLite[],
+    pendingRows: PaymentLite[],
+    paid: number,
+    pending: number
+  ) {
+    const baseName = `relatorio-financeiro-${safeFilename(period)}-${monthReference()}`;
+    if (artifactType === 'spreadsheet') {
+      const rows: unknown[][] = [
+        ['Categoria', 'Aluno', 'Mes', 'Status', 'Valor total', 'Valor pago', 'Valor pendente', 'Vencimento'],
+        ...paidRows.map((item) => ['Recebido', item.students?.full_name || 'Aluno', item.month_reference, shortStatus(item.status), item.amount, item.paid_amount || item.amount, 0, item.due_date || '']),
+        ...pendingRows.map((item) => ['A receber', item.students?.full_name || 'Aluno', item.month_reference, shortStatus(item.status), item.amount, item.paid_amount || 0, Number(item.amount || 0) - Number(item.paid_amount || 0), item.due_date || '']),
+        [],
+        ['Resumo', 'Total recebido', paid],
+        ['Resumo', 'Total pendente', pending],
+      ];
+      return {
+        filename: `${baseName}.csv`,
+        content: csvContent(rows),
+        contentType: 'text/csv;charset=utf-8',
+        caption: 'Relatorio financeiro gerado pela LuminaAI.',
+      };
+    }
+    if (artifactType === 'chart') {
+      return {
+        filename: `${baseName}.svg`,
+        content: simpleBarChartSvg({
+          title: 'Relatorio financeiro',
+          rows: [
+            { label: 'Recebido', value: paid, color: '#60a5fa' },
+            { label: 'A receber', value: pending, color: '#f59e0b' },
+          ],
+        }),
+        contentType: 'image/svg+xml;charset=utf-8',
+        caption: 'Grafico financeiro gerado pela LuminaAI.',
+      };
+    }
+    return {
+      filename: `${baseName}.txt`,
+      content: [
+        'Relatorio financeiro - LuminaAI',
+        '',
+        `Periodo: ${period}`,
+        `Total recebido: ${currency(paid)}`,
+        `Total pendente: ${currency(pending)}`,
+        '',
+        'Pagamentos recebidos:',
+        ...(paidRows.length ? paidRows.map((item) => `- ${item.students?.full_name || 'Aluno'} - ${currency(Number(item.paid_amount || item.amount || 0))} - ${item.month_reference}`) : ['- Nenhum pagamento recebido no periodo.']),
+        '',
+        'Valores pendentes:',
+        ...(pendingRows.length ? pendingRows.map((item) => `- ${item.students?.full_name || 'Aluno'} - ${currency(Number(item.amount || 0) - Number(item.paid_amount || 0))} - ${item.month_reference}`) : ['- Nenhum valor pendente encontrado.']),
+      ].join('\n'),
+      contentType: 'text/plain;charset=utf-8',
+      caption: 'Documento financeiro gerado pela LuminaAI.',
+    };
+  }
+
   private studentsList(context: TeacherContext) {
     if (!context.students.length) {
       return botMessage([
@@ -1480,7 +1655,7 @@ export class ConversationalAssistantService {
     ]);
   }
 
-  private studentsReport(context: TeacherContext, period: string) {
+  private async studentsReport(connection: BotConnection, context: TeacherContext, period: string, artifactType?: DetectedIntent['artifactType']) {
     const active = context.students.filter((item) => item.status === 'active');
     const today = todayDate();
     const recentLimit = addDays(today, -30);
@@ -1488,6 +1663,20 @@ export class ConversationalAssistantService {
     const studentsWithAbsence = new Set(context.classes.filter((item) => item.status === 'absence').map((item) => item.student_id));
     const pending = new Set(this.pendingPaymentRows(context).map((item) => item.student_id));
     const withoutRecent = active.filter((student) => !studentsWithRecentClass.has(student.id));
+    if (artifactType) {
+      const file = this.studentsArtifact(period, artifactType, context, active, studentsWithRecentClass, studentsWithAbsence, pending, withoutRecent);
+      const sent = await telegramSendDocument(connection, file);
+      return botMessage([
+        sent ? `Preparei e enviei o ${artifactLabel(artifactType)} do relatorio dos alunos.` : `Preparei o ${artifactLabel(artifactType)}, mas nao consegui enviar o arquivo pelo Telegram agora.`,
+        '',
+        '*Arquivo:*',
+        bullet('Tipo', artifactLabel(artifactType)),
+        bullet('Formato', artifactFormat(artifactType)),
+        bullet('Periodo', period),
+        '',
+        sent ? 'Deseja que eu gere um relatorio individual de algum aluno?' : 'Tente novamente em alguns minutos ou peca outro formato.',
+      ]);
+    }
     return botMessage([
       'Preparei o relatorio geral dos alunos.',
       '',
@@ -1505,6 +1694,71 @@ export class ConversationalAssistantService {
       '',
       'Deseja ver o relatorio detalhado de algum aluno?',
     ]);
+  }
+
+  private studentsArtifact(
+    period: string,
+    artifactType: DetectedIntent['artifactType'],
+    context: TeacherContext,
+    active: StudentLite[],
+    studentsWithRecentClass: Set<string>,
+    studentsWithAbsence: Set<string>,
+    pending: Set<string>,
+    withoutRecent: StudentLite[]
+  ) {
+    const baseName = `relatorio-alunos-${safeFilename(period)}-${monthReference()}`;
+    if (artifactType === 'spreadsheet') {
+      const rows: unknown[][] = [
+        ['Aluno', 'Materia', 'Status', 'Aula recente', 'Possui falta registrada', 'Pagamento pendente'],
+        ...context.students.map((student) => [
+          student.full_name,
+          student.subject || '',
+          shortStatus(student.status),
+          studentsWithRecentClass.has(student.id) ? 'Sim' : 'Nao',
+          studentsWithAbsence.has(student.id) ? 'Sim' : 'Nao',
+          pending.has(student.id) ? 'Sim' : 'Nao',
+        ]),
+      ];
+      return {
+        filename: `${baseName}.csv`,
+        content: csvContent(rows),
+        contentType: 'text/csv;charset=utf-8',
+        caption: 'Relatorio de alunos gerado pela LuminaAI.',
+      };
+    }
+    if (artifactType === 'chart') {
+      return {
+        filename: `${baseName}.svg`,
+        content: simpleBarChartSvg({
+          title: 'Resumo dos alunos',
+          rows: [
+            { label: 'Alunos ativos', value: active.length, color: '#2563eb' },
+            { label: 'Com aula recente', value: active.filter((student) => studentsWithRecentClass.has(student.id)).length, color: '#10b981' },
+            { label: 'Sem aula recente', value: withoutRecent.length, color: '#f59e0b' },
+            { label: 'Com pendencia', value: active.filter((student) => pending.has(student.id)).length, color: '#ef4444' },
+          ],
+        }),
+        contentType: 'image/svg+xml;charset=utf-8',
+        caption: 'Grafico de alunos gerado pela LuminaAI.',
+      };
+    }
+    return {
+      filename: `${baseName}.txt`,
+      content: [
+        'Relatorio geral dos alunos - LuminaAI',
+        '',
+        `Periodo: ${period}`,
+        `Alunos ativos: ${active.length}`,
+        `Com aulas recentes: ${active.filter((student) => studentsWithRecentClass.has(student.id)).length}`,
+        '',
+        'Pontos de atencao:',
+        withoutRecent.length ? `- Sem aula recente: ${withoutRecent.map((student) => student.full_name).join(', ')}` : '- Nenhum aluno sem aula recente.',
+        pending.size ? `- Pendencias financeiras: ${active.filter((student) => pending.has(student.id)).map((student) => student.full_name).join(', ')}` : '- Nenhuma pendencia financeira encontrada.',
+        studentsWithAbsence.size ? `- Faltas registradas: ${active.filter((student) => studentsWithAbsence.has(student.id)).map((student) => student.full_name).join(', ')}` : '- Nenhuma falta registrada nos dados recentes.',
+      ].join('\n'),
+      contentType: 'text/plain;charset=utf-8',
+      caption: 'Documento de alunos gerado pela LuminaAI.',
+    };
   }
 
   private attentionRows(context: TeacherContext) {
@@ -1568,7 +1822,7 @@ export class ConversationalAssistantService {
     ]);
   }
 
-  private studentReport(context: TeacherContext, studentName?: string) {
+  private async studentReport(connection: BotConnection, context: TeacherContext, studentName?: string, artifactType?: DetectedIntent['artifactType']) {
     const { student, error } = this.dataContext.findStudent(context, studentName);
     if (!student) return error || 'Nao encontrei esse aluno.';
     const reports = context.reports.filter((item) => item.student_id === student.id).slice(0, 5);
@@ -1583,6 +1837,20 @@ export class ConversationalAssistantService {
     }
     const scores = reports.map((item) => item.learning_score).filter((score): score is number => typeof score === 'number');
     const avg = scores.length ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : null;
+    if (artifactType) {
+      const file = this.studentArtifact(student, reports, artifactType, avg);
+      const sent = await telegramSendDocument(connection, file);
+      return botMessage([
+        sent ? `Preparei e enviei o ${artifactLabel(artifactType)} da evolucao de ${student.full_name}.` : `Preparei o ${artifactLabel(artifactType)}, mas nao consegui enviar o arquivo pelo Telegram agora.`,
+        '',
+        '*Arquivo:*',
+        bullet('Tipo', artifactLabel(artifactType)),
+        bullet('Formato', artifactFormat(artifactType)),
+        bullet('Aluno', student.full_name),
+        '',
+        sent ? 'Deseja transformar essa analise em mensagem para o responsavel?' : 'Tente novamente em alguns minutos ou peca outro formato.',
+      ]);
+    }
     return botMessage([
       `Preparei a evolucao de ${student.full_name}.`,
       '',
@@ -1599,6 +1867,63 @@ export class ConversationalAssistantService {
       '',
       'Deseja transformar essa analise em uma mensagem para o responsavel?',
     ]);
+  }
+
+  private studentArtifact(student: StudentLite, reports: LessonReportLite[], artifactType: DetectedIntent['artifactType'], average: number | null) {
+    const baseName = `evolucao-${safeFilename(student.full_name)}-${monthReference()}`;
+    if (artifactType === 'spreadsheet') {
+      const rows: unknown[][] = [
+        ['Data', 'Materia', 'Pontuacao', 'Resumo', 'Conteudo', 'Duvidas detectadas', 'Pontos de reforco', 'Proxima recomendacao'],
+        ...reports.map((report) => [
+          report.created_at.slice(0, 10),
+          report.class_schedules?.subject || report.students?.subject || student.subject || '',
+          report.learning_score ?? '',
+          report.summary || '',
+          report.taught_content || '',
+          report.detected_doubts || report.student_questions || '',
+          report.reinforcement_points || '',
+          report.next_recommendation || '',
+        ]),
+      ];
+      return {
+        filename: `${baseName}.csv`,
+        content: csvContent(rows),
+        contentType: 'text/csv;charset=utf-8',
+        caption: 'Planilha de evolucao gerada pela LuminaAI.',
+      };
+    }
+    if (artifactType === 'chart') {
+      const scored = reports
+        .filter((report) => typeof report.learning_score === 'number')
+        .map((report, index) => ({ label: `Aula ${reports.length - index}`, value: Number(report.learning_score || 0), color: '#8b5cf6' }))
+        .reverse();
+      return {
+        filename: `${baseName}.svg`,
+        content: simpleBarChartSvg({
+          title: `Evolucao de ${student.full_name}`,
+          rows: scored.length ? scored : [{ label: 'Sem pontuacao', value: 0, color: '#94a3b8' }],
+        }),
+        contentType: 'image/svg+xml;charset=utf-8',
+        caption: 'Grafico de evolucao gerado pela LuminaAI.',
+      };
+    }
+    return {
+      filename: `${baseName}.txt`,
+      content: [
+        `Evolucao de ${student.full_name} - LuminaAI`,
+        '',
+        `Materia: ${student.subject || 'sem materia cadastrada'}`,
+        average != null ? `Media recente: ${average} de 100` : 'Media recente: sem pontuacao suficiente',
+        '',
+        'Avancos:',
+        ...((reports.map((item) => item.learning_progress || item.learning_evidence || item.summary).filter(Boolean).slice(0, 5) as string[]).map((item) => `- ${item}`)),
+        '',
+        'Pontos de reforco:',
+        ...((reports.map((item) => item.detected_doubts || item.reinforcement_points).filter(Boolean).slice(0, 5) as string[]).map((item) => `- ${item}`)),
+      ].join('\n'),
+      contentType: 'text/plain;charset=utf-8',
+      caption: 'Documento de evolucao gerado pela LuminaAI.',
+    };
   }
 
   private parentText(context: TeacherContext, studentName: string | undefined, topic: string) {
