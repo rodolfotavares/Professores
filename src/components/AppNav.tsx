@@ -19,7 +19,7 @@ export function TeacherNav() {
         <NavIcon href="/teacher" label="Início" icon="home" />
         <NavIcon href="/teacher/students" label="Alunos" icon="users" />
         <NavIcon href="/teacher/smart-lesson" label="Aula Inteligente" icon="smart" />
-        <NavIcon href="/teacher/telegram" label="LuminaBot" icon="bot" />
+        <NavIcon href="/teacher/telegram" label="Lumi Assistente" icon="bot" />
         <NavIcon href="/teacher/messages" label="Mensagens" icon="message" />
         <NavIcon href="/teacher/finance" label="Financeiro" icon="chart" />
         <NavIcon href="/teacher/support" label="Suporte" icon="support" />

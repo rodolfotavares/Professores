@@ -570,17 +570,17 @@ function TelegramSettingsCard() {
 
   return (
     <GlassCard className="portal-summary-card">
-      <span className="eyebrow">Telegram</span>
+      <span className="eyebrow">Lumi Assistente</span>
       <h2>{connected ? 'Conectado' : 'Não conectado'}</h2>
       <p className="muted">
         {connected
-          ? `LuminaBot vinculado ${identity ? `como ${identity}` : 'ao seu Telegram'}.`
-          : 'Conecte o LuminaBot para organizar agenda e pagamentos pelo Telegram.'}
+          ? `Lumi Assistente vinculado ${identity ? `como ${identity}` : 'ao seu Telegram'}.`
+          : 'Conecte o Lumi Assistente para organizar agenda e pagamentos pelo Telegram.'}
       </p>
       {error && <small className="error-text">{error}</small>}
       <div className="panel-actions">
         <Link className="btn primary" href="/teacher/telegram">
-          {connected ? 'Gerenciar Telegram' : 'Conectar Telegram'}
+          {connected ? 'Gerenciar assistente' : 'Conectar assistente'}
         </Link>
         {connected && (
           <button className="btn danger" type="button" onClick={disconnect} disabled={busy || loading}>
