@@ -328,6 +328,28 @@ function contextSummary(context: TeacherContext) {
   return [`Alunos:\n${students || 'Nenhum aluno.'}`, `Agenda:\n${classes || 'Nenhuma aula.'}`, `Pagamentos:\n${payments || 'Nenhum pagamento.'}`, `Relatorios:\n${reports || 'Nenhum relatorio.'}`].join('\n\n');
 }
 
+function compactLines(lines: Array<string | false | null | undefined>) {
+  return lines.filter(Boolean).join('\n');
+}
+
+function botMessage(lines: Array<string | false | null | undefined>) {
+  return compactLines(lines).replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function bullet(label: string, value?: string | number | null) {
+  return value === undefined || value === null || value === '' ? `- ${label}` : `- ${label}: ${value}`;
+}
+
+function shortStatus(status?: string | null) {
+  if (status === 'scheduled') return 'agendada';
+  if (status === 'completed') return 'concluida';
+  if (status === 'cancelled') return 'cancelada';
+  if (status === 'absence') return 'falta registrada';
+  if (status === 'paid') return 'pago';
+  if (status === 'pending') return 'pendente';
+  return status || 'sem status';
+}
+
 export class EntityExtractionService {
   extract(message: string) {
     const raw = message.trim();
@@ -582,11 +604,11 @@ export class LuminaDataContextService {
   }
 
   findStudent(context: TeacherContext, name?: string) {
-    if (!name) return { error: 'Qual aluno voce quer consultar ou alterar?' };
+    if (!name) return { error: botMessage(['Preciso saber qual aluno voce quer consultar ou alterar.', '', 'Envie o nome do aluno para eu continuar.']) };
     const normalized = normalize(name);
     const matches = context.students.filter((student) => normalize(student.full_name).includes(normalized) || normalized.includes(normalize(student.full_name)));
-    if (matches.length === 0) return { error: 'Nao encontrei esse aluno na sua conta. Voce quer cadastrar esse aluno ou verificar o nome?' };
-    if (matches.length > 1) return { error: `Encontrei mais de um aluno: ${matches.map((item) => item.full_name).join(', ')}. Me envie o nome mais completo.` };
+    if (matches.length === 0) return { error: botMessage(['Nao encontrei esse aluno na sua conta.', '', 'Verifique o nome ou cadastre esse aluno na LuminaAI.']) };
+    if (matches.length > 1) return { error: botMessage(['Encontrei mais de um aluno com esse nome.', '', '*Opcoes encontradas:*', ...matches.map((item) => `- ${item.full_name}`), '', 'Envie o nome mais completo para eu continuar.']) };
     return { student: matches[0] };
   }
 }
@@ -640,7 +662,16 @@ export class BotActionExecutor {
         status: 'scheduled',
       });
       if (error) throw error;
-      return `Pronto! Aula com ${action.student_name} marcada para ${formatDate(action.class_date)} as ${formatTime(action.class_time)}.`;
+      return botMessage([
+        'Aula marcada com sucesso.',
+        '',
+        '*📚 Aula:*',
+        bullet('Aluno', action.student_name),
+        bullet('Data', formatDate(action.class_date)),
+        bullet('Horario', formatTime(action.class_time)),
+        '',
+        'Deseja registrar alguma observacao para essa aula?',
+      ]);
     }
 
     if (action.type === 'REGISTER_PAYMENT') {
@@ -655,7 +686,16 @@ export class BotActionExecutor {
         paid_at: new Date().toISOString(),
       });
       if (error) throw error;
-      return `Pronto! Registrei o pagamento de ${currency(action.amount)} para ${action.student_name}.`;
+      return botMessage([
+        'Pagamento registrado com sucesso.',
+        '',
+        '*💰 Pagamento:*',
+        bullet('Aluno', action.student_name),
+        bullet('Valor', currency(action.amount)),
+        bullet('Mes de referencia', action.month_reference),
+        '',
+        'Deseja consultar o resumo financeiro do mes?',
+      ]);
     }
 
     if (action.type === 'UPDATE_CLASS') {
@@ -669,7 +709,16 @@ export class BotActionExecutor {
         .eq('id', action.class_id)
         .eq('teacher_id', connection.teacher_id);
       if (error) throw error;
-      return `Pronto! Remarquei a aula de ${action.student_name} para ${formatDate(action.class_date)} as ${formatTime(action.class_time)}.`;
+      return botMessage([
+        'Aula remarcada com sucesso.',
+        '',
+        '*📚 Novo horario:*',
+        bullet('Aluno', action.student_name),
+        bullet('Data', formatDate(action.class_date)),
+        bullet('Horario', formatTime(action.class_time)),
+        '',
+        'Deseja enviar uma mensagem de confirmacao ao responsavel?',
+      ]);
     }
 
     if (action.type === 'CANCEL_CLASS') {
@@ -679,7 +728,16 @@ export class BotActionExecutor {
         .in('id', action.class_ids)
         .eq('teacher_id', connection.teacher_id);
       if (error) throw error;
-      return action.class_ids.length === 1 ? 'Pronto! Aula cancelada.' : `Pronto! Cancelei ${action.class_ids.length} aulas.`;
+      return botMessage([
+        action.class_ids.length === 1 ? 'Aula cancelada com sucesso.' : 'Aulas canceladas com sucesso.',
+        '',
+        '*📚 Cancelamento:*',
+        bullet('Quantidade', action.class_ids.length),
+        action.student_name ? bullet('Aluno', action.student_name) : null,
+        action.class_date ? bullet('Data', formatDate(action.class_date)) : null,
+        '',
+        'Deseja reagendar alguma dessas aulas?',
+      ]);
     }
 
     if (action.type === 'REGISTER_ABSENCE') {
@@ -693,10 +751,28 @@ export class BotActionExecutor {
         .order('class_time')
         .limit(1)
         .maybeSingle();
-      if (!data?.id) return `Nao encontrei aula agendada para ${action.student_name} em ${formatDate(action.class_date)}. Nada foi alterado.`;
+      if (!data?.id) {
+        return botMessage([
+          'Nao encontrei uma aula agendada com esses dados.',
+          '',
+          '*📚 Busca realizada:*',
+          bullet('Aluno', action.student_name),
+          bullet('Data', formatDate(action.class_date)),
+          '',
+          'Deseja consultar a agenda desse aluno?',
+        ]);
+      }
       const { error } = await supabaseAdmin.from('class_schedules').update({ status: 'absence' }).eq('id', data.id).eq('teacher_id', connection.teacher_id);
       if (error) throw error;
-      return `Pronto! Registrei falta de ${action.student_name} em ${formatDate(action.class_date)}.`;
+      return botMessage([
+        'Falta registrada com sucesso.',
+        '',
+        '*⚠️ Falta:*',
+        bullet('Aluno', action.student_name),
+        bullet('Data', formatDate(action.class_date)),
+        '',
+        'Deseja criar uma mensagem para o responsavel?',
+      ]);
     }
 
     if (action.type === 'CREATE_NOTE') {
@@ -707,10 +783,22 @@ export class BotActionExecutor {
         source: 'telegram',
       });
       if (error) throw error;
-      return `Pronto! Criei a anotacao para ${action.student_name}.`;
+      return botMessage([
+        'Anotacao criada com sucesso.',
+        '',
+        '*📝 Anotacao:*',
+        bullet('Aluno', action.student_name),
+        bullet('Origem', 'Telegram'),
+        '',
+        'Deseja consultar o relatorio desse aluno?',
+      ]);
     }
 
-    return 'Historico apagado com sucesso.';
+    return botMessage([
+      'Historico apagado com sucesso.',
+      '',
+      'Posso ajudar com agenda, pagamentos ou relatorios agora?',
+    ]);
   }
 }
 
@@ -751,13 +839,25 @@ export class ConversationalAssistantService {
 
     if (action.expires_at && new Date(action.expires_at).getTime() < Date.now()) {
       await this.state.clear(connection);
-      return 'Essa confirmacao expirou por seguranca. Envie o pedido novamente para eu preparar a acao.';
+      return botMessage([
+        'Essa confirmacao expirou por seguranca.',
+        '',
+        'Envie o pedido novamente para eu preparar a acao.',
+        '',
+        'Quer tentar de novo agora?',
+      ]);
     }
 
     const text = normalize(message);
     if (isCancellation(message)) {
       await this.state.clear(connection);
-      return 'Tudo bem, cancelei essa acao.';
+      return botMessage([
+        'Tudo bem, cancelei essa acao.',
+        '',
+        'Nada foi alterado na LuminaAI.',
+        '',
+        'Deseja fazer outra coisa?',
+      ]);
     }
 
     if (action.type === 'CREATE_CLASS' && (text.includes('troca') || text.includes('muda') || text.includes('remarca'))) {
@@ -769,17 +869,39 @@ export class ConversationalAssistantService {
       nextAction.expires_at = pendingExpiration();
       nextAction.status = 'pending';
       await this.state.set(connection, nextAction);
-      return `Atualizei a acao pendente. Confirma ${nextAction.summary}?`;
+      return botMessage([
+        'Atualizei o pedido pendente.',
+        '',
+        '*📚 Aula:*',
+        bullet('Aluno', nextAction.student_name),
+        bullet('Data', formatDate(nextAction.class_date)),
+        bullet('Horario', formatTime(nextAction.class_time)),
+        '',
+        'Confirma que posso marcar essa aula?',
+      ]);
     }
 
     if (!isConfirmation(message)) {
-      return `Tenho uma acao aguardando confirmacao: ${action.summary}. Responda "sim" para confirmar ou "cancelar" para desistir.`;
+      return botMessage([
+        'Tenho uma acao aguardando confirmacao.',
+        '',
+        '*Pedido:*',
+        bullet(action.summary),
+        '',
+        'Responda "sim" para confirmar ou "cancelar" para desistir.',
+      ]);
     }
 
     if (action.type === 'DELETE_HISTORY') {
       await this.interactionLog.deleteHistory(connection.teacher_id);
       await this.state.clear(connection);
-      return 'Pronto! Apaguei o historico de conversas do LuminaBot para sua conta.';
+      return botMessage([
+        'Historico apagado com sucesso.',
+        '',
+        'As conversas anteriores do LumiBot foram removidas da sua conta.',
+        '',
+        'Deseja consultar sua agenda agora?',
+      ]);
     }
 
     const result = await this.actionExecutor.execute(connection, action);
@@ -818,35 +940,73 @@ export class ConversationalAssistantService {
     if (detected.intent === 'CRIAR_ANOTACAO_AULA') return this.prepareNote(connection, context, detected, originalMessage);
 
     const llmAnswer = await this.llm.complete({
-      systemPrompt: 'Voce e o LumiBot, assistente inteligente da LuminaAI. Sua funcao e ajudar professores particulares a organizar alunos, aulas, agenda, pagamentos, relatorios e rotina. Responda de forma clara, profissional e util. Use apenas os dados fornecidos pelo sistema. Nao invente informacoes. Quando o professor pedir uma acao sensivel, solicite confirmacao antes de executar.',
+      systemPrompt: 'Voce e o LumiBot, assistente inteligente da LuminaAI. Sua funcao e ajudar professores particulares a organizar alunos, aulas, agenda, pagamentos, relatorios e rotina. Responda de forma clara, profissional, natural e objetiva. Separe informacoes por topicos, use quebras de linha e termine com uma proxima acao util. Use apenas os dados fornecidos pelo sistema. Nao invente informacoes. Quando o professor pedir uma acao sensivel, solicite confirmacao antes de executar.',
       userMessage: originalMessage,
       context: contextSummary(context),
     });
     if (llmAnswer) return llmAnswer;
 
-    return 'Entendi. Posso te ajudar com agenda, alunos, pagamentos, relatorios, mensagens para responsaveis e organizacao da semana. Se quiser, escreva do seu jeito, por exemplo: "Como esta minha agenda de hoje?" ou "Marque aula com Ana amanha as 15h".';
+    return botMessage([
+      'Entendi sua mensagem.',
+      '',
+      '*Posso ajudar com:*',
+      '- Agenda e aulas',
+      '- Alunos e relatorios',
+      '- Pagamentos',
+      '- Mensagens para responsaveis',
+      '- Organizacao da semana',
+      '',
+      'Qual dessas opcoes voce deseja resolver agora?',
+    ]);
   }
 
   private help() {
-    return [
-      'Sou o LumiBot. Voce pode conversar comigo naturalmente.',
-      'Exemplos:',
+    return botMessage([
+      'Sou o LumiBot, seu assistente da LuminaAI.',
+      '',
+      '*Posso ajudar com:*',
+      '- Agenda',
+      '- Alunos',
+      '- Pagamentos',
+      '- Relatorios',
+      '- Mensagens para responsaveis',
+      '',
+      '*Exemplos:*',
       '- Como esta minha agenda de hoje?',
       '- Tenho algum aluno com pagamento atrasado?',
       '- Me ajude a organizar minha semana.',
       '- Marque aula com Ana amanha as 15h.',
       '- O Pedro faltou hoje, registra pra mim.',
       '- Como foi a evolucao da Maria nas ultimas aulas?',
+      '',
       'Quando uma acao alterar dados, eu sempre vou pedir confirmacao antes.',
-    ].join('\n');
+      '',
+      'O que voce deseja fazer agora?',
+    ]);
   }
 
   private agenda(context: TeacherContext, date: string) {
     const classes = context.classes.filter((item) => item.class_date === date).sort((a, b) => a.class_time.localeCompare(b.class_time));
-    if (!classes.length) return `Voce nao tem aulas agendadas para ${formatDate(date)}.`;
-    return [`Em ${formatDate(date)}, voce tem ${classes.length} aula${classes.length === 1 ? '' : 's'}:`]
-      .concat(classes.map((item) => `- ${item.students?.full_name || 'Aluno'} as ${formatTime(item.class_time)} (${item.subject || 'Aula'}, ${item.status})`))
-      .join('\n');
+    if (!classes.length) {
+      return botMessage([
+        `Nao encontrei aulas agendadas para ${formatDate(date)}.`,
+        '',
+        'Deseja marcar uma nova aula para esse dia?',
+      ]);
+    }
+    const pendingStudents = new Set(this.pendingPaymentRows(context).map((item) => item.student_id));
+    const pending = classes.filter((item) => pendingStudents.has(item.student_id));
+    return botMessage([
+      `Encontrei sua agenda de ${formatDate(date)}.`,
+      '',
+      '*📚 Aulas marcadas:*',
+      ...classes.map((item) => `- ${item.students?.full_name || 'Aluno'} - ${formatTime(item.class_time)} - ${item.subject || 'Aula'} - ${shortStatus(item.status)}`),
+      pending.length ? '' : null,
+      pending.length ? '*⚠️ Pendencias:*' : null,
+      ...pending.map((item) => `- ${item.students?.full_name || 'Aluno'} tem pagamento pendente.`),
+      '',
+      'Posso registrar uma anotacao, pagamento ou falta para voce?',
+    ]);
   }
 
   private organizeWeek(context: TeacherContext) {
@@ -855,13 +1015,23 @@ export class ConversationalAssistantService {
     const weekClasses = context.classes.filter((item) => item.class_date >= today && item.class_date <= weekEnd && item.status === 'scheduled');
     const pending = this.pendingPaymentRows(context);
     const attention = this.attentionRows(context).slice(0, 3);
-    return [
-      `Para os proximos 7 dias, encontrei ${weekClasses.length} aula${weekClasses.length === 1 ? '' : 's'} agendada${weekClasses.length === 1 ? '' : 's'}.`,
-      weekClasses.length ? `Dias mais cheios: ${this.busyDays(weekClasses)}.` : 'Ainda nao ha aulas na semana.',
-      pending.length ? `Pagamentos para acompanhar: ${pending.map((item) => item.students?.full_name || 'Aluno').join(', ')}.` : 'Nao encontrei pagamentos pendentes neste mes.',
-      attention.length ? `Alunos para observar: ${attention.map((item) => item.name).join(', ')}.` : 'Nao encontrei alertas fortes nos relatorios recentes.',
-      'Sugestao: revise primeiro pagamentos pendentes, depois prepare as aulas dos alunos com mais pontos de reforco.',
-    ].join('\n');
+    return botMessage([
+      'Organizei um resumo da sua semana.',
+      '',
+      '*📚 Aulas:*',
+      bullet('Proximos sete dias', weekClasses.length),
+      weekClasses.length ? bullet('Dias mais cheios', this.busyDays(weekClasses)) : '- Ainda nao ha aulas agendadas na semana.',
+      '',
+      '*💰 Pagamentos:*',
+      pending.length ? `- ${pending.length} pagamento${pending.length === 1 ? '' : 's'} para acompanhar.` : '- Nao encontrei pagamentos pendentes neste mes.',
+      ...pending.slice(0, 5).map((item) => `- ${item.students?.full_name || 'Aluno'} - ${currency(Number(item.amount || 0) - Number(item.paid_amount || 0))}`),
+      '',
+      '*Atencao:*',
+      attention.length ? `- ${attention.length} aluno${attention.length === 1 ? '' : 's'} precisa${attention.length === 1 ? '' : 'm'} de acompanhamento.` : '- Nao encontrei alertas fortes nos relatorios recentes.',
+      ...attention.map((item) => `- ${item.name} - media ${Math.round(item.average)}.`),
+      '',
+      'Deseja que eu prepare uma lista de prioridades para hoje?',
+    ]);
   }
 
   private pendingPaymentRows(context: TeacherContext) {
@@ -881,14 +1051,40 @@ export class ConversationalAssistantService {
 
   private pendingPayments(context: TeacherContext) {
     const pending = this.pendingPaymentRows(context);
-    if (!pending.length) return `Nao encontrei pagamentos pendentes em ${monthReference()}.`;
-    return [`Pagamentos pendentes em ${monthReference()}:`].concat(pending.map((item) => `- ${item.students?.full_name || 'Aluno'}: ${currency(Number(item.amount || 0))} (${item.status})`)).join('\n');
+    if (!pending.length) {
+      return botMessage([
+        `Nao encontrei pagamentos pendentes em ${monthReference()}.`,
+        '',
+        'Deseja consultar o resumo financeiro completo?',
+      ]);
+    }
+    return botMessage([
+      `Encontrei pagamentos pendentes em ${monthReference()}.`,
+      '',
+      '*A receber:*',
+      ...pending.map((item) => `- ${item.students?.full_name || 'Aluno'} - ${currency(Number(item.amount || 0) - Number(item.paid_amount || 0))} - ${shortStatus(item.status)}`),
+      '',
+      'Deseja que eu crie uma mensagem de cobranca educada?',
+    ]);
   }
 
   private financeSummary(context: TeacherContext) {
     const paid = context.payments.filter((item) => item.status === 'paid').reduce((sum, item) => sum + Number(item.paid_amount || item.amount || 0), 0);
     const pending = this.pendingPaymentRows(context).reduce((sum, item) => sum + Number(item.amount || 0) - Number(item.paid_amount || 0), 0);
-    return [`Resumo financeiro de ${monthReference()}:`, `- Recebido: ${currency(paid)}`, `- A receber/pendente: ${currency(pending)}`, `- Alunos ativos: ${context.students.filter((item) => item.status === 'active').length}`].join('\n');
+    return botMessage([
+      `Preparei seu resumo financeiro de ${monthReference()}.`,
+      '',
+      '*Recebido:*',
+      bullet('Total', currency(paid)),
+      '',
+      '*A receber:*',
+      bullet('Total pendente', currency(pending)),
+      '',
+      '*Alunos:*',
+      bullet('Alunos ativos', context.students.filter((item) => item.status === 'active').length),
+      '',
+      'Deseja gerar esse resumo em grafico, planilha ou relatorio?',
+    ]);
   }
 
   private financeReport(context: TeacherContext, period: string) {
@@ -896,28 +1092,46 @@ export class ConversationalAssistantService {
     const pendingRows = this.pendingPaymentRows(context);
     const paid = paidRows.reduce((sum, item) => sum + Number(item.paid_amount || item.amount || 0), 0);
     const pending = pendingRows.reduce((sum, item) => sum + Number(item.amount || 0) - Number(item.paid_amount || 0), 0);
-    return [
-      'Relatorio financeiro completo',
-      `Periodo: ${period}`,
-      `Total recebido: ${currency(paid)}`,
-      `Total pendente: ${currency(pending)}`,
-      `Pagamentos registrados: ${context.payments.length}`,
-      pendingRows.length
-        ? `Alunos com pendencia: ${pendingRows.map((item) => `${item.students?.full_name || 'Aluno'} (${currency(Number(item.amount || 0) - Number(item.paid_amount || 0))})`).join(', ')}`
-        : 'Alunos com pendencia: nenhum encontrado.',
-      paidRows.length
-        ? `Recebimentos confirmados: ${paidRows.map((item) => `${item.students?.full_name || 'Aluno'} - ${currency(Number(item.paid_amount || item.amount || 0))}`).join('; ')}`
-        : 'Recebimentos confirmados: nenhum pagamento marcado como pago neste periodo.',
+    return botMessage([
+      'Preparei seu relatorio financeiro.',
+      '',
+      '*Periodo:*',
+      bullet('Referencia', period),
+      '',
+      '*Recebido:*',
+      bullet('Total recebido', currency(paid)),
+      bullet('Pagamentos registrados', context.payments.length),
+      '',
+      '*A receber:*',
+      bullet('Total pendente', currency(pending)),
+      pendingRows.length ? '*Alunos com pendencia:*' : null,
+      ...pendingRows.slice(0, 8).map((item) => `- ${item.students?.full_name || 'Aluno'} - ${currency(Number(item.amount || 0) - Number(item.paid_amount || 0))}`),
+      '',
+      '*Resumo:*',
       pending > 0
-        ? 'Analise do mes: ha valores pendentes que merecem acompanhamento para manter o fluxo de caixa previsivel.'
-        : 'Analise do mes: os pagamentos do periodo parecem organizados com base nos registros atuais.',
-      'Sugestao: revise pendencias no inicio da semana e confirme pagamentos assim que forem recebidos.',
-    ].join('\n');
+        ? 'Ainda existem valores pendentes que merecem acompanhamento.'
+        : 'Os pagamentos do periodo parecem organizados com base nos registros atuais.',
+      '',
+      'Posso gerar esse relatorio em grafico ou planilha?',
+    ]);
   }
 
   private studentsList(context: TeacherContext) {
-    if (!context.students.length) return 'Voce ainda nao tem alunos cadastrados.';
-    return ['Seus alunos cadastrados:'].concat(context.students.map((student) => `- ${student.full_name} (${student.subject || 'sem materia'}, ${student.status || 'sem status'})`)).join('\n');
+    if (!context.students.length) {
+      return botMessage([
+        'Voce ainda nao tem alunos cadastrados.',
+        '',
+        'Deseja cadastrar seu primeiro aluno?',
+      ]);
+    }
+    return botMessage([
+      'Encontrei seus alunos cadastrados.',
+      '',
+      '*Alunos:*',
+      ...context.students.slice(0, 20).map((student) => `- ${student.full_name} - ${student.subject || 'sem materia'} - ${shortStatus(student.status)}`),
+      '',
+      'Deseja consultar o relatorio de algum aluno?',
+    ]);
   }
 
   private studentsReport(context: TeacherContext, period: string) {
@@ -928,16 +1142,23 @@ export class ConversationalAssistantService {
     const studentsWithAbsence = new Set(context.classes.filter((item) => item.status === 'absence').map((item) => item.student_id));
     const pending = new Set(this.pendingPaymentRows(context).map((item) => item.student_id));
     const withoutRecent = active.filter((student) => !studentsWithRecentClass.has(student.id));
-    return [
-      'Relatorio geral dos alunos',
-      `Periodo: ${period}`,
-      `Total de alunos ativos: ${active.length}`,
-      `Alunos com aulas recentes: ${active.filter((student) => studentsWithRecentClass.has(student.id)).length}`,
-      withoutRecent.length ? `Alunos sem aula recente: ${withoutRecent.map((student) => student.full_name).join(', ')}` : 'Alunos sem aula recente: nenhum.',
-      pending.size ? `Alunos com pendencias financeiras: ${active.filter((student) => pending.has(student.id)).map((student) => student.full_name).join(', ')}` : 'Alunos com pendencias financeiras: nenhum encontrado.',
-      studentsWithAbsence.size ? `Alunos com faltas registradas: ${active.filter((student) => studentsWithAbsence.has(student.id)).map((student) => student.full_name).join(', ')}` : 'Alunos com faltas registradas: nenhum nos dados recentes.',
-      'Observacoes importantes: este relatorio usa somente alunos, aulas, pagamentos e faltas registrados na LuminaAI.',
-    ].join('\n');
+    return botMessage([
+      'Preparei o relatorio geral dos alunos.',
+      '',
+      '*Periodo:*',
+      bullet('Referencia', period),
+      '',
+      '*Alunos:*',
+      bullet('Ativos', active.length),
+      bullet('Com aulas recentes', active.filter((student) => studentsWithRecentClass.has(student.id)).length),
+      '',
+      '*Pontos de atencao:*',
+      withoutRecent.length ? `- Sem aula recente: ${withoutRecent.map((student) => student.full_name).join(', ')}` : '- Nenhum aluno sem aula recente.',
+      pending.size ? `- Pendencias financeiras: ${active.filter((student) => pending.has(student.id)).map((student) => student.full_name).join(', ')}` : '- Nenhuma pendencia financeira encontrada.',
+      studentsWithAbsence.size ? `- Faltas registradas: ${active.filter((student) => studentsWithAbsence.has(student.id)).map((student) => student.full_name).join(', ')}` : '- Nenhuma falta registrada nos dados recentes.',
+      '',
+      'Deseja ver o relatorio detalhado de algum aluno?',
+    ]);
   }
 
   private attentionRows(context: TeacherContext) {
@@ -958,10 +1179,23 @@ export class ConversationalAssistantService {
 
   private attentionSummary(context: TeacherContext) {
     const rows = this.attentionRows(context);
-    if (!rows.length) return 'Nao encontrei alunos com sinais claros de dificuldade nos relatorios recentes. Isso depende dos relatorios de aula estarem preenchidos.';
-    return ['Alunos que podem precisar de mais atencao:']
-      .concat(rows.slice(0, 5).map((item) => `- ${item.name}: media ${Math.round(item.average)}. Pontos: ${item.issues.slice(0, 2).join('; ') || 'sem detalhe registrado'}`))
-      .join('\n');
+    if (!rows.length) {
+      return botMessage([
+        'Nao encontrei alunos com sinais claros de dificuldade nos relatorios recentes.',
+        '',
+        'Essa analise depende dos relatorios de aula estarem preenchidos.',
+        '',
+        'Deseja registrar um relatorio de aula agora?',
+      ]);
+    }
+    return botMessage([
+      'Encontrei alunos que podem precisar de mais atencao.',
+      '',
+      '*Alunos em observacao:*',
+      ...rows.slice(0, 5).map((item) => `- ${item.name} - media ${Math.round(item.average)} - ${item.issues.slice(0, 2).join('; ') || 'sem detalhe registrado'}`),
+      '',
+      'Deseja preparar um plano de reforco para algum deles?',
+    ]);
   }
 
   private studentSummary(context: TeacherContext, studentName?: string) {
@@ -969,26 +1203,56 @@ export class ConversationalAssistantService {
     if (!student) return error || 'Nao encontrei esse aluno.';
     const nextClasses = context.classes.filter((item) => item.student_id === student.id && item.status === 'scheduled').slice(0, 3);
     const reports = context.reports.filter((item) => item.student_id === student.id).slice(0, 3);
-    return [
-      `${student.full_name} - ${student.subject || 'sem materia cadastrada'} (${student.status}).`,
-      nextClasses.length ? `Proximas aulas: ${nextClasses.map((item) => `${formatDate(item.class_date)} as ${formatTime(item.class_time)}`).join(', ')}.` : 'Nao encontrei proximas aulas agendadas.',
-      reports.length ? `Relatorios recentes: ${reports.map((item) => item.summary || item.learning_progress || item.detected_doubts || 'sem resumo').join(' | ')}` : 'Ainda nao ha relatorios recentes cadastrados.',
-    ].join('\n');
+    return botMessage([
+      `Encontrei o aluno ${student.full_name}.`,
+      '',
+      '*Cadastro:*',
+      bullet('Materia', student.subject || 'sem materia cadastrada'),
+      bullet('Status', shortStatus(student.status)),
+      '',
+      '*Proximas aulas:*',
+      nextClasses.length ? null : '- Nao encontrei proximas aulas agendadas.',
+      ...nextClasses.map((item) => `- ${formatDate(item.class_date)} - ${formatTime(item.class_time)}`),
+      '',
+      '*Relatorios recentes:*',
+      reports.length ? null : '- Ainda nao ha relatorios recentes cadastrados.',
+      ...reports.map((item) => `- ${item.summary || item.learning_progress || item.detected_doubts || 'sem resumo'}`),
+      '',
+      'Deseja marcar aula, registrar pagamento ou gerar relatorio desse aluno?',
+    ]);
   }
 
   private studentReport(context: TeacherContext, studentName?: string) {
     const { student, error } = this.dataContext.findStudent(context, studentName);
     if (!student) return error || 'Nao encontrei esse aluno.';
     const reports = context.reports.filter((item) => item.student_id === student.id).slice(0, 5);
-    if (!reports.length) return `Ainda nao ha relatorios suficientes para avaliar a evolucao de ${student.full_name}.`;
+    if (!reports.length) {
+      return botMessage([
+        `Ainda nao ha relatorios suficientes para avaliar a evolucao de ${student.full_name}.`,
+        '',
+        'Registre relatorios de aula para que eu consiga analisar o progresso com mais precisao.',
+        '',
+        'Deseja criar uma anotacao para esse aluno?',
+      ]);
+    }
     const scores = reports.map((item) => item.learning_score).filter((score): score is number => typeof score === 'number');
     const avg = scores.length ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : null;
-    return [
-      `Evolucao de ${student.full_name}:`,
-      avg != null ? `- Media recente: ${avg}/100.` : '- Sem pontuacao numerica suficiente.',
-      `- Avancos/observacoes: ${reports.map((item) => item.learning_progress || item.learning_evidence || item.summary).filter(Boolean).slice(0, 3).join(' | ') || 'sem observacoes registradas'}.`,
-      `- Pontos de reforco: ${reports.map((item) => item.detected_doubts || item.reinforcement_points).filter(Boolean).slice(0, 3).join(' | ') || 'sem dificuldades recorrentes registradas'}.`,
-    ].join('\n');
+    return botMessage([
+      `Preparei a evolucao de ${student.full_name}.`,
+      '',
+      '*Desempenho:*',
+      avg != null ? bullet('Media recente', `${avg} de 100`) : '- Sem pontuacao numerica suficiente.',
+      '',
+      '*Avancos:*',
+      ...((reports.map((item) => item.learning_progress || item.learning_evidence || item.summary).filter(Boolean).slice(0, 3) as string[]).map((item) => `- ${item}`)),
+      reports.map((item) => item.learning_progress || item.learning_evidence || item.summary).filter(Boolean).length ? null : '- Sem observacoes registradas.',
+      '',
+      '*Pontos de reforco:*',
+      ...((reports.map((item) => item.detected_doubts || item.reinforcement_points).filter(Boolean).slice(0, 3) as string[]).map((item) => `- ${item}`)),
+      reports.map((item) => item.detected_doubts || item.reinforcement_points).filter(Boolean).length ? null : '- Sem dificuldades recorrentes registradas.',
+      '',
+      'Deseja transformar essa analise em uma mensagem para o responsavel?',
+    ]);
   }
 
   private parentText(context: TeacherContext, studentName: string | undefined, topic: string) {
@@ -996,14 +1260,37 @@ export class ConversationalAssistantService {
     const name = student?.full_name || 'seu filho(a)';
     const text = normalize(topic);
     if (text.includes('faltou')) {
-      return `Claro. Sugestao de mensagem:\n\nOla! Passando para avisar que ${name} nao compareceu a aula de hoje. Caso queira, podemos combinar um novo horario para repor o conteudo.`;
+      return botMessage([
+        'Preparei uma sugestao de mensagem.',
+        '',
+        '*Mensagem:*',
+        `Ola! Passando para avisar que ${name} nao compareceu a aula de hoje. Caso queira, podemos combinar um novo horario para repor o conteudo.`,
+        '',
+        'Deseja que eu deixe essa mensagem mais formal ou mais curta?',
+      ]);
     }
-    return `Claro. Sugestao de mensagem:\n\nOla! Tudo bem? Estou entrando em contato para compartilhar uma atualizacao sobre ${name}. Podemos alinhar os proximos passos para manter uma boa evolucao nos estudos.`;
+    return botMessage([
+      'Preparei uma sugestao de mensagem.',
+      '',
+      '*Mensagem:*',
+      `Ola! Tudo bem? Estou entrando em contato para compartilhar uma atualizacao sobre ${name}. Podemos alinhar os proximos passos para manter uma boa evolucao nos estudos.`,
+      '',
+      'Deseja que eu adapte o texto para WhatsApp?',
+    ]);
   }
 
   private async prepareCreateClass(connection: BotConnection, context: TeacherContext, detected: DetectedIntent) {
     if (!detected.studentName || !detected.date || !detected.time) {
-      return 'Entendi que voce quer marcar uma aula. Me envie aluno, data e horario. Exemplo: "marque a aula do Joao para amanha as 14h".';
+      return botMessage([
+        'Entendi que voce quer marcar uma aula.',
+        '',
+        '*Falta informar:*',
+        !detected.studentName ? '- Nome do aluno' : null,
+        !detected.date ? '- Data da aula' : null,
+        !detected.time ? '- Horario da aula' : null,
+        '',
+        'Exemplo: "marque a aula do Joao para amanha as 14h".',
+      ]);
     }
     const { student, error } = this.dataContext.findStudent(context, detected.studentName);
     if (!student) return error || 'Nao encontrei esse aluno.';
@@ -1025,16 +1312,44 @@ export class ConversationalAssistantService {
       status: 'pending',
     };
     await this.state.set(connection, action);
-    return `Confirma ${action.summary}?`;
+    return botMessage([
+      'Entendi o pedido.',
+      '',
+      '*Aula:*',
+      bullet('Aluno', student.full_name),
+      bullet('Data', formatDate(detected.date)),
+      bullet('Horario', formatTime(detected.time)),
+      bullet('Duracao', '60 minutos'),
+      '',
+      'Confirma que posso marcar essa aula?',
+    ]);
   }
 
   private async prepareUpdateClass(connection: BotConnection, context: TeacherContext, detected: DetectedIntent) {
-    if (!detected.studentName) return 'Entendi que voce quer remarcar uma aula. Qual aluno devo remarcar?';
+    if (!detected.studentName) {
+      return botMessage([
+        'Entendi que voce quer remarcar uma aula.',
+        '',
+        'Me diga qual aluno devo remarcar para eu continuar.',
+      ]);
+    }
     const { student, error } = this.dataContext.findStudent(context, detected.studentName);
     if (!student) return error || 'Nao encontrei esse aluno.';
-    if (!detected.date && !detected.time) return `Para remarcar a aula de ${student.full_name}, me envie a nova data ou o novo horario.`;
+    if (!detected.date && !detected.time) {
+      return botMessage([
+        `Encontrei ${student.full_name}.`,
+        '',
+        'Para remarcar a aula, me envie a nova data ou o novo horario.',
+      ]);
+    }
     const currentClass = context.classes.find((item) => item.student_id === student.id && item.status === 'scheduled');
-    if (!currentClass) return `Nao encontrei aula agendada para ${student.full_name}.`;
+    if (!currentClass) {
+      return botMessage([
+        `Nao encontrei aula agendada para ${student.full_name}.`,
+        '',
+        'Deseja marcar uma nova aula para esse aluno?',
+      ]);
+    }
     const nextDate = detected.date || currentClass.class_date;
     const nextTime = detected.time || currentClass.class_time;
     const action: BotPendingAction = {
@@ -1052,7 +1367,16 @@ export class ConversationalAssistantService {
       status: 'pending',
     };
     await this.state.set(connection, action);
-    return `Confirma ${action.summary}?`;
+    return botMessage([
+      'Entendi o pedido de remarcacao.',
+      '',
+      '*Nova aula:*',
+      bullet('Aluno', student.full_name),
+      bullet('Data', formatDate(nextDate)),
+      bullet('Horario', formatTime(nextTime)),
+      '',
+      'Confirma que posso remarcar essa aula?',
+    ]);
   }
 
   private async prepareCancelClass(connection: BotConnection, context: TeacherContext, detected: DetectedIntent) {
@@ -1067,8 +1391,20 @@ export class ConversationalAssistantService {
     }
     if (date) classes = classes.filter((item) => item.class_date === date);
     if (detected.time) classes = classes.filter((item) => item.class_time === detected.time);
-    if (!classes.length) return 'Nao encontrei nenhuma aula agendada com esses dados para cancelar.';
-    if (classes.length > 5) return 'Encontrei muitas aulas. Para evitar erro, me diga o aluno, a data ou o horario que devo cancelar.';
+    if (!classes.length) {
+      return botMessage([
+        'Nao encontrei nenhuma aula agendada com esses dados para cancelar.',
+        '',
+        'Envie o aluno, a data ou o horario para eu buscar novamente.',
+      ]);
+    }
+    if (classes.length > 5) {
+      return botMessage([
+        'Encontrei muitas aulas para cancelar.',
+        '',
+        'Para evitar erro, me diga o aluno, a data ou o horario exato.',
+      ]);
+    }
     const summary = classes.length === 1
       ? `cancelar aula de ${classes[0].students?.full_name || studentName || 'aluno'} em ${formatDate(classes[0].class_date)} as ${formatTime(classes[0].class_time)}`
       : `cancelar ${classes.length} aulas${date ? ` em ${formatDate(date)}` : ''}`;
@@ -1086,12 +1422,29 @@ export class ConversationalAssistantService {
       status: 'pending',
     };
     await this.state.set(connection, action);
-    return `Confirma ${summary}?`;
+    return botMessage([
+      'Entendi o pedido de cancelamento.',
+      '',
+      '*Aula:*',
+      classes.length === 1 ? bullet('Aluno', classes[0].students?.full_name || studentName || 'aluno') : bullet('Quantidade', classes.length),
+      classes.length === 1 ? bullet('Data', formatDate(classes[0].class_date)) : date ? bullet('Data', formatDate(date)) : null,
+      classes.length === 1 ? bullet('Horario', formatTime(classes[0].class_time)) : null,
+      '',
+      'Confirma que posso cancelar?',
+    ]);
   }
 
   private async preparePayment(connection: BotConnection, context: TeacherContext, detected: DetectedIntent) {
     if (!detected.studentName || !detected.amount || detected.amount <= 0) {
-      return 'Entendi que voce quer registrar um pagamento. Me envie aluno e valor. Exemplo: "registrar pagamento da Maria de 100 reais".';
+      return botMessage([
+        'Entendi que voce quer registrar um pagamento.',
+        '',
+        '*Falta informar:*',
+        !detected.studentName ? '- Nome do aluno' : null,
+        !detected.amount || detected.amount <= 0 ? '- Valor recebido' : null,
+        '',
+        'Exemplo: "registrar pagamento da Maria de 100 reais".',
+      ]);
     }
     const { student, error } = this.dataContext.findStudent(context, detected.studentName);
     if (!student) return error || 'Nao encontrei esse aluno.';
@@ -1111,7 +1464,16 @@ export class ConversationalAssistantService {
       status: 'pending',
     };
     await this.state.set(connection, action);
-    return `Confirma ${action.summary}?`;
+    return botMessage([
+      'Entendi o pagamento recebido.',
+      '',
+      '*Pagamento:*',
+      bullet('Aluno', student.full_name),
+      bullet('Valor', currency(detected.amount)),
+      bullet('Mes de referencia', monthReference()),
+      '',
+      'Confirma que posso registrar esse pagamento?',
+    ]);
   }
 
   private async prepareAbsence(connection: BotConnection, context: TeacherContext, detected: DetectedIntent) {
@@ -1132,12 +1494,20 @@ export class ConversationalAssistantService {
       status: 'pending',
     };
     await this.state.set(connection, action);
-    return `Confirma ${action.summary}?`;
+    return botMessage([
+      'Entendi o registro de falta.',
+      '',
+      '*Falta:*',
+      bullet('Aluno', student.full_name),
+      bullet('Data', formatDate(date)),
+      '',
+      'Confirma que posso registrar essa falta?',
+    ]);
   }
 
   private async prepareNote(connection: BotConnection, context: TeacherContext, detected: DetectedIntent, originalMessage: string) {
     const { student, error } = this.dataContext.findStudent(context, detected.studentName);
-    if (!student) return error || 'Para qual aluno devo criar essa anotacao?';
+    if (!student) return error || botMessage(['Para qual aluno devo criar essa anotacao?', '', 'Envie o nome do aluno para eu continuar.']);
     const note = detected.note || originalMessage;
     const action: BotPendingAction = {
       type: 'CREATE_NOTE',
@@ -1153,7 +1523,15 @@ export class ConversationalAssistantService {
       status: 'pending',
     };
     await this.state.set(connection, action);
-    return `Confirma ${action.summary}?`;
+    return botMessage([
+      'Entendi a anotacao.',
+      '',
+      '*Anotacao:*',
+      bullet('Aluno', student.full_name),
+      bullet('Texto', note.slice(0, 160)),
+      '',
+      'Confirma que posso salvar essa anotacao?',
+    ]);
   }
 
   private async prepareDeleteHistory(connection: BotConnection) {
@@ -1168,7 +1546,15 @@ export class ConversationalAssistantService {
       status: 'pending',
     };
     await this.state.set(connection, action);
-    return 'Confirma apagar seu historico de conversas do LuminaBot? Essa acao nao altera alunos, aulas ou pagamentos.';
+    return botMessage([
+      'Entendi que voce quer apagar o historico do LumiBot.',
+      '',
+      '*Importante:*',
+      '- Essa acao remove apenas o historico de conversas.',
+      '- Alunos, aulas e pagamentos nao serao alterados.',
+      '',
+      'Confirma que posso apagar o historico?',
+    ]);
   }
 
   private busyDays(classes: ClassLite[]) {
