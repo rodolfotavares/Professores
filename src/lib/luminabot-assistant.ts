@@ -102,6 +102,33 @@ type BotPendingAction =
       status?: 'pending';
     }
   | {
+      type: 'UPDATE_CLASS';
+      intent: 'ALTERAR_AULA';
+      teacher_id?: string;
+      telegram_user_id?: string | null;
+      entities?: Record<string, unknown>;
+      class_id: string;
+      student_name: string;
+      class_date: string;
+      class_time: string;
+      summary: string;
+      expires_at?: string;
+      status?: 'pending';
+    }
+  | {
+      type: 'CANCEL_CLASS';
+      intent: 'CANCELAR_AULA';
+      teacher_id?: string;
+      telegram_user_id?: string | null;
+      entities?: Record<string, unknown>;
+      class_ids: string[];
+      student_name?: string;
+      class_date?: string;
+      summary: string;
+      expires_at?: string;
+      status?: 'pending';
+    }
+  | {
       type: 'REGISTER_PAYMENT';
       intent: 'REGISTRAR_PAGAMENTO';
       teacher_id?: string;
@@ -264,6 +291,13 @@ function parseDate(text: string) {
 
 function parseTime(text: string) {
   const normalized = normalize(text);
+  if (normalized.includes('duas da tarde')) return '14:00:00';
+  if (normalized.includes('tres da tarde')) return '15:00:00';
+  if (normalized.includes('quatro da tarde')) return '16:00:00';
+  if (normalized.includes('cinco da tarde')) return '17:00:00';
+  if (normalized.includes('seis da tarde')) return '18:00:00';
+  if (normalized.includes('periodo da tarde') || normalized.includes('de tarde')) return '14:00:00';
+  if (normalized.includes('de manha') || normalized.includes('pela manha')) return '09:00:00';
   const match = normalized.match(/\b(?:as|a|para)?\s*(\d{1,2})(?::|h)(\d{2})?\b/) || normalized.match(/\b(?:as|a)\s+(\d{1,2})\b/);
   if (!match) return '';
   const hour = Number(match[1]);
@@ -312,15 +346,28 @@ export class EntityExtractionService {
 
   private studentName(message: string) {
     const raw = message.trim();
+    const afterAmount = raw.match(/(?:pagamento|pagou|recebi|recebido|valor|mensalidade).*?(?:para|do|da|de)\s+([A-Za-zÀ-ÿ]+(?:\s+[A-Za-zÀ-ÿ]+)?)(?:\s|$)/i);
+    if (afterAmount?.[1] && !/reais|real|valor|aula|mensalidade/i.test(afterAmount[1])) {
+      return afterAmount[1].replace(/\s+(do|da|de|com|para)$/i, '').trim();
+    }
     const patterns = [
+      /^(?:agenda|agende|marca|marque|coloca|coloque|cria|crie)\s+(?:o|a|aluno|aluna)?\s*(.+?)(?:\s+(?:na agenda|no horario|para|amanh|hoje|ontem|segunda|terca|quarta|quinta|sexta|sabado|domingo|as|a\s+\d|de manha|de tarde|periodo da tarde)|$)/i,
       /(?:aula|pagamento|relatorio|falta|mensagem|anotacao)\s+(?:do|da|de|com|para|sobre)\s+(.+?)(?:\s+(?:para|amanh|hoje|ontem|segunda|terca|quarta|quinta|sexta|sabado|domingo|as|a\s+\d|de\s+r?\$|de\s+\d|\d+[,.]?\d*\s*(?:reais|real))|$)/i,
       /(?:do|da|de|com|para|sobre)\s+(.+?)(?:\s+(?:para|amanh|hoje|ontem|segunda|terca|quarta|quinta|sexta|sabado|domingo|as|a\s+\d|de\s+r?\$|de\s+\d|\d+[,.]?\d*\s*(?:reais|real))|$)/i,
+      /^(.+?)\s+(?:pagou|nao veio|nao compareceu)\b/i,
       /^(.+?)\s+faltou\b/i,
     ];
     for (const pattern of patterns) {
       const match = raw.match(pattern);
       const value = match?.[1]?.trim();
-      if (value) return value.replace(/\b(aula|pagamento|relatorio|aluno|aluna)\b/gi, '').trim();
+      if (value) {
+        return value
+          .replace(/\b(aula|pagamento|relatorio|aluno|aluna)\b/gi, '')
+          .trim()
+          .replace(/^(do|da|de|com|para)\s+/i, '')
+          .replace(/\s+(do|da|de|com|para)$/i, '')
+          .trim();
+      }
     }
     return undefined;
   }
@@ -381,16 +428,63 @@ export class IntentDetectionService {
     const text = normalize(raw);
     const entities = this.entityExtractor.extract(raw);
 
-    if (/(marcar|marque|marca|agendar|agende|agenda a aula|criar aula|crie aula|coloca aula|coloque aula)/.test(text) && text.includes('aula')) {
+    if (
+      /(quanto|quem|quais|qual|me mostra|mostra|resumo|financeiro|faturamento|recebimentos|devendo|pendente|atrasado|receber)/.test(text) &&
+      /(recebi|receber|financeiro|faturamento|pagamento|pagamentos|devendo|pendente|atrasado|recebimentos)/.test(text)
+    ) {
+      if (text.includes('planilha') || text.includes('grafico') || text.includes('pdf') || text.includes('imagem') || text.includes('relatorio')) return { intent: 'GERAR_RELATORIO_FINANCEIRO', ...entities };
+      if (text.includes('pendente') || text.includes('atrasado') || text.includes('devendo')) return { intent: 'LISTAR_PENDENCIAS', ...entities };
+      return { intent: 'CONSULTAR_FINANCEIRO', ...entities };
+    }
+    if (/(crie|cria|escreva|faca|transforme).*(mensagem|aviso|comunicado)/.test(text) || text.includes('mensagem cobrando') || text.includes('mensagem confirmando')) {
+      return { intent: 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO', ...entities, studentName: entities.studentName || this.extractStudentName(raw), topic: raw };
+    }
+    if (/(muda|mude|remarca|remarque|troca|altera|alterar|passa|reagenda|reagende)/.test(text) && (text.includes('aula') || text.includes('horario'))) {
+      return { intent: 'ALTERAR_AULA', ...entities, needsClarification: !entities.studentName ? 'missing_student' : undefined };
+    }
+    if (/(cancela|cancelar|desmarca|desmarque|remove|remova|tira|tire)/.test(text) && (text.includes('aula') || text.includes('horario') || text.includes('agenda'))) {
+      return { intent: 'CANCELAR_AULA', ...entities };
+    }
+    if (text.includes('planilha') || text.includes('grafico') || text.includes('pdf') || text.includes('imagem') || text.includes('relatorio anual') || text.includes('relatorio completo do mes')) {
+      if (text.includes('desempenho') || text.includes('evolucao') || text.includes('historico')) return { intent: 'GERAR_RELATORIO_ALUNO', ...entities, studentName: entities.studentName || this.extractStudentName(raw) };
+      return { intent: text.includes('pagamento') || text.includes('financeiro') || text.includes('recebimento') ? 'GERAR_RELATORIO_FINANCEIRO' : 'GERAR_RELATORIO_ALUNOS', ...entities };
+    }
+    if (/(faltou|falta|ausencia|nao veio|nao compareceu|nao vai vir)/.test(text)) {
+      return { intent: 'REGISTRAR_FALTA', ...entities, date: entities.date || parseDate(raw), needsClarification: !entities.studentName ? 'missing_student' : undefined };
+    }
+    if (
+      (/\b(marcar|marque|marca|agendar|agende|criar aula|crie aula|cria uma aula|cria aula|coloca aula|coloque aula)\b/.test(text) && text.includes('aula')) ||
+      (text.includes('agenda a aula') && text.includes('aula')) ||
+      (/^(coloca|coloque|marca|marque|agenda|agende)\b/.test(text) && text.includes('agenda') && !!entities.studentName) ||
+      (/^(coloca|coloque|marca|marque|agenda|agende)\b/.test(text) && !!entities.studentName && (!!entities.date || !!entities.time))
+    ) {
       return { intent: 'CRIAR_AULA', ...entities, needsClarification: !entities.studentName || !entities.date || !entities.time ? 'missing_class_data' : undefined };
     }
-    if (/(registrar pagamento|registre pagamento|anota pagamento|anote pagamento|pagamento do|pagamento da|pagamento de|recebi)/.test(text)) {
+    if (/(registrar pagamento|registra pagamento|registre pagamento|anota pagamento|anote pagamento|adiciona pagamento|coloca pagamento|marca pagamento|pagou|recebi)/.test(text)) {
       return { intent: 'REGISTRAR_PAGAMENTO', ...entities, needsClarification: !entities.studentName || !entities.amount ? 'missing_payment_data' : undefined };
     }
     if (text.includes('relatorio financeiro')) return { intent: 'GERAR_RELATORIO_FINANCEIRO', ...entities };
     if (text.includes('relatorio dos alunos') || text.includes('relatorio geral dos alunos')) return { intent: 'GERAR_RELATORIO_ALUNOS', ...entities };
-    if (text.includes('relatorio do') || text.includes('relatorio da')) return { intent: 'GERAR_RELATORIO_ALUNO', ...entities, needsClarification: !entities.studentName ? 'missing_student' : undefined };
-    if (text.includes('minha agenda') || text.includes('agenda de hoje') || text.includes('quais aulas') || text.includes('como esta minha agenda') || text.includes('aulas tenho')) {
+    if (text.includes('evolucao') || text.includes('desempenho') || text.includes('historico') || text.includes('relatorio mensal da') || text.includes('relatorio mensal do') || text.includes('relatorio profissional')) {
+      return { intent: 'GERAR_RELATORIO_ALUNO', ...entities, studentName: entities.studentName || this.extractStudentName(raw) };
+    }
+    if ((text.includes('planilha') || text.includes('alunos ativos')) && text.includes('alunos')) return { intent: 'GERAR_RELATORIO_ALUNOS', ...entities };
+    if (text.includes('relatorio do') || text.includes('relatorio da') || /relatorio\s+.+\s+(do|da)\b/.test(text)) return { intent: 'GERAR_RELATORIO_ALUNO', ...entities, needsClarification: !entities.studentName ? 'missing_student' : undefined };
+    if (
+      text.includes('minha agenda') ||
+      text.includes('agenda de hoje') ||
+      text.includes('quais aulas') ||
+      text.includes('como esta minha agenda') ||
+      text.includes('aulas tenho') ||
+      text.includes('tenho aula') ||
+      (text.includes('horarios') && text.includes('livres')) ||
+      text.includes('proximas aulas') ||
+      text.includes('compromissos') ||
+      text.includes('aula marcada') ||
+      text.includes('aluno marcado') ||
+      text.includes('agenda da semana') ||
+      text.includes('agenda do mes')
+    ) {
       return { intent: 'CONSULTAR_AGENDA', ...entities, date: entities.date || parseDate(raw) };
     }
     if (text.includes('listar alunos') || text === 'alunos' || text.includes('meus alunos')) return { intent: 'LISTAR_ALUNOS', ...entities };
@@ -398,16 +492,16 @@ export class IntentDetectionService {
       return { intent: 'LISTAR_PENDENCIAS', ...entities };
     }
 
-    if (['/start', '/ajuda', 'ajuda', 'help', 'comandos'].includes(text) || text.includes('o que voce faz')) return { intent: 'PEDIR_AJUDA' };
+    if (['/start', '/ajuda', 'ajuda', 'help', 'comandos'].includes(text) || text.includes('o que voce faz') || text.includes('consegue fazer')) return { intent: 'PEDIR_AJUDA' };
     if (text.includes('apagar historico') || text.includes('limpar historico') || text.includes('excluir historico')) return { intent: 'APAGAR_HISTORICO' };
     if (text.includes('agenda') || text.includes('aulas de hoje') || text.includes('minhas aulas')) return { intent: 'CONSULTAR_AGENDA', date: parseDate(raw) };
-    if (text.includes('organizar minha semana') || text.includes('organize minha semana') || text.includes('planejar semana')) return { intent: 'ORGANIZAR_SEMANA' };
+    if (text.includes('organizar minha semana') || text.includes('organize minha semana') || text.includes('planejar semana') || text.includes('resolver hoje') || text.includes('melhorar minha rotina') || text.includes('resumo geral da minha semana')) return { intent: 'ORGANIZAR_SEMANA' };
     if (text.includes('pagamento atrasado') || text.includes('pagamentos atrasados') || text.includes('pagamento pendente') || text.includes('quem esta devendo')) return { intent: 'LISTAR_PAGAMENTOS_PENDENTES' };
     if (text.includes('financeiro') || text.includes('ganhos') || text.includes('recebi') || text.includes('resumo do mes')) return { intent: 'CONSULTAR_FINANCEIRO' };
     if (text.includes('precisam de mais atencao') || text.includes('dificuldade') || text.includes('dificuldades')) return { intent: 'RESUMIR_DADOS' };
-    if (text.includes('evolucao') || text.includes('desempenho')) return { intent: 'GERAR_RELATORIO_ALUNO', studentName: this.extractStudentName(raw) };
+    if (text.includes('evolucao') || text.includes('desempenho') || text.includes('historico')) return { intent: 'GERAR_RELATORIO_ALUNO', studentName: this.extractStudentName(raw) || entities.studentName };
     if (text.includes('relatorio da aula') || text.includes('relatorio de aula')) return { intent: 'CRIAR_ANOTACAO_AULA', studentName: this.extractStudentName(raw), note: raw };
-    if (text.includes('mensagem') || text.includes('avisar') || text.includes('mae') || text.includes('responsavel')) return { intent: 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO', studentName: this.extractStudentName(raw), topic: raw };
+    if (text.includes('mensagem') || text.includes('avisar') || text.includes('aviso') || text.includes('comunicado') || text.includes('mae') || text.includes('responsavel')) return { intent: 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO', studentName: this.extractStudentName(raw) || entities.studentName, topic: raw };
 
     const classMatch = raw.match(/(?:marque|marca|agende|agenda|crie)\s+(?:uma\s+)?aula\s+com\s+(.+?)\s+(hoje|amanh[aã]|ontem|\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?)\s+(?:a?s|às)?\s*(\d{1,2}(?::|h)?\d{0,2})/i);
     if (classMatch) return { intent: 'CRIAR_AULA', studentName: classMatch[1].trim(), date: parseDate(classMatch[2]), time: parseTime(classMatch[3]) };
@@ -564,6 +658,30 @@ export class BotActionExecutor {
       return `Pronto! Registrei o pagamento de ${currency(action.amount)} para ${action.student_name}.`;
     }
 
+    if (action.type === 'UPDATE_CLASS') {
+      const { error } = await supabaseAdmin
+        .from('class_schedules')
+        .update({
+          class_date: action.class_date,
+          class_time: action.class_time,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', action.class_id)
+        .eq('teacher_id', connection.teacher_id);
+      if (error) throw error;
+      return `Pronto! Remarquei a aula de ${action.student_name} para ${formatDate(action.class_date)} as ${formatTime(action.class_time)}.`;
+    }
+
+    if (action.type === 'CANCEL_CLASS') {
+      const { error } = await supabaseAdmin
+        .from('class_schedules')
+        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .in('id', action.class_ids)
+        .eq('teacher_id', connection.teacher_id);
+      if (error) throw error;
+      return action.class_ids.length === 1 ? 'Pronto! Aula cancelada.' : `Pronto! Cancelei ${action.class_ids.length} aulas.`;
+    }
+
     if (action.type === 'REGISTER_ABSENCE') {
       const { data } = await supabaseAdmin
         .from('class_schedules')
@@ -693,6 +811,8 @@ export class ConversationalAssistantService {
     if (detected.intent === 'GERAR_RELATORIO_ALUNO') return this.studentReport(context, detected.studentName);
     if (detected.intent === 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO' || detected.intent === 'GERAR_MENSAGEM_PARA_RESPONSAVEL') return this.parentText(context, detected.studentName, detected.topic || originalMessage);
     if (detected.intent === 'CRIAR_AULA') return this.prepareCreateClass(connection, context, detected);
+    if (detected.intent === 'ALTERAR_AULA') return this.prepareUpdateClass(connection, context, detected);
+    if (detected.intent === 'CANCELAR_AULA') return this.prepareCancelClass(connection, context, detected);
     if (detected.intent === 'REGISTRAR_PAGAMENTO') return this.preparePayment(connection, context, detected);
     if (detected.intent === 'REGISTRAR_FALTA') return this.prepareAbsence(connection, context, detected);
     if (detected.intent === 'CRIAR_ANOTACAO_AULA') return this.prepareNote(connection, context, detected, originalMessage);
@@ -906,6 +1026,67 @@ export class ConversationalAssistantService {
     };
     await this.state.set(connection, action);
     return `Confirma ${action.summary}?`;
+  }
+
+  private async prepareUpdateClass(connection: BotConnection, context: TeacherContext, detected: DetectedIntent) {
+    if (!detected.studentName) return 'Entendi que voce quer remarcar uma aula. Qual aluno devo remarcar?';
+    const { student, error } = this.dataContext.findStudent(context, detected.studentName);
+    if (!student) return error || 'Nao encontrei esse aluno.';
+    if (!detected.date && !detected.time) return `Para remarcar a aula de ${student.full_name}, me envie a nova data ou o novo horario.`;
+    const currentClass = context.classes.find((item) => item.student_id === student.id && item.status === 'scheduled');
+    if (!currentClass) return `Nao encontrei aula agendada para ${student.full_name}.`;
+    const nextDate = detected.date || currentClass.class_date;
+    const nextTime = detected.time || currentClass.class_time;
+    const action: BotPendingAction = {
+      type: 'UPDATE_CLASS',
+      intent: 'ALTERAR_AULA',
+      teacher_id: connection.teacher_id,
+      telegram_user_id: connection.telegram_user_id,
+      entities: detected as Record<string, unknown>,
+      class_id: currentClass.id,
+      student_name: student.full_name,
+      class_date: nextDate,
+      class_time: nextTime,
+      summary: `remarcar aula de ${student.full_name} para ${formatDate(nextDate)} as ${formatTime(nextTime)}`,
+      expires_at: pendingExpiration(),
+      status: 'pending',
+    };
+    await this.state.set(connection, action);
+    return `Confirma ${action.summary}?`;
+  }
+
+  private async prepareCancelClass(connection: BotConnection, context: TeacherContext, detected: DetectedIntent) {
+    const date = detected.date;
+    let classes = context.classes.filter((item) => item.status === 'scheduled');
+    let studentName = detected.studentName;
+    if (studentName) {
+      const { student, error } = this.dataContext.findStudent(context, studentName);
+      if (!student) return error || 'Nao encontrei esse aluno.';
+      studentName = student.full_name;
+      classes = classes.filter((item) => item.student_id === student.id);
+    }
+    if (date) classes = classes.filter((item) => item.class_date === date);
+    if (detected.time) classes = classes.filter((item) => item.class_time === detected.time);
+    if (!classes.length) return 'Nao encontrei nenhuma aula agendada com esses dados para cancelar.';
+    if (classes.length > 5) return 'Encontrei muitas aulas. Para evitar erro, me diga o aluno, a data ou o horario que devo cancelar.';
+    const summary = classes.length === 1
+      ? `cancelar aula de ${classes[0].students?.full_name || studentName || 'aluno'} em ${formatDate(classes[0].class_date)} as ${formatTime(classes[0].class_time)}`
+      : `cancelar ${classes.length} aulas${date ? ` em ${formatDate(date)}` : ''}`;
+    const action: BotPendingAction = {
+      type: 'CANCEL_CLASS',
+      intent: 'CANCELAR_AULA',
+      teacher_id: connection.teacher_id,
+      telegram_user_id: connection.telegram_user_id,
+      entities: detected as Record<string, unknown>,
+      class_ids: classes.map((item) => item.id),
+      student_name: studentName,
+      class_date: date,
+      summary,
+      expires_at: pendingExpiration(),
+      status: 'pending',
+    };
+    await this.state.set(connection, action);
+    return `Confirma ${summary}?`;
   }
 
   private async preparePayment(connection: BotConnection, context: TeacherContext, detected: DetectedIntent) {
