@@ -6,8 +6,6 @@ import { StatusMessage } from '@/components/PanelState';
 import { apiFetch } from '@/lib/fetcher';
 
 type TelegramConnection = {
-  connection_code: string;
-  code_expires_at: string;
   connected: boolean;
   telegram_username?: string | null;
   telegram_first_name?: string | null;
@@ -19,13 +17,19 @@ type TelegramResponse = {
   bot_username: string;
 };
 
+type TelegramLinkResponse = {
+  bot_username: string;
+  deep_link: string;
+  connect_token_expires_at: string;
+};
+
 export function TeacherTelegramPanel() {
   const [connection, setConnection] = useState<TelegramConnection | null>(null);
   const [botUsername, setBotUsername] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [linkExpiresAt, setLinkExpiresAt] = useState('');
 
   async function load() {
     try {
@@ -51,22 +55,16 @@ export function TeacherTelegramPanel() {
     return `https://t.me/${botUsername.replace('@', '')}`;
   }, [botUsername]);
 
-  async function copyCode() {
-    if (!connection?.connection_code) return;
-    await navigator.clipboard.writeText(connection.connection_code);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1600);
-  }
-
-  async function regenerateCode() {
+  async function connectTelegram() {
     setActionLoading(true);
     setError('');
     try {
-      const data = await apiFetch<TelegramResponse>('/api/teacher/telegram', { method: 'POST' });
-      setConnection(data.connection);
+      const data = await apiFetch<TelegramLinkResponse>('/api/teacher/telegram', { method: 'POST' });
       setBotUsername(data.bot_username || '');
+      setLinkExpiresAt(data.connect_token_expires_at);
+      window.open(data.deep_link, '_blank', 'noopener,noreferrer');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao gerar novo código.');
+      setError(err instanceof Error ? err.message : 'Falha ao abrir conexão do Telegram.');
     } finally {
       setActionLoading(false);
     }
@@ -77,6 +75,7 @@ export function TeacherTelegramPanel() {
     setError('');
     try {
       await apiFetch('/api/teacher/telegram', { method: 'DELETE' });
+      setLinkExpiresAt('');
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao desconectar Telegram.');
@@ -108,23 +107,22 @@ export function TeacherTelegramPanel() {
           <p className="muted">
             {connection?.connected
               ? `Conectado como ${connection.telegram_username ? `@${connection.telegram_username}` : connection.telegram_first_name || 'usuário do Telegram'}.`
-              : 'Envie o código abaixo para o bot no Telegram para concluir a conexão.'}
+              : 'Clique no botão abaixo para abrir o Telegram e conectar sua conta automaticamente.'}
           </p>
-          <div className="telegram-code-box">
-            <span>Código de conexão</span>
-            <strong>{connection?.connection_code || '...'}</strong>
-            <small>Expira em {connection?.code_expires_at ? new Date(connection.code_expires_at).toLocaleString('pt-BR') : '24 horas'}</small>
-          </div>
+          {!connection?.connected && (
+            <div className="telegram-code-box">
+              <span>Link seguro</span>
+              <strong>Uso único</strong>
+              <small>{linkExpiresAt ? `Expira em ${new Date(linkExpiresAt).toLocaleString('pt-BR')}` : 'O link expira em 10 minutos e só pode ser usado uma vez.'}</small>
+            </div>
+          )}
           <div className="panel-actions">
-            <button className="btn primary" type="button" onClick={copyCode} disabled={!connection?.connection_code}>
-              {copied ? 'Copiado' : 'Copiar código'}
-            </button>
-            <button className="btn" type="button" onClick={regenerateCode} disabled={actionLoading}>
-              Novo código
+            <button className="btn primary" type="button" onClick={connectTelegram} disabled={actionLoading || !botUsername}>
+              {actionLoading ? 'Abrindo...' : connection?.connected ? 'Reconectar meu Telegram' : 'Conectar meu Telegram'}
             </button>
             {connection?.connected && (
               <button className="btn danger" type="button" onClick={disconnect} disabled={actionLoading}>
-                Desconectar
+                Desconectar Telegram
               </button>
             )}
           </div>
@@ -134,12 +132,12 @@ export function TeacherTelegramPanel() {
           <span className="eyebrow">Passo a passo</span>
           <h2>Como conectar</h2>
           <div className="mini-list">
-            <span><strong>1. Abra o bot</strong><small>{telegramLink ? 'Clique no botão abaixo ou procure pelo usuário do bot.' : 'Configure o usuário do bot nas variáveis de ambiente.'}</small></span>
-            <span><strong>2. Envie o código</strong><small>Copie o código desta tela e envie como mensagem para o bot.</small></span>
-            <span><strong>3. Use comandos</strong><small>Depois de conectado, envie /ajuda para ver os comandos disponíveis.</small></span>
+            <span><strong>1. Clique em conectar</strong><small>O LuminaAI gera um link seguro e temporário.</small></span>
+            <span><strong>2. Abra o Telegram</strong><small>O link inicia a conversa com o LuminaBot usando um token de uso único.</small></span>
+            <span><strong>3. Comece a usar</strong><small>Depois de conectado, envie /ajuda para ver os comandos disponíveis.</small></span>
           </div>
           {telegramLink ? (
-            <a className="btn primary" href={telegramLink} target="_blank" rel="noreferrer">Abrir bot no Telegram</a>
+            <a className="btn" href={telegramLink} target="_blank" rel="noreferrer">Ver bot no Telegram</a>
           ) : (
             <p className="muted">Defina NEXT_PUBLIC_TELEGRAM_BOT_USERNAME para mostrar o link direto do bot.</p>
           )}

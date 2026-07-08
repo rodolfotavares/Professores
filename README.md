@@ -64,7 +64,9 @@ curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook" ^
   -d "{\"url\":\"https://luminaipro.com.br/api/telegram/webhook\",\"secret_token\":\"<TELEGRAM_WEBHOOK_SECRET>\"}"
 ```
 
-No painel do professor, abra `/teacher/telegram`, copie o codigo de conexao e envie para o bot. Depois disso, o professor pode usar comandos como `/agenda`, `/alunos`, `/pendentes`, `Marcar aula com Ana amanha as 15h`, `Registrar pagamento do Joao de R$100` e `Maria faltou hoje`.
+No painel do professor, abra `/teacher/telegram` e clique em **Conectar meu Telegram**. A LuminaAI gera um link seguro do tipo `https://t.me/<bot>?start=<token>`; esse token e temporario, expira em 10 minutos e so pode ser usado uma vez. Ao abrir o link, o LuminaBot valida o token, vincula o Telegram ID do professor e registra a conexao nos logs de auditoria. Depois disso, o professor pode usar comandos como `/agenda`, `/alunos`, `/pendentes`, `Marcar aula com Ana amanha as 15h`, `Registrar pagamento do Joao de R$100` e `Maria faltou hoje`.
+
+Se o professor quiser remover o vinculo, use o botao **Desconectar Telegram** na mesma pagina.
 
 ## Primeiro teste recomendado
 

@@ -1,3 +1,4 @@
+import { createHash, randomBytes } from 'crypto';
 import { supabaseAdmin } from './supabase-admin';
 
 type TelegramUser = {
@@ -25,6 +26,10 @@ type BotConnection = {
   code_expires_at: string;
   pending_action: PendingAction | null;
 };
+
+type TokenValidationResult =
+  | { ok: true; connection: BotConnection }
+  | { ok: false; reason: 'invalid' | 'expired' | 'used' };
 
 type StudentMatch = {
   id: string;
@@ -65,6 +70,108 @@ export function expectedTelegramSecret() {
 
 export function botUsername() {
   return process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || process.env.TELEGRAM_BOT_USERNAME || '';
+}
+
+function hashConnectToken(value: string) {
+  return createHash('sha256').update(value).digest('hex');
+}
+
+export async function createTelegramConnectToken(teacherId: string) {
+  const rawToken = randomBytes(24).toString('base64url');
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+  const { error } = await supabaseAdmin.from('telegram_bot_connection_tokens').insert({
+    teacher_id: teacherId,
+    token_hash: hashConnectToken(rawToken),
+    expires_at: expiresAt,
+  });
+  if (error) throw error;
+
+  return { token: rawToken, expires_at: expiresAt };
+}
+
+async function consumeTelegramConnectToken(rawToken: string, message: TelegramMessage): Promise<TokenValidationResult> {
+  if (!message.from) return { ok: false, reason: 'invalid' };
+
+  const now = new Date().toISOString();
+  const tokenHash = hashConnectToken(rawToken);
+  const { data: tokenRow, error: tokenError } = await supabaseAdmin
+    .from('telegram_bot_connection_tokens')
+    .select('id, teacher_id, expires_at, used_at')
+    .eq('token_hash', tokenHash)
+    .maybeSingle();
+
+  if (tokenError || !tokenRow) return { ok: false, reason: 'invalid' };
+  if (tokenRow.used_at) return { ok: false, reason: 'used' };
+  if (new Date(tokenRow.expires_at).getTime() <= Date.now()) return { ok: false, reason: 'expired' };
+
+  const { data: existing } = await supabaseAdmin
+    .from('telegram_bot_connections')
+    .select('id')
+    .eq('teacher_id', tokenRow.teacher_id)
+    .maybeSingle();
+
+  if (!existing?.id) {
+    await supabaseAdmin.from('telegram_bot_connections').insert({
+      teacher_id: tokenRow.teacher_id,
+      connection_code: newConnectionCode(),
+      code_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    });
+  }
+
+  const telegramUserId = String(message.from.id);
+  const { data: consumed, error: consumeError } = await supabaseAdmin
+    .from('telegram_bot_connection_tokens')
+    .update({ used_at: now, used_by_telegram_user_id: telegramUserId })
+    .eq('id', tokenRow.id)
+    .is('used_at', null)
+    .select('id')
+    .maybeSingle();
+  if (consumeError) throw consumeError;
+  if (!consumed?.id) return { ok: false, reason: 'used' };
+
+  await supabaseAdmin
+    .from('telegram_bot_connections')
+    .update({
+      telegram_user_id: null,
+      telegram_username: null,
+      telegram_first_name: null,
+      telegram_chat_id: null,
+      pending_action: null,
+      connected_at: null,
+      updated_at: now,
+    })
+    .eq('telegram_user_id', telegramUserId)
+    .neq('teacher_id', tokenRow.teacher_id);
+
+  const { data: updated, error: updateError } = await supabaseAdmin
+    .from('telegram_bot_connections')
+    .update({
+      telegram_user_id: telegramUserId,
+      telegram_username: message.from.username || null,
+      telegram_first_name: message.from.first_name || null,
+      telegram_chat_id: String(message.chat.id),
+      connected_at: now,
+      updated_at: now,
+      pending_action: null,
+    })
+    .eq('teacher_id', tokenRow.teacher_id)
+    .select('*')
+    .single();
+  if (updateError || !updated) return { ok: false, reason: 'invalid' };
+
+  await logInteraction({
+    teacherId: tokenRow.teacher_id,
+    telegramUserId,
+    telegramChatId: String(message.chat.id),
+    direction: 'inbound',
+    message: 'Deep link token consumed',
+    intent: 'CONNECT',
+    status: 'connected',
+    metadata: { token_id: tokenRow.id },
+  });
+
+  return { ok: true, connection: updated as BotConnection };
 }
 
 function todayDate() {
@@ -128,7 +235,7 @@ function helpText(connected: boolean) {
   if (!connected) {
     return [
       'Ola! Eu sou o LuminaBot, seu assistente da LuminaAI.',
-      'Para conectar, abra o LuminaAI em Configuracoes > Conectar Telegram e envie aqui o codigo exibido na tela.',
+      'Para conectar, volte na LuminaAI e clique em "Conectar meu Telegram".',
     ].join('\n');
   }
   return [
@@ -175,6 +282,17 @@ function parseIntent(text: string): ParsedIntent {
   if (noteMatch) return { type: 'CREATE_NOTE', studentName: noteMatch[1].trim(), note: noteMatch[2].trim() };
 
   return { type: 'UNKNOWN' };
+}
+
+function startTokenFromText(text: string) {
+  const match = text.trim().match(/^\/start(?:@\w+)?\s+([A-Za-z0-9_-]{20,})$/);
+  return match?.[1] || '';
+}
+
+function invalidTokenMessage(reason: 'invalid' | 'expired' | 'used') {
+  if (reason === 'expired') return 'Esse link expirou. Volte na LuminaAI e clique novamente em "Conectar meu Telegram".';
+  if (reason === 'used') return 'Esse link ja foi usado. Volte na LuminaAI e gere um novo link de conexao.';
+  return 'Link de conexao invalido. Volte na LuminaAI e clique novamente em "Conectar meu Telegram".';
 }
 
 async function telegramSendMessage(chatId: string, text: string) {
@@ -232,35 +350,6 @@ async function getConnectionByTelegram(telegramUserId: string) {
     .eq('telegram_user_id', telegramUserId)
     .maybeSingle();
   return data as BotConnection | null;
-}
-
-async function linkConnection(code: string, message: TelegramMessage) {
-  const now = new Date().toISOString();
-  const { data } = await supabaseAdmin
-    .from('telegram_bot_connections')
-    .select('*')
-    .eq('connection_code', code.toUpperCase())
-    .gt('code_expires_at', now)
-    .maybeSingle();
-
-  if (!data || !message.from) return null;
-
-  const { data: updated, error } = await supabaseAdmin
-    .from('telegram_bot_connections')
-    .update({
-      telegram_user_id: String(message.from.id),
-      telegram_username: message.from.username || null,
-      telegram_first_name: message.from.first_name || null,
-      telegram_chat_id: String(message.chat.id),
-      connected_at: now,
-      updated_at: now,
-      pending_action: null,
-    })
-    .eq('id', data.id)
-    .select('*')
-    .single();
-  if (error) throw error;
-  return updated as BotConnection;
 }
 
 async function findStudents(teacherId: string, name: string) {
@@ -480,14 +569,19 @@ export async function handleTelegramUpdate(update: { message?: TelegramMessage }
     message: text,
   });
 
-  const existing = await getConnectionByTelegram(telegramUserId);
-  if (!existing) {
-    const code = text.replace(/\s+/g, '').toUpperCase();
-    const linked = code.length >= 6 ? await linkConnection(code, message) : null;
-    if (linked) {
-      await reply(chatId, 'Pronto! Seu Telegram foi conectado ao LuminaAI. Envie /ajuda para ver o que posso fazer.', { teacherId: linked.teacher_id, telegramUserId, intent: 'CONNECT' });
+  const startToken = startTokenFromText(text);
+  if (startToken) {
+    const linked = await consumeTelegramConnectToken(startToken, message);
+    if (linked.ok) {
+      await reply(chatId, 'Seu Telegram foi conectado com sucesso à LuminaAI. Agora você pode organizar sua rotina por aqui.', { teacherId: linked.connection.teacher_id, telegramUserId, intent: 'CONNECT' });
       return;
     }
+    await reply(chatId, invalidTokenMessage(linked.reason), { telegramUserId, intent: 'CONNECT', status: linked.reason });
+    return;
+  }
+
+  const existing = await getConnectionByTelegram(telegramUserId);
+  if (!existing) {
     await reply(chatId, helpText(false), { telegramUserId, intent: 'START' });
     return;
   }

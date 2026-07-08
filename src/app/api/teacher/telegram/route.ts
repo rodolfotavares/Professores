@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { apiError, getApiUser, json } from '@/lib/api-auth';
-import { botUsername, newConnectionCode } from '@/lib/luminabot';
+import { botUsername, createTelegramConnectToken, newConnectionCode } from '@/lib/luminabot';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 function codeExpiration() {
@@ -39,8 +39,6 @@ export async function GET(req: NextRequest) {
     const connection = await ensureConnection(user.id);
     return json({
       connection: {
-        connection_code: connection.connection_code,
-        code_expires_at: connection.code_expires_at,
         connected: Boolean(connection.telegram_user_id),
         telegram_username: connection.telegram_username,
         telegram_first_name: connection.telegram_first_name,
@@ -60,31 +58,16 @@ export async function POST(req: NextRequest) {
       return json({ error: 'Sem permissao.' }, { status: 403 });
     }
 
-    const { data, error } = await supabaseAdmin
-      .from('telegram_bot_connections')
-      .upsert({
-        teacher_id: user.id,
-        connection_code: newConnectionCode(),
-        code_expires_at: codeExpiration(),
-        telegram_user_id: null,
-        telegram_username: null,
-        telegram_first_name: null,
-        telegram_chat_id: null,
-        pending_action: null,
-        connected_at: null,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'teacher_id' })
-      .select('*')
-      .single();
-    if (error) throw error;
+    await ensureConnection(user.id);
 
+    const username = botUsername();
+    if (!username) return json({ error: 'Usuário do bot não configurado.' }, { status: 500 });
+    const token = await createTelegramConnectToken(user.id);
+    const cleanUsername = username.replace('@', '');
     return json({
-      connection: {
-        connection_code: data.connection_code,
-        code_expires_at: data.code_expires_at,
-        connected: false,
-      },
-      bot_username: botUsername(),
+      bot_username: username,
+      connect_token_expires_at: token.expires_at,
+      deep_link: `https://t.me/${cleanUsername}?start=${encodeURIComponent(token.token)}`,
     });
   } catch (error) {
     return apiError(error);

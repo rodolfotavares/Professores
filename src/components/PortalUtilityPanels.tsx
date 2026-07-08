@@ -506,6 +506,7 @@ export function TeacherSettingsPanel() {
       </div>
       <div className="grid grid-2">
         <LanguagePreferenceCard />
+        <TelegramSettingsCard />
       </div>
       <GlassCard className="support-shortcuts-card">
         <div className="glass-card-head">
@@ -526,6 +527,68 @@ export function TeacherSettingsPanel() {
         </div>
       </GlassCard>
     </div>
+  );
+}
+
+function TelegramSettingsCard() {
+  const [connected, setConnected] = useState(false);
+  const [identity, setIdentity] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  async function load() {
+    try {
+      setError('');
+      const data = await apiFetch<{
+        connection: { connected: boolean; telegram_username?: string | null; telegram_first_name?: string | null };
+      }>('/api/teacher/telegram');
+      setConnected(Boolean(data.connection.connected));
+      setIdentity(data.connection.telegram_username ? `@${data.connection.telegram_username}` : data.connection.telegram_first_name || '');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao carregar Telegram.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  usePanelLoad(load, 30000);
+
+  async function disconnect() {
+    setBusy(true);
+    setError('');
+    try {
+      await apiFetch('/api/teacher/telegram', { method: 'DELETE' });
+      setConnected(false);
+      setIdentity('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao desconectar Telegram.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <GlassCard className="portal-summary-card">
+      <span className="eyebrow">Telegram</span>
+      <h2>{connected ? 'Conectado' : 'Não conectado'}</h2>
+      <p className="muted">
+        {connected
+          ? `LuminaBot vinculado ${identity ? `como ${identity}` : 'ao seu Telegram'}.`
+          : 'Conecte o LuminaBot para organizar agenda e pagamentos pelo Telegram.'}
+      </p>
+      {error && <small className="error-text">{error}</small>}
+      <div className="panel-actions">
+        <Link className="btn primary" href="/teacher/telegram">
+          {connected ? 'Gerenciar Telegram' : 'Conectar Telegram'}
+        </Link>
+        {connected && (
+          <button className="btn danger" type="button" onClick={disconnect} disabled={busy || loading}>
+            {busy ? 'Desconectando...' : 'Desconectar'}
+          </button>
+        )}
+      </div>
+    </GlassCard>
   );
 }
 

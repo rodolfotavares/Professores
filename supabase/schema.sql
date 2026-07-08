@@ -283,6 +283,16 @@ create table public.bot_student_notes (
   created_at timestamptz not null default now()
 );
 
+create table public.telegram_bot_connection_tokens (
+  id uuid primary key default gen_random_uuid(),
+  teacher_id uuid not null references public.profiles(id) on delete cascade,
+  token_hash text not null unique,
+  expires_at timestamptz not null,
+  used_at timestamptz,
+  used_by_telegram_user_id text,
+  created_at timestamptz not null default now()
+);
+
 create index students_teacher_id_idx on public.students(teacher_id);
 create index students_user_id_idx on public.students(user_id);
 create index class_schedules_teacher_student_idx on public.class_schedules(teacher_id, student_id);
@@ -297,6 +307,8 @@ create index telegram_bot_connections_teacher_idx on public.telegram_bot_connect
 create index telegram_bot_connections_telegram_user_idx on public.telegram_bot_connections(telegram_user_id);
 create index telegram_bot_logs_teacher_idx on public.telegram_bot_interaction_logs(teacher_id, created_at desc);
 create index bot_student_notes_teacher_student_idx on public.bot_student_notes(teacher_id, student_id);
+create index telegram_bot_connection_tokens_teacher_idx on public.telegram_bot_connection_tokens(teacher_id, created_at desc);
+create index telegram_bot_connection_tokens_lookup_idx on public.telegram_bot_connection_tokens(token_hash, expires_at, used_at);
 
 alter table public.profiles enable row level security;
 alter table public.teacher_profiles enable row level security;
@@ -318,6 +330,7 @@ alter table public.push_subscriptions enable row level security;
 alter table public.telegram_bot_connections enable row level security;
 alter table public.telegram_bot_interaction_logs enable row level security;
 alter table public.bot_student_notes enable row level security;
+alter table public.telegram_bot_connection_tokens enable row level security;
 
 create policy "profiles own read" on public.profiles for select using (auth.uid() = id);
 create policy "profiles own update" on public.profiles for update using (auth.uid() = id);
@@ -339,3 +352,4 @@ create policy "push subscriptions own read" on public.push_subscriptions for sel
 create policy "telegram connections teacher read" on public.telegram_bot_connections for select to authenticated using ((select auth.uid()) = teacher_id);
 create policy "telegram logs teacher read" on public.telegram_bot_interaction_logs for select to authenticated using ((select auth.uid()) = teacher_id);
 create policy "bot notes teacher read" on public.bot_student_notes for select to authenticated using ((select auth.uid()) = teacher_id);
+create policy "telegram connect tokens teacher read" on public.telegram_bot_connection_tokens for select to authenticated using ((select auth.uid()) = teacher_id);
