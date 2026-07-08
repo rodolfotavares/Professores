@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import zlib from 'node:zlib';
 import ts from 'typescript';
 
 const source = fs.readFileSync('src/lib/luminabot-assistant.ts', 'utf8');
@@ -16,6 +17,7 @@ const module = { exports: {} };
 const sandbox = {
   require(id) {
     if (id === './supabase-admin') return { supabaseAdmin: {} };
+    if (id === 'zlib') return zlib;
     throw new Error(`Unexpected require: ${id}`);
   },
   exports: module.exports,
@@ -170,6 +172,11 @@ assert.equal(financialSpreadsheet.artifactType, 'spreadsheet');
 const financialChart = detector.detect('cria um grafico dos meus recebimentos');
 assert.equal(financialChart.intent, 'GERAR_RELATORIO_FINANCEIRO');
 assert.equal(financialChart.artifactType, 'chart');
+
+const financialChartPhoto = detector.detect('cria uma foto com o grafico dos meus recebimentos');
+assert.equal(financialChartPhoto.intent, 'GERAR_RELATORIO_FINANCEIRO');
+assert.equal(financialChartPhoto.artifactType, 'chart');
+assert.equal(financialChartPhoto.artifactDelivery, 'photo');
 
 const studentDocument = detector.detect('gera um documento com o desempenho do Joao');
 assert.equal(studentDocument.intent, 'GERAR_RELATORIO_ALUNO');

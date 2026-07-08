@@ -1,3 +1,4 @@
+import { deflateSync } from 'zlib';
 import { supabaseAdmin } from './supabase-admin';
 
 export type ConversationIntent =
@@ -189,6 +190,7 @@ type DetectedIntent = {
   period?: string;
   reportType?: string;
   artifactType?: 'spreadsheet' | 'chart' | 'document';
+  artifactDelivery?: 'document' | 'photo';
   note?: string;
   topic?: string;
   needsClarification?: string;
@@ -354,21 +356,74 @@ function bullet(label: string, value?: string | number | null) {
   return value === undefined || value === null || value === '' ? `- ${label}` : `- ${label}: ${value}`;
 }
 
-function escapeCsvCell(value: unknown) {
-  const text = String(value ?? '');
-  return /[";\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-}
-
-function csvContent(rows: unknown[][]) {
-  return rows.map((row) => row.map(escapeCsvCell).join(';')).join('\n');
-}
-
 function escapeXml(value: unknown) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+type SpreadsheetCell = string | number | boolean | null | undefined;
+
+type SpreadsheetSheet = {
+  name: string;
+  title: string;
+  headers: string[];
+  rows: SpreadsheetCell[][];
+  summary?: Array<[string, SpreadsheetCell]>;
+};
+
+function spreadsheetXmlContent(sheets: SpreadsheetSheet[]) {
+  const styles = `
+  <Styles>
+    <Style ss:ID="Title"><Font ss:Bold="1" ss:Size="16" ss:Color="#06133A"/><Interior ss:Color="#DCEBFF" ss:Pattern="Solid"/></Style>
+    <Style ss:ID="Header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#2563EB" ss:Pattern="Solid"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#1D4ED8"/></Borders></Style>
+    <Style ss:ID="Text"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders></Style>
+    <Style ss:ID="Number"><NumberFormat ss:Format="#,##0.00"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders></Style>
+    <Style ss:ID="SummaryLabel"><Font ss:Bold="1" ss:Color="#0F172A"/><Interior ss:Color="#EFF6FF" ss:Pattern="Solid"/></Style>
+    <Style ss:ID="SummaryValue"><Font ss:Bold="1" ss:Color="#0F172A"/><NumberFormat ss:Format="#,##0.00"/><Interior ss:Color="#EFF6FF" ss:Pattern="Solid"/></Style>
+  </Styles>`;
+  const worksheets = sheets.map((sheet) => {
+    const columnCount = Math.max(sheet.headers.length, 2);
+    const columns = Array.from({ length: columnCount }, () => '<Column ss:AutoFitWidth="1" ss:Width="145"/>').join('');
+    const summaryRows = (sheet.summary || [])
+      .map(
+        ([label, value]) =>
+          `<Row><Cell ss:StyleID="SummaryLabel"><Data ss:Type="String">${escapeXml(label)}</Data></Cell><Cell ss:StyleID="SummaryValue">${spreadsheetData(value)}</Cell></Row>`
+      )
+      .join('');
+    const headerRow = `<Row>${sheet.headers.map((header) => `<Cell ss:StyleID="Header"><Data ss:Type="String">${escapeXml(header)}</Data></Cell>`).join('')}</Row>`;
+    const dataRows = sheet.rows
+      .map((row) => `<Row>${row.map((cell) => `<Cell ss:StyleID="${typeof cell === 'number' ? 'Number' : 'Text'}">${spreadsheetData(cell)}</Cell>`).join('')}</Row>`)
+      .join('');
+    return `<Worksheet ss:Name="${escapeXml(sheet.name.slice(0, 31))}">
+      <Table>${columns}
+        <Row><Cell ss:MergeAcross="${Math.max(0, columnCount - 1)}" ss:StyleID="Title"><Data ss:Type="String">${escapeXml(sheet.title)}</Data></Cell></Row>
+        <Row></Row>
+        ${summaryRows}
+        ${summaryRows ? '<Row></Row>' : ''}
+        ${headerRow}
+        ${dataRows}
+      </Table>
+      <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>4</SplitHorizontal><TopRowBottomPane>4</TopRowBottomPane></WorksheetOptions>
+    </Worksheet>`;
+  });
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ ${styles}
+ ${worksheets.join('\n')}
+</Workbook>`;
+}
+
+function spreadsheetData(value: SpreadsheetCell) {
+  if (typeof value === 'number' && Number.isFinite(value)) return `<Data ss:Type="Number">${value}</Data>`;
+  if (typeof value === 'boolean') return `<Data ss:Type="Boolean">${value ? 1 : 0}</Data>`;
+  return `<Data ss:Type="String">${escapeXml(value ?? '')}</Data>`;
 }
 
 function safeFilename(value: string) {
@@ -382,9 +437,13 @@ function safeFilename(value: string) {
 
 function detectArtifactType(text: string): DetectedIntent['artifactType'] {
   if (text.includes('planilha') || text.includes('excel') || text.includes('csv')) return 'spreadsheet';
-  if (text.includes('grafico') || text.includes('imagem')) return 'chart';
+  if (text.includes('grafico') || text.includes('imagem') || text.includes('foto') || text.includes('png')) return 'chart';
   if (text.includes('documento') || text.includes('arquivo') || text.includes('pdf')) return 'document';
   return undefined;
+}
+
+function detectArtifactDelivery(text: string): DetectedIntent['artifactDelivery'] {
+  return text.includes('foto') || text.includes('imagem') || text.includes('png') ? 'photo' : 'document';
 }
 
 function artifactLabel(type?: DetectedIntent['artifactType']) {
@@ -394,9 +453,9 @@ function artifactLabel(type?: DetectedIntent['artifactType']) {
   return 'relatorio';
 }
 
-function artifactFormat(type?: DetectedIntent['artifactType']) {
-  if (type === 'spreadsheet') return 'CSV';
-  if (type === 'chart') return 'SVG';
+function artifactFormat(type?: DetectedIntent['artifactType'], delivery?: DetectedIntent['artifactDelivery']) {
+  if (type === 'spreadsheet') return 'XLS';
+  if (type === 'chart') return delivery === 'photo' ? 'PNG' : 'SVG';
   if (type === 'document') return 'TXT';
   return 'texto';
 }
@@ -426,17 +485,118 @@ function simpleBarChartSvg(input: { title: string; rows: Array<{ label: string; 
 </svg>`;
 }
 
+function crc32(buffer: Buffer) {
+  let crc = 0xffffffff;
+  for (const byte of buffer) {
+    crc ^= byte;
+    for (let index = 0; index < 8; index += 1) crc = crc & 1 ? (crc >>> 1) ^ 0xedb88320 : crc >>> 1;
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function pngChunk(type: string, data: Buffer) {
+  const typeBuffer = Buffer.from(type);
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE(data.length, 0);
+  const checksum = Buffer.alloc(4);
+  checksum.writeUInt32BE(crc32(Buffer.concat([typeBuffer, data])), 0);
+  return Buffer.concat([length, typeBuffer, data, checksum]);
+}
+
+function simpleBarChartPng(input: { rows: Array<{ value: number; color: string }> }) {
+  const width = 900;
+  const height = 420;
+  const data = Buffer.alloc((width * 4 + 1) * height);
+  const max = Math.max(1, ...input.rows.map((row) => row.value));
+  const colors = input.rows.map((row) => hexToRgb(row.color));
+  for (let y = 0; y < height; y += 1) {
+    const rowStart = y * (width * 4 + 1);
+    data[rowStart] = 0;
+    for (let x = 0; x < width; x += 1) {
+      const offset = rowStart + 1 + x * 4;
+      data[offset] = 248;
+      data[offset + 1] = 251;
+      data[offset + 2] = 255;
+      data[offset + 3] = 255;
+    }
+  }
+  input.rows.forEach((row, index) => {
+    const barWidth = Math.max(8, Math.round((row.value / max) * 620));
+    const x = 190;
+    const y = 80 + index * 90;
+    drawRect(data, width, x, y, 620, 42, { r: 226, g: 237, b: 255 });
+    drawRect(data, width, x, y, barWidth, 42, colors[index]);
+  });
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 6;
+  ihdr[10] = 0;
+  ihdr[11] = 0;
+  ihdr[12] = 0;
+  return Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    pngChunk('IHDR', ihdr),
+    pngChunk('IDAT', deflateSync(data)),
+    pngChunk('IEND', Buffer.alloc(0)),
+  ]);
+}
+
+function hexToRgb(value: string) {
+  const normalized = value.replace('#', '');
+  return {
+    r: parseInt(normalized.slice(0, 2), 16) || 37,
+    g: parseInt(normalized.slice(2, 4), 16) || 99,
+    b: parseInt(normalized.slice(4, 6), 16) || 235,
+  };
+}
+
+function drawRect(data: Buffer, width: number, x: number, y: number, rectWidth: number, rectHeight: number, color: { r: number; g: number; b: number }) {
+  for (let yy = Math.max(0, y); yy < Math.min(420, y + rectHeight); yy += 1) {
+    for (let xx = Math.max(0, x); xx < Math.min(width, x + rectWidth); xx += 1) {
+      const offset = yy * (width * 4 + 1) + 1 + xx * 4;
+      data[offset] = color.r;
+      data[offset + 1] = color.g;
+      data[offset + 2] = color.b;
+      data[offset + 3] = 255;
+    }
+  }
+}
+
 async function telegramSendDocument(
   connection: BotConnection,
-  file: { filename: string; content: string; contentType: string; caption: string }
+  file: { filename: string; content: string | Buffer; contentType: string; caption: string }
 ) {
   if (!connection.telegram_chat_id || !process.env.TELEGRAM_BOT_TOKEN) return false;
   try {
     const formData = new FormData();
     formData.append('chat_id', connection.telegram_chat_id);
     formData.append('caption', file.caption.slice(0, 1024));
-    formData.append('document', new Blob([file.content], { type: file.contentType }), file.filename);
+    const content: BlobPart = typeof file.content === 'string' ? file.content : new Uint8Array(file.content);
+    formData.append('document', new Blob([content], { type: file.contentType }), file.filename);
     const response = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendDocument`, {
+      method: 'POST',
+      body: formData,
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function telegramSendPhoto(
+  connection: BotConnection,
+  file: { filename: string; content: Buffer; contentType: string; caption: string }
+) {
+  if (!connection.telegram_chat_id || !process.env.TELEGRAM_BOT_TOKEN) return false;
+  try {
+    const formData = new FormData();
+    formData.append('chat_id', connection.telegram_chat_id);
+    formData.append('caption', file.caption.slice(0, 1024));
+    const content: BlobPart = new Uint8Array(file.content);
+    formData.append('photo', new Blob([content], { type: file.contentType }), file.filename);
+    const response = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendPhoto`, {
       method: 'POST',
       body: formData,
     });
@@ -468,6 +628,7 @@ export class EntityExtractionService {
       period: this.period(text),
       reportType: this.reportType(text),
       artifactType: detectArtifactType(text),
+      artifactDelivery: detectArtifactDelivery(text),
       note: this.note(raw),
       topic: raw,
     };
@@ -836,6 +997,10 @@ function coerceArtifactType(value: unknown): DetectedIntent['artifactType'] {
   return value === 'spreadsheet' || value === 'chart' || value === 'document' ? value : undefined;
 }
 
+function coerceArtifactDelivery(value: unknown): DetectedIntent['artifactDelivery'] {
+  return value === 'photo' || value === 'document' ? value : undefined;
+}
+
 function validateLLMInterpretation(payload: any): InterpretationResult | null {
   if (!payload || typeof payload !== 'object') return null;
   const entities = payload.entities && typeof payload.entities === 'object' ? payload.entities : {};
@@ -849,6 +1014,7 @@ function validateLLMInterpretation(payload: any): InterpretationResult | null {
     period: typeof entities.period === 'string' ? entities.period : undefined,
     reportType: typeof entities.reportType === 'string' ? entities.reportType : typeof entities.report_type === 'string' ? entities.report_type : undefined,
     artifactType: coerceArtifactType(entities.artifactType) || coerceArtifactType(entities.artifact_type),
+    artifactDelivery: coerceArtifactDelivery(entities.artifactDelivery) || coerceArtifactDelivery(entities.artifact_delivery),
     note: typeof entities.note === 'string' ? entities.note : undefined,
     topic: typeof entities.topic === 'string' ? entities.topic : undefined,
     confidence,
@@ -887,7 +1053,7 @@ export class GroqLLMProvider implements LLMProvider {
             {
               role: 'system',
               content:
-                'Voce interpreta mensagens de professores particulares para a LuminaAI. Responda somente JSON valido com: intent, entities, confidence, missing_fields e natural_response. Nunca execute acoes. Use apenas os dados fornecidos. Se o professor pedir planilha, grafico ou documento, preencha entities.artifactType com spreadsheet, chart ou document. Se tiver duvida, reduza a confidence.',
+                'Voce interpreta mensagens de professores particulares para a LuminaAI. Responda somente JSON valido com: intent, entities, confidence, missing_fields e natural_response. Nunca execute acoes. Use apenas os dados fornecidos. Se o professor pedir planilha, grafico ou documento, preencha entities.artifactType com spreadsheet, chart ou document. Se pedir grafico como foto, imagem ou png, preencha entities.artifactDelivery com photo. Se tiver duvida, reduza a confidence.',
             },
             {
               role: 'user',
@@ -1364,11 +1530,11 @@ export class ConversationalAssistantService {
     if (detected.intent === 'LISTAR_PAGAMENTOS_PENDENTES' || detected.intent === 'LISTAR_PENDENCIAS') return this.pendingPayments(context);
     if (detected.intent === 'LISTAR_ALUNOS') return this.studentsList(context);
     if (detected.intent === 'CONSULTAR_FINANCEIRO') return this.financeSummary(context);
-    if (detected.intent === 'GERAR_RELATORIO_FINANCEIRO') return this.financeReport(connection, context, detected.period || 'mes atual', detected.artifactType);
-    if (detected.intent === 'GERAR_RELATORIO_ALUNOS') return this.studentsReport(connection, context, detected.period || 'mes atual', detected.artifactType);
+    if (detected.intent === 'GERAR_RELATORIO_FINANCEIRO') return this.financeReport(connection, context, detected.period || 'mes atual', detected.artifactType, detected.artifactDelivery);
+    if (detected.intent === 'GERAR_RELATORIO_ALUNOS') return this.studentsReport(connection, context, detected.period || 'mes atual', detected.artifactType, detected.artifactDelivery);
     if (detected.intent === 'RESUMIR_DADOS') return this.attentionSummary(context);
     if (detected.intent === 'CONSULTAR_ALUNO') return this.studentSummary(context, detected.studentName);
-    if (detected.intent === 'GERAR_RELATORIO_ALUNO') return this.studentReport(connection, context, detected.studentName, detected.artifactType);
+    if (detected.intent === 'GERAR_RELATORIO_ALUNO') return this.studentReport(connection, context, detected.studentName, detected.artifactType, detected.artifactDelivery);
     if (detected.intent === 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO' || detected.intent === 'GERAR_MENSAGEM_PARA_RESPONSAVEL') return this.parentText(context, detected.studentName, detected.topic || originalMessage);
     if (detected.intent === 'CRIAR_AULA') return this.prepareCreateClass(connection, context, detected, originalMessage);
     if (detected.intent === 'ALTERAR_AULA') return this.prepareUpdateClass(connection, context, detected, originalMessage);
@@ -1426,6 +1592,7 @@ export class ConversationalAssistantService {
       '- Como foi a evolucao da Maria nas ultimas aulas?',
       '- Me mande uma planilha com o relatorio financeiro mensal.',
       '- Crie um grafico dos meus recebimentos.',
+      '- Crie uma foto com o grafico dos meus recebimentos.',
       '',
       'Quando uma acao alterar dados, eu sempre vou pedir confirmacao antes.',
       '',
@@ -1535,20 +1702,20 @@ export class ConversationalAssistantService {
     ]);
   }
 
-  private async financeReport(connection: BotConnection, context: TeacherContext, period: string, artifactType?: DetectedIntent['artifactType']) {
+  private async financeReport(connection: BotConnection, context: TeacherContext, period: string, artifactType?: DetectedIntent['artifactType'], artifactDelivery?: DetectedIntent['artifactDelivery']) {
     const paidRows = context.payments.filter((item) => item.status === 'paid');
     const pendingRows = this.pendingPaymentRows(context);
     const paid = paidRows.reduce((sum, item) => sum + Number(item.paid_amount || item.amount || 0), 0);
     const pending = pendingRows.reduce((sum, item) => sum + Number(item.amount || 0) - Number(item.paid_amount || 0), 0);
     if (artifactType) {
-      const file = this.financeArtifact(period, artifactType, paidRows, pendingRows, paid, pending);
-      const sent = await telegramSendDocument(connection, file);
+      const file = this.financeArtifact(period, artifactType, paidRows, pendingRows, paid, pending, artifactDelivery);
+      const sent = file.sendAs === 'photo' ? await telegramSendPhoto(connection, file as any) : await telegramSendDocument(connection, file);
       return botMessage([
         sent ? `Preparei e enviei o ${artifactLabel(artifactType)} do relatorio financeiro.` : `Preparei o ${artifactLabel(artifactType)}, mas nao consegui enviar o arquivo pelo Telegram agora.`,
         '',
         '*Arquivo:*',
         bullet('Tipo', artifactLabel(artifactType)),
-        bullet('Formato', artifactFormat(artifactType)),
+        bullet('Formato', artifactFormat(artifactType, artifactDelivery)),
         bullet('Periodo', period),
         '',
         sent ? 'Deseja que eu gere outro formato tambem?' : 'Tente novamente em alguns minutos ou peca outro formato.',
@@ -1584,37 +1751,58 @@ export class ConversationalAssistantService {
     paidRows: PaymentLite[],
     pendingRows: PaymentLite[],
     paid: number,
-    pending: number
+    pending: number,
+    artifactDelivery?: DetectedIntent['artifactDelivery']
   ) {
     const baseName = `relatorio-financeiro-${safeFilename(period)}-${monthReference()}`;
     if (artifactType === 'spreadsheet') {
-      const rows: unknown[][] = [
-        ['Categoria', 'Aluno', 'Mes', 'Status', 'Valor total', 'Valor pago', 'Valor pendente', 'Vencimento'],
-        ...paidRows.map((item) => ['Recebido', item.students?.full_name || 'Aluno', item.month_reference, shortStatus(item.status), item.amount, item.paid_amount || item.amount, 0, item.due_date || '']),
-        ...pendingRows.map((item) => ['A receber', item.students?.full_name || 'Aluno', item.month_reference, shortStatus(item.status), item.amount, item.paid_amount || 0, Number(item.amount || 0) - Number(item.paid_amount || 0), item.due_date || '']),
-        [],
-        ['Resumo', 'Total recebido', paid],
-        ['Resumo', 'Total pendente', pending],
-      ];
       return {
-        filename: `${baseName}.csv`,
-        content: csvContent(rows),
-        contentType: 'text/csv;charset=utf-8',
-        caption: 'Relatorio financeiro gerado pela LuminaAI.',
+        filename: `${baseName}.xls`,
+        content: spreadsheetXmlContent([
+          {
+            name: 'Financeiro',
+            title: 'Relatorio financeiro mensal',
+            summary: [
+              ['Periodo', period],
+              ['Total recebido', paid],
+              ['Total pendente', pending],
+              ['Pagamentos registrados', paidRows.length + pendingRows.length],
+            ],
+            headers: ['Categoria', 'Aluno', 'Mes', 'Status', 'Valor total', 'Valor pago', 'Valor pendente', 'Vencimento'],
+            rows: [
+              ...paidRows.map((item) => ['Recebido', item.students?.full_name || 'Aluno', item.month_reference, shortStatus(item.status), Number(item.amount || 0), Number(item.paid_amount || item.amount || 0), 0, item.due_date || '']),
+              ...pendingRows.map((item) => ['A receber', item.students?.full_name || 'Aluno', item.month_reference, shortStatus(item.status), Number(item.amount || 0), Number(item.paid_amount || 0), Number(item.amount || 0) - Number(item.paid_amount || 0), item.due_date || '']),
+            ],
+          },
+        ]),
+        contentType: 'application/vnd.ms-excel;charset=utf-8',
+        caption: 'Planilha estruturada do relatorio financeiro gerada pela LuminaAI.',
+        sendAs: 'document' as const,
       };
     }
     if (artifactType === 'chart') {
+      const rows = [
+        { label: 'Recebido', value: paid, color: '#60a5fa' },
+        { label: 'A receber', value: pending, color: '#f59e0b' },
+      ];
+      if (artifactDelivery === 'photo') {
+        return {
+          filename: `${baseName}.png`,
+          content: simpleBarChartPng({ rows }),
+          contentType: 'image/png',
+          caption: `Grafico financeiro gerado pela LuminaAI.\nRecebido: ${currency(paid)}\nA receber: ${currency(pending)}\nPeriodo: ${period}`,
+          sendAs: 'photo' as const,
+        };
+      }
       return {
         filename: `${baseName}.svg`,
         content: simpleBarChartSvg({
           title: 'Relatorio financeiro',
-          rows: [
-            { label: 'Recebido', value: paid, color: '#60a5fa' },
-            { label: 'A receber', value: pending, color: '#f59e0b' },
-          ],
+          rows,
         }),
         contentType: 'image/svg+xml;charset=utf-8',
         caption: 'Grafico financeiro gerado pela LuminaAI.',
+        sendAs: 'document' as const,
       };
     }
     return {
@@ -1634,6 +1822,7 @@ export class ConversationalAssistantService {
       ].join('\n'),
       contentType: 'text/plain;charset=utf-8',
       caption: 'Documento financeiro gerado pela LuminaAI.',
+      sendAs: 'document' as const,
     };
   }
 
@@ -1655,7 +1844,7 @@ export class ConversationalAssistantService {
     ]);
   }
 
-  private async studentsReport(connection: BotConnection, context: TeacherContext, period: string, artifactType?: DetectedIntent['artifactType']) {
+  private async studentsReport(connection: BotConnection, context: TeacherContext, period: string, artifactType?: DetectedIntent['artifactType'], artifactDelivery?: DetectedIntent['artifactDelivery']) {
     const active = context.students.filter((item) => item.status === 'active');
     const today = todayDate();
     const recentLimit = addDays(today, -30);
@@ -1664,14 +1853,14 @@ export class ConversationalAssistantService {
     const pending = new Set(this.pendingPaymentRows(context).map((item) => item.student_id));
     const withoutRecent = active.filter((student) => !studentsWithRecentClass.has(student.id));
     if (artifactType) {
-      const file = this.studentsArtifact(period, artifactType, context, active, studentsWithRecentClass, studentsWithAbsence, pending, withoutRecent);
-      const sent = await telegramSendDocument(connection, file);
+      const file = this.studentsArtifact(period, artifactType, context, active, studentsWithRecentClass, studentsWithAbsence, pending, withoutRecent, artifactDelivery);
+      const sent = file.sendAs === 'photo' ? await telegramSendPhoto(connection, file as any) : await telegramSendDocument(connection, file);
       return botMessage([
         sent ? `Preparei e enviei o ${artifactLabel(artifactType)} do relatorio dos alunos.` : `Preparei o ${artifactLabel(artifactType)}, mas nao consegui enviar o arquivo pelo Telegram agora.`,
         '',
         '*Arquivo:*',
         bullet('Tipo', artifactLabel(artifactType)),
-        bullet('Formato', artifactFormat(artifactType)),
+        bullet('Formato', artifactFormat(artifactType, artifactDelivery)),
         bullet('Periodo', period),
         '',
         sent ? 'Deseja que eu gere um relatorio individual de algum aluno?' : 'Tente novamente em alguns minutos ou peca outro formato.',
@@ -1704,42 +1893,64 @@ export class ConversationalAssistantService {
     studentsWithRecentClass: Set<string>,
     studentsWithAbsence: Set<string>,
     pending: Set<string>,
-    withoutRecent: StudentLite[]
+    withoutRecent: StudentLite[],
+    artifactDelivery?: DetectedIntent['artifactDelivery']
   ) {
     const baseName = `relatorio-alunos-${safeFilename(period)}-${monthReference()}`;
     if (artifactType === 'spreadsheet') {
-      const rows: unknown[][] = [
-        ['Aluno', 'Materia', 'Status', 'Aula recente', 'Possui falta registrada', 'Pagamento pendente'],
-        ...context.students.map((student) => [
-          student.full_name,
-          student.subject || '',
-          shortStatus(student.status),
-          studentsWithRecentClass.has(student.id) ? 'Sim' : 'Nao',
-          studentsWithAbsence.has(student.id) ? 'Sim' : 'Nao',
-          pending.has(student.id) ? 'Sim' : 'Nao',
-        ]),
-      ];
       return {
-        filename: `${baseName}.csv`,
-        content: csvContent(rows),
-        contentType: 'text/csv;charset=utf-8',
-        caption: 'Relatorio de alunos gerado pela LuminaAI.',
+        filename: `${baseName}.xls`,
+        content: spreadsheetXmlContent([
+          {
+            name: 'Alunos',
+            title: 'Relatorio geral dos alunos',
+            summary: [
+              ['Periodo', period],
+              ['Alunos ativos', active.length],
+              ['Com aula recente', active.filter((student) => studentsWithRecentClass.has(student.id)).length],
+              ['Com pendencia financeira', active.filter((student) => pending.has(student.id)).length],
+            ],
+            headers: ['Aluno', 'Materia', 'Status', 'Aula recente', 'Possui falta registrada', 'Pagamento pendente'],
+            rows: context.students.map((student) => [
+              student.full_name,
+              student.subject || '',
+              shortStatus(student.status),
+              studentsWithRecentClass.has(student.id) ? 'Sim' : 'Nao',
+              studentsWithAbsence.has(student.id) ? 'Sim' : 'Nao',
+              pending.has(student.id) ? 'Sim' : 'Nao',
+            ]),
+          },
+        ]),
+        contentType: 'application/vnd.ms-excel;charset=utf-8',
+        caption: 'Planilha estruturada de alunos gerada pela LuminaAI.',
+        sendAs: 'document' as const,
       };
     }
     if (artifactType === 'chart') {
+      const rows = [
+        { label: 'Alunos ativos', value: active.length, color: '#2563eb' },
+        { label: 'Com aula recente', value: active.filter((student) => studentsWithRecentClass.has(student.id)).length, color: '#10b981' },
+        { label: 'Sem aula recente', value: withoutRecent.length, color: '#f59e0b' },
+        { label: 'Com pendencia', value: active.filter((student) => pending.has(student.id)).length, color: '#ef4444' },
+      ];
+      if (artifactDelivery === 'photo') {
+        return {
+          filename: `${baseName}.png`,
+          content: simpleBarChartPng({ rows }),
+          contentType: 'image/png',
+          caption: `Grafico de alunos gerado pela LuminaAI.\nAtivos: ${active.length}\nCom aula recente: ${active.filter((student) => studentsWithRecentClass.has(student.id)).length}\nCom pendencia: ${active.filter((student) => pending.has(student.id)).length}`,
+          sendAs: 'photo' as const,
+        };
+      }
       return {
         filename: `${baseName}.svg`,
         content: simpleBarChartSvg({
           title: 'Resumo dos alunos',
-          rows: [
-            { label: 'Alunos ativos', value: active.length, color: '#2563eb' },
-            { label: 'Com aula recente', value: active.filter((student) => studentsWithRecentClass.has(student.id)).length, color: '#10b981' },
-            { label: 'Sem aula recente', value: withoutRecent.length, color: '#f59e0b' },
-            { label: 'Com pendencia', value: active.filter((student) => pending.has(student.id)).length, color: '#ef4444' },
-          ],
+          rows,
         }),
         contentType: 'image/svg+xml;charset=utf-8',
         caption: 'Grafico de alunos gerado pela LuminaAI.',
+        sendAs: 'document' as const,
       };
     }
     return {
@@ -1758,6 +1969,7 @@ export class ConversationalAssistantService {
       ].join('\n'),
       contentType: 'text/plain;charset=utf-8',
       caption: 'Documento de alunos gerado pela LuminaAI.',
+      sendAs: 'document' as const,
     };
   }
 
@@ -1822,7 +2034,7 @@ export class ConversationalAssistantService {
     ]);
   }
 
-  private async studentReport(connection: BotConnection, context: TeacherContext, studentName?: string, artifactType?: DetectedIntent['artifactType']) {
+  private async studentReport(connection: BotConnection, context: TeacherContext, studentName?: string, artifactType?: DetectedIntent['artifactType'], artifactDelivery?: DetectedIntent['artifactDelivery']) {
     const { student, error } = this.dataContext.findStudent(context, studentName);
     if (!student) return error || 'Nao encontrei esse aluno.';
     const reports = context.reports.filter((item) => item.student_id === student.id).slice(0, 5);
@@ -1838,14 +2050,14 @@ export class ConversationalAssistantService {
     const scores = reports.map((item) => item.learning_score).filter((score): score is number => typeof score === 'number');
     const avg = scores.length ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : null;
     if (artifactType) {
-      const file = this.studentArtifact(student, reports, artifactType, avg);
-      const sent = await telegramSendDocument(connection, file);
+      const file = this.studentArtifact(student, reports, artifactType, avg, artifactDelivery);
+      const sent = file.sendAs === 'photo' ? await telegramSendPhoto(connection, file as any) : await telegramSendDocument(connection, file);
       return botMessage([
         sent ? `Preparei e enviei o ${artifactLabel(artifactType)} da evolucao de ${student.full_name}.` : `Preparei o ${artifactLabel(artifactType)}, mas nao consegui enviar o arquivo pelo Telegram agora.`,
         '',
         '*Arquivo:*',
         bullet('Tipo', artifactLabel(artifactType)),
-        bullet('Formato', artifactFormat(artifactType)),
+        bullet('Formato', artifactFormat(artifactType, artifactDelivery)),
         bullet('Aluno', student.full_name),
         '',
         sent ? 'Deseja transformar essa analise em mensagem para o responsavel?' : 'Tente novamente em alguns minutos ou peca outro formato.',
@@ -1869,27 +2081,37 @@ export class ConversationalAssistantService {
     ]);
   }
 
-  private studentArtifact(student: StudentLite, reports: LessonReportLite[], artifactType: DetectedIntent['artifactType'], average: number | null) {
+  private studentArtifact(student: StudentLite, reports: LessonReportLite[], artifactType: DetectedIntent['artifactType'], average: number | null, artifactDelivery?: DetectedIntent['artifactDelivery']) {
     const baseName = `evolucao-${safeFilename(student.full_name)}-${monthReference()}`;
     if (artifactType === 'spreadsheet') {
-      const rows: unknown[][] = [
-        ['Data', 'Materia', 'Pontuacao', 'Resumo', 'Conteudo', 'Duvidas detectadas', 'Pontos de reforco', 'Proxima recomendacao'],
-        ...reports.map((report) => [
-          report.created_at.slice(0, 10),
-          report.class_schedules?.subject || report.students?.subject || student.subject || '',
-          report.learning_score ?? '',
-          report.summary || '',
-          report.taught_content || '',
-          report.detected_doubts || report.student_questions || '',
-          report.reinforcement_points || '',
-          report.next_recommendation || '',
-        ]),
-      ];
       return {
-        filename: `${baseName}.csv`,
-        content: csvContent(rows),
-        contentType: 'text/csv;charset=utf-8',
-        caption: 'Planilha de evolucao gerada pela LuminaAI.',
+        filename: `${baseName}.xls`,
+        content: spreadsheetXmlContent([
+          {
+            name: 'Evolucao',
+            title: `Evolucao de ${student.full_name}`,
+            summary: [
+              ['Aluno', student.full_name],
+              ['Materia', student.subject || 'sem materia cadastrada'],
+              ['Media recente', average ?? 'sem pontuacao suficiente'],
+              ['Relatorios analisados', reports.length],
+            ],
+            headers: ['Data', 'Materia', 'Pontuacao', 'Resumo', 'Conteudo', 'Duvidas detectadas', 'Pontos de reforco', 'Proxima recomendacao'],
+            rows: reports.map((report) => [
+              report.created_at.slice(0, 10),
+              report.class_schedules?.subject || report.students?.subject || student.subject || '',
+              typeof report.learning_score === 'number' ? report.learning_score : '',
+              report.summary || '',
+              report.taught_content || '',
+              report.detected_doubts || report.student_questions || '',
+              report.reinforcement_points || '',
+              report.next_recommendation || '',
+            ]),
+          },
+        ]),
+        contentType: 'application/vnd.ms-excel;charset=utf-8',
+        caption: 'Planilha estruturada de evolucao gerada pela LuminaAI.',
+        sendAs: 'document' as const,
       };
     }
     if (artifactType === 'chart') {
@@ -1897,6 +2119,15 @@ export class ConversationalAssistantService {
         .filter((report) => typeof report.learning_score === 'number')
         .map((report, index) => ({ label: `Aula ${reports.length - index}`, value: Number(report.learning_score || 0), color: '#8b5cf6' }))
         .reverse();
+      if (artifactDelivery === 'photo') {
+        return {
+          filename: `${baseName}.png`,
+          content: simpleBarChartPng({ rows: scored.length ? scored : [{ label: 'Sem pontuacao', value: 0, color: '#94a3b8' }] }),
+          contentType: 'image/png',
+          caption: `Grafico de evolucao gerado pela LuminaAI.\nAluno: ${student.full_name}\nMedia recente: ${average != null ? `${average} de 100` : 'sem pontuacao suficiente'}\nRelatorios analisados: ${reports.length}`,
+          sendAs: 'photo' as const,
+        };
+      }
       return {
         filename: `${baseName}.svg`,
         content: simpleBarChartSvg({
@@ -1905,6 +2136,7 @@ export class ConversationalAssistantService {
         }),
         contentType: 'image/svg+xml;charset=utf-8',
         caption: 'Grafico de evolucao gerado pela LuminaAI.',
+        sendAs: 'document' as const,
       };
     }
     return {
@@ -1923,6 +2155,7 @@ export class ConversationalAssistantService {
       ].join('\n'),
       contentType: 'text/plain;charset=utf-8',
       caption: 'Documento de evolucao gerado pela LuminaAI.',
+      sendAs: 'document' as const,
     };
   }
 
