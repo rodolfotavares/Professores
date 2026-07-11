@@ -253,6 +253,27 @@ export async function createOrUpdateGoogleEventForClass(teacherId: string, class
   return { synced: true, action: 'created' as const };
 }
 
+export async function createStandaloneGoogleCalendarEvent(teacherId: string, input: {
+  title: string;
+  description?: string | null;
+  class_date: string;
+  class_time: string;
+  duration_minutes?: number | null;
+}) {
+  const connection = await getValidGoogleConnection(teacherId);
+  if (!connection) return { synced: false, reason: 'not_connected' as const };
+
+  await googleCalendarFetch(connection.access_token, '/calendars/primary/events', {
+    method: 'POST',
+    body: JSON.stringify({
+      summary: input.title,
+      description: input.description || 'Evento criado pelo LumiBot.',
+      ...toGoogleDateTime(input.class_date, input.class_time, input.duration_minutes || 60),
+    }),
+  });
+  return { synced: true, action: 'created' as const };
+}
+
 export async function listGoogleCalendarEvents(teacherId: string, date: string) {
   const connection = await getValidGoogleConnection(teacherId);
   if (!connection) return { connected: false as const, events: [] };

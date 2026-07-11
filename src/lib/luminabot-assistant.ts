@@ -3,6 +3,7 @@ import { supabaseAdmin } from './supabase-admin';
 import {
   createGmailDraft,
   createOrUpdateGoogleEventForClass,
+  createStandaloneGoogleCalendarEvent,
   deleteGoogleEventForClass,
   getValidGoogleConnection,
   listGoogleCalendarEvents,
@@ -10,6 +11,8 @@ import {
   sendGmailMessage,
   syncTeacherClassesToGoogle,
 } from './google-calendar';
+
+type CalendarTarget = 'LUMINAI' | 'GOOGLE_CALENDAR' | 'BOTH' | 'UNSPECIFIED';
 
 export type ConversationIntent =
   | 'CONSULTAR_AGENDA'
@@ -103,8 +106,21 @@ type LessonReportLite = {
 
 type BotPendingAction =
   | {
+      type: 'SELECT_CALENDAR_TARGET';
+      intent: ConversationIntent;
+      teacher_id?: string;
+      telegram_user_id?: string | null;
+      entities?: Record<string, unknown>;
+      detected: DetectedIntent;
+      original_message: string;
+      summary: string;
+      expires_at?: string;
+      status?: 'waiting_calendar_target';
+    }
+  | {
       type: 'CREATE_CLASS';
       intent: 'CRIAR_AULA';
+      target_calendar?: CalendarTarget;
       teacher_id?: string;
       telegram_user_id?: string | null;
       entities?: Record<string, unknown>;
@@ -122,6 +138,7 @@ type BotPendingAction =
   | {
       type: 'UPDATE_CLASS';
       intent: 'ALTERAR_AULA';
+      target_calendar?: CalendarTarget;
       teacher_id?: string;
       telegram_user_id?: string | null;
       entities?: Record<string, unknown>;
@@ -136,6 +153,7 @@ type BotPendingAction =
   | {
       type: 'CANCEL_CLASS';
       intent: 'CANCELAR_AULA';
+      target_calendar?: CalendarTarget;
       teacher_id?: string;
       telegram_user_id?: string | null;
       entities?: Record<string, unknown>;
@@ -240,6 +258,7 @@ type DetectedIntent = {
   artifactDelivery?: 'document' | 'photo';
   note?: string;
   topic?: string;
+  targetCalendar?: CalendarTarget;
   needsClarification?: string;
 };
 
@@ -408,6 +427,48 @@ function botMessage(lines: Array<string | false | null | undefined>) {
 
 function bullet(label: string, value?: string | number | null) {
   return value === undefined || value === null || value === '' ? `- ${label}` : `- ${label}: ${value}`;
+}
+
+export class CalendarTargetResolver {
+  detect(message: string): CalendarTarget {
+    const text = normalize(message);
+    if (/(nos dois|em ambos|as duas|duas agendas|app e google|luminaai e google|lumina e google|no app e no google|sincroniza nos dois)/.test(text)) return 'BOTH';
+    if (/(google agenda|agenda do google|google calendar|\bcalendar\b|so no google|apenas no google|no google\b)/.test(text)) return 'GOOGLE_CALENDAR';
+    if (/(luminaai|lumina ai|agenda da lumina|no app|na plataforma|so no app|apenas no app|só no app|na lumina)/.test(text)) return 'LUMINAI';
+    return 'UNSPECIFIED';
+  }
+
+  fromChoice(message: string): CalendarTarget {
+    const text = normalize(message);
+    if (text === '1' || text.includes('opcao 1') || text.includes('lumina') || text.includes('no app') || text.includes('so no app') || text.includes('plataforma')) return 'LUMINAI';
+    if (text === '2' || text.includes('opcao 2') || text.includes('google') || text.includes('calendar')) return 'GOOGLE_CALENDAR';
+    if (text === '3' || text.includes('opcao 3') || text.includes('nos dois') || text.includes('ambos') || text.includes('as duas') || text.includes('app e google')) return 'BOTH';
+    return 'UNSPECIFIED';
+  }
+}
+
+const calendarTargetResolver = new CalendarTargetResolver();
+
+function calendarTargetLabel(target?: CalendarTarget) {
+  if (target === 'LUMINAI') return 'LuminaAI';
+  if (target === 'GOOGLE_CALENDAR') return 'Google Agenda';
+  if (target === 'BOTH') return 'LuminaAI e Google Agenda';
+  return 'nao especificado';
+}
+
+function calendarActionVerb(intent: ConversationIntent) {
+  if (intent === 'CONSULTAR_AGENDA') return 'consultar';
+  if (intent === 'CANCELAR_AULA') return 'cancelar';
+  if (intent === 'ALTERAR_AULA') return 'remarcar';
+  return 'salvar';
+}
+
+function isCalendarIntent(intent: ConversationIntent) {
+  return intent === 'CONSULTAR_AGENDA' || intent === 'CRIAR_AULA' || intent === 'ALTERAR_AULA' || intent === 'CANCELAR_AULA';
+}
+
+function coerceCalendarTarget(value: unknown): CalendarTarget | undefined {
+  return value === 'LUMINAI' || value === 'GOOGLE_CALENDAR' || value === 'BOTH' || value === 'UNSPECIFIED' ? value : undefined;
 }
 
 async function safeGoogleSync(action: () => Promise<{ synced: boolean; action?: string; reason?: string }>) {
@@ -697,6 +758,7 @@ export class EntityExtractionService {
       artifactDelivery: detectArtifactDelivery(text),
       note: this.note(raw),
       topic: raw,
+      targetCalendar: calendarTargetResolver.detect(raw),
     };
   }
 
@@ -859,7 +921,9 @@ export class IntentDetectionService {
       text.includes('aula marcada') ||
       text.includes('aluno marcado') ||
       text.includes('agenda da semana') ||
-      text.includes('agenda do mes')
+      text.includes('agenda do mes') ||
+      text.includes('duas agendas') ||
+      text.includes('as duas agendas')
     ) {
       return { intent: 'CONSULTAR_AGENDA', ...entities, date: entities.date || parseDate(raw) };
     }
@@ -1109,6 +1173,7 @@ function validateLLMInterpretation(payload: any): InterpretationResult | null {
     artifactDelivery: coerceArtifactDelivery(entities.artifactDelivery) || coerceArtifactDelivery(entities.artifact_delivery),
     note: typeof entities.note === 'string' ? entities.note : undefined,
     topic: typeof entities.topic === 'string' ? entities.topic : undefined,
+    targetCalendar: coerceCalendarTarget(entities.targetCalendar) || coerceCalendarTarget(entities.target_calendar),
     confidence,
     source: 'llm',
     missing_fields: Array.isArray(payload.missing_fields) ? payload.missing_fields.filter((item: unknown) => typeof item === 'string') : [],
@@ -1145,7 +1210,7 @@ export class GroqLLMProvider implements LLMProvider {
             {
               role: 'system',
               content:
-                'Voce interpreta mensagens de professores particulares para a LuminaAI. Responda somente JSON valido com: intent, entities, confidence, missing_fields e natural_response. Nunca execute acoes. Use apenas os dados fornecidos. Se o professor pedir planilha, grafico ou documento, preencha entities.artifactType com spreadsheet, chart ou document. Se pedir grafico como foto, imagem ou png, preencha entities.artifactDelivery com photo. Se tiver duvida, reduza a confidence.',
+                'Voce interpreta mensagens de professores particulares para a LuminaAI. Responda somente JSON valido com: intent, entities, confidence, missing_fields e natural_response. Nunca execute acoes. Use apenas os dados fornecidos. Se o professor pedir planilha, grafico ou documento, preencha entities.artifactType com spreadsheet, chart ou document. Se pedir grafico como foto, imagem ou png, preencha entities.artifactDelivery com photo. Para pedidos de agenda ou aula, preencha entities.targetCalendar com LUMINAI, GOOGLE_CALENDAR, BOTH ou UNSPECIFIED. Se tiver duvida, reduza a confidence.',
             },
             {
               role: 'user',
@@ -1309,25 +1374,47 @@ export class BotInteractionLogService extends BotInteractionLog {}
 export class BotActionExecutor {
   async execute(connection: BotConnection, action: BotPendingAction) {
     if (action.type === 'CREATE_CLASS') {
-      const { data, error } = await supabaseAdmin.from('class_schedules').insert({
-        teacher_id: connection.teacher_id,
-        student_id: action.student_id,
-        student_user_id: action.student_user_id,
-        subject: action.subject,
-        class_date: action.class_date,
-        class_time: action.class_time,
-        duration_minutes: action.duration_minutes,
-        status: 'scheduled',
-      }).select('id').single();
-      if (error) throw error;
-      const googleSync = data?.id ? await safeGoogleSync(() => createOrUpdateGoogleEventForClass(connection.teacher_id, data.id)) : null;
+      const target = action.target_calendar || 'LUMINAI';
+      let luminaResult: string | null = null;
+      let googleSync: string | null = null;
+
+      if (target === 'LUMINAI' || target === 'BOTH') {
+        const { data, error } = await supabaseAdmin.from('class_schedules').insert({
+          teacher_id: connection.teacher_id,
+          student_id: action.student_id,
+          student_user_id: action.student_user_id,
+          subject: action.subject,
+          class_date: action.class_date,
+          class_time: action.class_time,
+          duration_minutes: action.duration_minutes,
+          status: 'scheduled',
+        }).select('id').single();
+        if (error) throw error;
+        luminaResult = '- LuminaAI: aula salva.';
+        if (target === 'BOTH' && data?.id) {
+          googleSync = await safeGoogleSync(() => createOrUpdateGoogleEventForClass(connection.teacher_id, data.id));
+        }
+      }
+
+      if (target === 'GOOGLE_CALENDAR') {
+        googleSync = await safeGoogleSync(() => createStandaloneGoogleCalendarEvent(connection.teacher_id, {
+          title: `Aula - ${action.student_name}`,
+          description: action.subject ? `Materia: ${action.subject}` : 'Aula criada pelo LumiBot.',
+          class_date: action.class_date,
+          class_time: action.class_time,
+          duration_minutes: action.duration_minutes,
+        }));
+      }
+
       return botMessage([
         'Aula marcada com sucesso.',
         '',
-        '*📚 Aula:*',
+        '*Aula:*',
         bullet('Aluno', action.student_name),
         bullet('Data', formatDate(action.class_date)),
         bullet('Horario', formatTime(action.class_time)),
+        bullet('Destino', calendarTargetLabel(target)),
+        luminaResult,
         googleSync,
         '',
         'Deseja registrar alguma observacao para essa aula?',
@@ -1359,24 +1446,34 @@ export class BotActionExecutor {
     }
 
     if (action.type === 'UPDATE_CLASS') {
-      const { error } = await supabaseAdmin
-        .from('class_schedules')
-        .update({
-          class_date: action.class_date,
-          class_time: action.class_time,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', action.class_id)
-        .eq('teacher_id', connection.teacher_id);
-      if (error) throw error;
-      const googleSync = await safeGoogleSync(() => createOrUpdateGoogleEventForClass(connection.teacher_id, action.class_id));
+      const target = action.target_calendar || 'LUMINAI';
+      let luminaResult: string | null = null;
+      let googleSync: string | null = null;
+      if (target === 'LUMINAI' || target === 'BOTH') {
+        const { error } = await supabaseAdmin
+          .from('class_schedules')
+          .update({
+            class_date: action.class_date,
+            class_time: action.class_time,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', action.class_id)
+          .eq('teacher_id', connection.teacher_id);
+        if (error) throw error;
+        luminaResult = '- LuminaAI: aula remarcada.';
+      }
+      if (target === 'GOOGLE_CALENDAR' || target === 'BOTH') {
+        googleSync = await safeGoogleSync(() => createOrUpdateGoogleEventForClass(connection.teacher_id, action.class_id));
+      }
       return botMessage([
         'Aula remarcada com sucesso.',
         '',
-        '*📚 Novo horario:*',
+        '*Novo horario:*',
         bullet('Aluno', action.student_name),
         bullet('Data', formatDate(action.class_date)),
         bullet('Horario', formatTime(action.class_time)),
+        bullet('Destino', calendarTargetLabel(target)),
+        luminaResult,
         googleSync,
         '',
         'Deseja enviar uma mensagem de confirmacao ao responsavel?',
@@ -1384,21 +1481,30 @@ export class BotActionExecutor {
     }
 
     if (action.type === 'CANCEL_CLASS') {
-      const { error } = await supabaseAdmin
-        .from('class_schedules')
-        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
-        .in('id', action.class_ids)
-        .eq('teacher_id', connection.teacher_id);
-      if (error) throw error;
-      const syncResults = await Promise.all(action.class_ids.map((id) => safeGoogleSync(() => deleteGoogleEventForClass(connection.teacher_id, id))));
+      const target = action.target_calendar || 'LUMINAI';
+      let luminaResult: string | null = null;
+      if (target === 'LUMINAI' || target === 'BOTH') {
+        const { error } = await supabaseAdmin
+          .from('class_schedules')
+          .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+          .in('id', action.class_ids)
+          .eq('teacher_id', connection.teacher_id);
+        if (error) throw error;
+        luminaResult = '- LuminaAI: aula cancelada.';
+      }
+      const syncResults = target === 'GOOGLE_CALENDAR' || target === 'BOTH'
+        ? await Promise.all(action.class_ids.map((id) => safeGoogleSync(() => deleteGoogleEventForClass(connection.teacher_id, id))))
+        : [];
       const googleSync = syncResults.find((item) => item?.includes('Google Agenda')) || null;
       return botMessage([
         action.class_ids.length === 1 ? 'Aula cancelada com sucesso.' : 'Aulas canceladas com sucesso.',
         '',
-        '*📚 Cancelamento:*',
+        '*Cancelamento:*',
         bullet('Quantidade', action.class_ids.length),
         action.student_name ? bullet('Aluno', action.student_name) : null,
         action.class_date ? bullet('Data', formatDate(action.class_date)) : null,
+        bullet('Destino', calendarTargetLabel(target)),
+        luminaResult,
         googleSync,
         '',
         'Deseja reagendar alguma dessas aulas?',
@@ -1573,6 +1679,36 @@ export class ConversationalAssistantService {
       ]);
     }
 
+    if (action.type === 'SELECT_CALENDAR_TARGET') {
+      const target = calendarTargetResolver.fromChoice(message);
+      if (target === 'UNSPECIFIED') {
+        return botMessage([
+          'Preciso que voce escolha onde devo mexer nessa agenda.',
+          '',
+          '*Opcoes:*',
+          '- 1. Apenas na LuminaAI',
+          '- 2. Apenas no Google Agenda',
+          '- 3. Nos dois',
+          '',
+          'Responda com 1, 2, 3 ou escreva o nome da opcao.',
+        ]);
+      }
+      await this.state.clear(connection);
+      const context = await this.dataContext.build(connection.teacher_id);
+      return this.respond(
+        connection,
+        {
+          ...action.detected,
+          targetCalendar: target,
+          confidence: 1,
+          source: 'local_rules',
+          missing_fields: [],
+        },
+        context,
+        action.original_message
+      );
+    }
+
     if (action.type === 'CREATE_CLASS' && (text.includes('troca') || text.includes('muda') || text.includes('remarca'))) {
       const nextAction = { ...action };
       if (text.includes('amanha') || /\d{1,2}[/-]\d{1,2}/.test(text)) nextAction.class_date = parseDate(message);
@@ -1660,7 +1796,10 @@ export class ConversationalAssistantService {
       ]);
     }
     if (detected.intent === 'APAGAR_HISTORICO') return this.prepareDeleteHistory(connection);
-    if (detected.intent === 'CONSULTAR_AGENDA') return this.agenda(connection, context, detected.date || todayDate());
+    if (isCalendarIntent(detected.intent) && (!detected.targetCalendar || detected.targetCalendar === 'UNSPECIFIED')) {
+      return this.prepareCalendarTargetChoice(connection, detected, originalMessage);
+    }
+    if (detected.intent === 'CONSULTAR_AGENDA') return this.agenda(connection, context, detected.date || todayDate(), detected.targetCalendar || 'LUMINAI');
     if (detected.intent === 'GOOGLE_CALENDAR_STATUS') return this.googleStatus(connection);
     if (detected.intent === 'GOOGLE_CALENDAR_FIND_FREE_TIME') return this.freeTimes(connection, context, detected.date || todayDate());
     if (detected.intent === 'GOOGLE_CALENDAR_SYNC_WITH_LUMINA') return this.syncGoogleAgenda(connection);
@@ -1712,6 +1851,35 @@ export class ConversationalAssistantService {
     ]);
   }
 
+  private async prepareCalendarTargetChoice(connection: BotConnection, detected: InterpretationResult, originalMessage: string) {
+    const verb = calendarActionVerb(detected.intent);
+    const action: BotPendingAction = {
+      type: 'SELECT_CALENDAR_TARGET',
+      intent: detected.intent,
+      teacher_id: connection.teacher_id,
+      telegram_user_id: connection.telegram_user_id,
+      entities: { ...(detected as Record<string, unknown>), originalMessage },
+      detected,
+      original_message: originalMessage,
+      summary: `${verb} agenda em local ainda nao escolhido`,
+      expires_at: pendingExpiration(),
+      status: 'waiting_calendar_target',
+    };
+    await this.state.set(connection, action);
+    return botMessage([
+      `Entendi que voce quer ${verb} algo na agenda.`,
+      '',
+      'Para evitar conflito entre a LuminaAI e o Google Agenda, me diga onde devo continuar.',
+      '',
+      '*Opcoes:*',
+      '- 1. Apenas na LuminaAI',
+      '- 2. Apenas no Google Agenda',
+      '- 3. Nos dois',
+      '',
+      'Qual opcao voce prefere?',
+    ]);
+  }
+
   private help() {
     return botMessage([
       'Sou o LumiBot, seu assistente da LuminaAI.',
@@ -1741,19 +1909,53 @@ export class ConversationalAssistantService {
     ]);
   }
 
-  private async agenda(connection: BotConnection, context: TeacherContext, date: string) {
-    const classes = context.classes.filter((item) => item.class_date === date).sort((a, b) => a.class_time.localeCompare(b.class_time));
-    const googleEvents = await listGoogleCalendarEvents(connection.teacher_id, date).catch(() => ({ connected: false as const, events: [] }));
+  private async agenda(connection: BotConnection, context: TeacherContext, date: string, target: CalendarTarget) {
+    const includeLumina = target === 'LUMINAI' || target === 'BOTH';
+    const includeGoogle = target === 'GOOGLE_CALENDAR' || target === 'BOTH';
+    const classes = includeLumina
+      ? context.classes.filter((item) => item.class_date === date).sort((a, b) => a.class_time.localeCompare(b.class_time))
+      : [];
+    const googleEvents = includeGoogle
+      ? await listGoogleCalendarEvents(connection.teacher_id, date).catch(() => ({ connected: false as const, events: [] }))
+      : { connected: false as const, events: [] };
+
+    if (includeGoogle && !googleEvents.connected) {
+      return botMessage([
+        'Seu Google Agenda ainda nao esta conectado.',
+        '',
+        'Para consultar ou alterar eventos no Google, conecte sua conta Google nas configuracoes da LuminaAI.',
+        '',
+        'Deseja consultar apenas a agenda interna da LuminaAI?',
+      ]);
+    }
+
     if (!classes.length && !googleEvents.events.length) {
       return botMessage([
-        `Nao encontrei aulas agendadas para ${formatDate(date)}.`,
-        googleEvents.connected ? '- Google Agenda: sem eventos nesse dia.' : '- Google Agenda: nao conectado.',
+        `Nao encontrei eventos em ${calendarTargetLabel(target)} para ${formatDate(date)}.`,
         '',
         'Deseja marcar uma nova aula para esse dia?',
       ]);
     }
     const pendingStudents = new Set(this.pendingPaymentRows(context).map((item) => item.student_id));
     const pending = classes.filter((item) => pendingStudents.has(item.student_id));
+    return botMessage([
+      `Encontrei sua agenda de ${formatDate(date)}.`,
+      '',
+      bullet('Origem', calendarTargetLabel(target)),
+      '',
+      includeLumina ? '*Aulas na LuminaAI:*' : null,
+      ...classes.map((item) => `- ${item.students?.full_name || 'Aluno'} - ${formatTime(item.class_time)} - ${item.subject || 'Aula'} - ${shortStatus(item.status)}`),
+      includeLumina && !classes.length ? '- Nenhuma aula cadastrada.' : null,
+      includeGoogle ? '' : null,
+      includeGoogle ? '*Google Agenda:*' : null,
+      ...googleEvents.events.slice(0, 8).map((event) => `- ${event.summary} - ${formatGoogleEventTime(event.start)}${event.description ? ` - ${event.description.slice(0, 80)}` : ''}`),
+      includeGoogle && !googleEvents.events.length ? '- Nenhum evento encontrado.' : null,
+      pending.length ? '' : null,
+      pending.length ? '*Pendencias:*' : null,
+      ...pending.map((item) => `- ${item.students?.full_name || 'Aluno'} tem pagamento pendente.`),
+      '',
+      'Posso registrar uma anotacao, pagamento ou falta para voce?',
+    ]);
     return botMessage([
       `Encontrei sua agenda de ${formatDate(date)}.`,
       '',
@@ -2513,6 +2715,16 @@ export class ConversationalAssistantService {
   }
 
   private async prepareCreateClass(connection: BotConnection, context: TeacherContext, detected: DetectedIntent, originalMessage: string) {
+    const targetCalendar = detected.targetCalendar && detected.targetCalendar !== 'UNSPECIFIED' ? detected.targetCalendar : 'LUMINAI';
+    if ((targetCalendar === 'GOOGLE_CALENDAR' || targetCalendar === 'BOTH') && !(await getValidGoogleConnection(connection.teacher_id).catch(() => null))) {
+      return botMessage([
+        'Seu Google Agenda ainda nao esta conectado.',
+        '',
+        'Conecte sua conta Google nas configuracoes da LuminaAI para salvar aulas no Google Agenda.',
+        '',
+        'Deseja salvar essa aula apenas na LuminaAI?',
+      ]);
+    }
     if (!detected.studentName || !detected.date || !detected.time) {
       return botMessage([
         'Entendi que voce quer marcar uma aula.',
@@ -2530,6 +2742,7 @@ export class ConversationalAssistantService {
     const action: BotPendingAction = {
       type: 'CREATE_CLASS',
       intent: 'CRIAR_AULA',
+      target_calendar: targetCalendar,
       teacher_id: connection.teacher_id,
       telegram_user_id: connection.telegram_user_id,
       entities: { ...(detected as Record<string, unknown>), originalMessage },
@@ -2540,7 +2753,7 @@ export class ConversationalAssistantService {
       class_date: detected.date,
       class_time: detected.time,
       duration_minutes: 60,
-      summary: `marcar aula com ${student.full_name} em ${formatDate(detected.date)} as ${formatTime(detected.time)}`,
+      summary: `marcar aula com ${student.full_name} em ${formatDate(detected.date)} as ${formatTime(detected.time)} em ${calendarTargetLabel(targetCalendar)}`,
       expires_at: pendingExpiration(),
       status: 'pending',
     };
@@ -2553,12 +2766,23 @@ export class ConversationalAssistantService {
       bullet('Data', formatDate(detected.date)),
       bullet('Horario', formatTime(detected.time)),
       bullet('Duracao', '60 minutos'),
+      bullet('Destino', calendarTargetLabel(targetCalendar)),
       '',
       'Confirma que posso marcar essa aula?',
     ]);
   }
 
   private async prepareUpdateClass(connection: BotConnection, context: TeacherContext, detected: DetectedIntent, originalMessage: string) {
+    const targetCalendar = detected.targetCalendar && detected.targetCalendar !== 'UNSPECIFIED' ? detected.targetCalendar : 'LUMINAI';
+    if ((targetCalendar === 'GOOGLE_CALENDAR' || targetCalendar === 'BOTH') && !(await getValidGoogleConnection(connection.teacher_id).catch(() => null))) {
+      return botMessage([
+        'Seu Google Agenda ainda nao esta conectado.',
+        '',
+        'Conecte sua conta Google nas configuracoes da LuminaAI para remarcar aulas no Google Agenda.',
+        '',
+        'Deseja remarcar apenas na LuminaAI?',
+      ]);
+    }
     if (!detected.studentName) {
       return botMessage([
         'Entendi que voce quer remarcar uma aula.',
@@ -2588,6 +2812,7 @@ export class ConversationalAssistantService {
     const action: BotPendingAction = {
       type: 'UPDATE_CLASS',
       intent: 'ALTERAR_AULA',
+      target_calendar: targetCalendar,
       teacher_id: connection.teacher_id,
       telegram_user_id: connection.telegram_user_id,
       entities: { ...(detected as Record<string, unknown>), originalMessage },
@@ -2595,7 +2820,7 @@ export class ConversationalAssistantService {
       student_name: student.full_name,
       class_date: nextDate,
       class_time: nextTime,
-      summary: `remarcar aula de ${student.full_name} para ${formatDate(nextDate)} as ${formatTime(nextTime)}`,
+      summary: `remarcar aula de ${student.full_name} para ${formatDate(nextDate)} as ${formatTime(nextTime)} em ${calendarTargetLabel(targetCalendar)}`,
       expires_at: pendingExpiration(),
       status: 'pending',
     };
@@ -2607,12 +2832,23 @@ export class ConversationalAssistantService {
       bullet('Aluno', student.full_name),
       bullet('Data', formatDate(nextDate)),
       bullet('Horario', formatTime(nextTime)),
+      bullet('Destino', calendarTargetLabel(targetCalendar)),
       '',
       'Confirma que posso remarcar essa aula?',
     ]);
   }
 
   private async prepareCancelClass(connection: BotConnection, context: TeacherContext, detected: DetectedIntent, originalMessage: string) {
+    const targetCalendar = detected.targetCalendar && detected.targetCalendar !== 'UNSPECIFIED' ? detected.targetCalendar : 'LUMINAI';
+    if ((targetCalendar === 'GOOGLE_CALENDAR' || targetCalendar === 'BOTH') && !(await getValidGoogleConnection(connection.teacher_id).catch(() => null))) {
+      return botMessage([
+        'Seu Google Agenda ainda nao esta conectado.',
+        '',
+        'Conecte sua conta Google nas configuracoes da LuminaAI para cancelar eventos no Google Agenda.',
+        '',
+        'Deseja cancelar apenas na LuminaAI?',
+      ]);
+    }
     const date = detected.date;
     let classes = context.classes.filter((item) => item.status === 'scheduled');
     let studentName = detected.studentName;
@@ -2644,13 +2880,14 @@ export class ConversationalAssistantService {
     const action: BotPendingAction = {
       type: 'CANCEL_CLASS',
       intent: 'CANCELAR_AULA',
+      target_calendar: targetCalendar,
       teacher_id: connection.teacher_id,
       telegram_user_id: connection.telegram_user_id,
       entities: { ...(detected as Record<string, unknown>), originalMessage },
       class_ids: classes.map((item) => item.id),
       student_name: studentName,
       class_date: date,
-      summary,
+      summary: `${summary} em ${calendarTargetLabel(targetCalendar)}`,
       expires_at: pendingExpiration(),
       status: 'pending',
     };
@@ -2662,6 +2899,7 @@ export class ConversationalAssistantService {
       classes.length === 1 ? bullet('Aluno', classes[0].students?.full_name || studentName || 'aluno') : bullet('Quantidade', classes.length),
       classes.length === 1 ? bullet('Data', formatDate(classes[0].class_date)) : date ? bullet('Data', formatDate(date)) : null,
       classes.length === 1 ? bullet('Horario', formatTime(classes[0].class_time)) : null,
+      bullet('Destino', calendarTargetLabel(targetCalendar)),
       '',
       'Confirma que posso cancelar?',
     ]);

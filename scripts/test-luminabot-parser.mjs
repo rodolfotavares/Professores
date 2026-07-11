@@ -20,6 +20,7 @@ const sandbox = {
     if (id === './google-calendar') {
       return {
         createOrUpdateGoogleEventForClass: async () => ({ synced: false }),
+        createStandaloneGoogleCalendarEvent: async () => ({ synced: false }),
         createGmailDraft: async () => ({}),
         deleteGoogleEventForClass: async () => ({ synced: false }),
         getValidGoogleConnection: async () => null,
@@ -47,9 +48,10 @@ const sandbox = {
 
 vm.runInNewContext(compiled, sandbox, { filename: 'luminabot-assistant.js' });
 
-const { IntentDetectionService, DateTimeParserPTBR } = module.exports;
+const { CalendarTargetResolver, IntentDetectionService, DateTimeParserPTBR } = module.exports;
 const detector = new IntentDetectionService();
 const parser = new DateTimeParserPTBR();
+const calendarTarget = new CalendarTargetResolver();
 
 const cases = [
   ['marque uma aula com Joao amanha as 14h', 'CRIAR_AULA'],
@@ -172,6 +174,21 @@ const classByAgenda = detector.detect('Agenda a aula do joao para amanha as 14h'
 assert.equal(classByAgenda.intent, 'CRIAR_AULA');
 assert.equal(classByAgenda.studentName, 'joao');
 assert.equal(classByAgenda.time, '14:00:00');
+assert.equal(classByAgenda.targetCalendar, 'UNSPECIFIED');
+
+assert.equal(detector.detect('marque uma aula com Joao no app amanha as 14h').targetCalendar, 'LUMINAI');
+assert.equal(detector.detect('marque uma aula com Joao no Google Agenda amanha as 14h').targetCalendar, 'GOOGLE_CALENDAR');
+assert.equal(detector.detect('marque uma aula com Joao nos dois amanha as 14h').targetCalendar, 'BOTH');
+assert.equal(detector.detect('como esta minha agenda da LuminaAI hoje?').targetCalendar, 'LUMINAI');
+assert.equal(detector.detect('como esta minha agenda do Google hoje?').targetCalendar, 'GOOGLE_CALENDAR');
+assert.equal(detector.detect('consulta as duas agendas hoje').targetCalendar, 'BOTH');
+
+assert.equal(calendarTarget.fromChoice('1'), 'LUMINAI');
+assert.equal(calendarTarget.fromChoice('no app'), 'LUMINAI');
+assert.equal(calendarTarget.fromChoice('2'), 'GOOGLE_CALENDAR');
+assert.equal(calendarTarget.fromChoice('no Google'), 'GOOGLE_CALENDAR');
+assert.equal(calendarTarget.fromChoice('3'), 'BOTH');
+assert.equal(calendarTarget.fromChoice('nos dois'), 'BOTH');
 
 const payment = detector.detect('registrar pagamento da maria de 100 reais');
 assert.equal(payment.studentName, 'maria');
