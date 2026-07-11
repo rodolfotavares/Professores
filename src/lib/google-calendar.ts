@@ -8,6 +8,8 @@ const gmailBase = 'https://gmail.googleapis.com/gmail/v1';
 const userInfoUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
 const scopes = [
   'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/gmail.compose',
+  'https://www.googleapis.com/auth/gmail.readonly',
   'https://www.googleapis.com/auth/gmail.send',
   'https://www.googleapis.com/auth/userinfo.email',
 ];
@@ -134,6 +136,12 @@ export async function getValidGoogleConnection(teacherId: string) {
   return data;
 }
 
+export async function disconnectGoogleConnection(teacherId: string) {
+  await supabaseAdmin.from('google_calendar_events').delete().eq('teacher_id', teacherId);
+  const { error } = await supabaseAdmin.from('google_calendar_connections').delete().eq('teacher_id', teacherId);
+  if (error) throw error;
+}
+
 function toGoogleDateTime(classDate: string, classTime: string, durationMinutes: number) {
   const start = `${classDate}T${classTime.slice(0, 5)}:00`;
   const [hours, minutes] = classTime.slice(0, 5).split(':').map(Number);
@@ -245,6 +253,32 @@ export async function createOrUpdateGoogleEventForClass(teacherId: string, class
   return { synced: true, action: 'created' as const };
 }
 
+export async function listGoogleCalendarEvents(teacherId: string, date: string) {
+  const connection = await getValidGoogleConnection(teacherId);
+  if (!connection) return { connected: false as const, events: [] };
+
+  const timeMin = `${date}T00:00:00-03:00`;
+  const timeMax = `${date}T23:59:59-03:00`;
+  const params = new URLSearchParams({
+    singleEvents: 'true',
+    orderBy: 'startTime',
+    timeMin,
+    timeMax,
+    maxResults: '20',
+  });
+  const payload = await googleCalendarFetch(connection.access_token, `/calendars/primary/events?${params.toString()}`) as { items?: any[] };
+  return {
+    connected: true as const,
+    events: (payload.items || []).map((item) => ({
+      id: item.id as string,
+      summary: item.summary as string || 'Evento',
+      description: item.description as string || '',
+      start: item.start?.dateTime || item.start?.date || '',
+      end: item.end?.dateTime || item.end?.date || '',
+    })),
+  };
+}
+
 export async function deleteGoogleEventForClass(teacherId: string, classScheduleId: string) {
   const connection = await getValidGoogleConnection(teacherId);
   if (!connection) return { synced: false, reason: 'not_connected' as const };
@@ -278,6 +312,41 @@ export async function sendGmailMessage(teacherId: string, input: { to: string; s
     method: 'POST',
     body: JSON.stringify({ raw: gmailRawMessage(input) }),
   });
+}
+
+export async function createGmailDraft(teacherId: string, input: { to: string; subject: string; body: string }) {
+  const connection = await getValidGoogleConnection(teacherId);
+  if (!connection) {
+    throw new Error('Conecte sua conta Google antes de criar rascunhos no Gmail.');
+  }
+  return googleGmailFetch(connection.access_token, '/users/me/drafts', {
+    method: 'POST',
+    body: JSON.stringify({ message: { raw: gmailRawMessage(input) } }),
+  });
+}
+
+export async function searchGmailMessages(teacherId: string, query: string, maxResults = 5) {
+  const connection = await getValidGoogleConnection(teacherId);
+  if (!connection) return { connected: false as const, messages: [] };
+
+  const params = new URLSearchParams({ q: query, maxResults: String(maxResults) });
+  const list = await googleGmailFetch(connection.access_token, `/users/me/messages?${params.toString()}`) as { messages?: Array<{ id: string }> };
+  const messages = await Promise.all((list.messages || []).slice(0, maxResults).map(async (message) => {
+    const detail = await googleGmailFetch(
+      connection.access_token,
+      `/users/me/messages/${message.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`
+    ) as { id: string; snippet?: string; payload?: { headers?: Array<{ name: string; value: string }> } };
+    const headers = new Map((detail.payload?.headers || []).map((header) => [header.name.toLowerCase(), header.value]));
+    return {
+      id: detail.id,
+      from: headers.get('from') || '',
+      subject: headers.get('subject') || 'Sem assunto',
+      date: headers.get('date') || '',
+      snippet: detail.snippet || '',
+    };
+  }));
+
+  return { connected: true as const, messages };
 }
 
 export async function syncTeacherClassesToGoogle(teacherId: string) {

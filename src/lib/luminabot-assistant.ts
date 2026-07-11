@@ -1,6 +1,15 @@
 import { deflateSync } from 'zlib';
 import { supabaseAdmin } from './supabase-admin';
-import { createOrUpdateGoogleEventForClass, deleteGoogleEventForClass, sendGmailMessage } from './google-calendar';
+import {
+  createGmailDraft,
+  createOrUpdateGoogleEventForClass,
+  deleteGoogleEventForClass,
+  getValidGoogleConnection,
+  listGoogleCalendarEvents,
+  searchGmailMessages,
+  sendGmailMessage,
+  syncTeacherClassesToGoogle,
+} from './google-calendar';
 
 export type ConversationIntent =
   | 'CONSULTAR_AGENDA'
@@ -21,6 +30,11 @@ export type ConversationIntent =
   | 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO'
   | 'GERAR_MENSAGEM_PARA_RESPONSAVEL'
   | 'ENVIAR_EMAIL'
+  | 'GMAIL_CREATE_DRAFT'
+  | 'GMAIL_SEARCH_EMAILS'
+  | 'GOOGLE_CALENDAR_STATUS'
+  | 'GOOGLE_CALENDAR_FIND_FREE_TIME'
+  | 'GOOGLE_CALENDAR_SYNC_WITH_LUMINA'
   | 'ORGANIZAR_SEMANA'
   | 'RESUMIR_DADOS'
   | 'PEDIR_AJUDA'
@@ -189,6 +203,21 @@ type BotPendingAction =
       status?: 'pending';
     }
   | {
+      type: 'CREATE_GMAIL_DRAFT';
+      intent: 'GMAIL_CREATE_DRAFT';
+      teacher_id?: string;
+      telegram_user_id?: string | null;
+      entities?: Record<string, unknown>;
+      student_id: string;
+      student_name: string;
+      to: string;
+      subject: string;
+      body: string;
+      summary: string;
+      expires_at?: string;
+      status?: 'pending';
+    }
+  | {
       type: 'DELETE_HISTORY';
       intent: 'APAGAR_HISTORICO';
       teacher_id?: string;
@@ -283,6 +312,13 @@ function formatDate(date: string) {
 
 function formatTime(time?: string | null) {
   return time ? time.slice(0, 5) : '';
+}
+
+function formatGoogleEventTime(value?: string | null) {
+  if (!value) return '';
+  const match = value.match(/T(\d{2}):(\d{2})/);
+  if (match) return `${match[1]}:${match[2]}`;
+  return value.slice(0, 10);
 }
 
 function currency(value: number) {
@@ -758,6 +794,21 @@ export class IntentDetectionService {
       if (text.includes('pendente') || text.includes('atrasado') || text.includes('devendo')) return { intent: 'LISTAR_PENDENCIAS', ...entities };
       return { intent: 'CONSULTAR_FINANCEIRO', ...entities };
     }
+    if ((text.includes('google') || text.includes('gmail')) && (text.includes('conectado') || text.includes('status') || text.includes('conexao'))) {
+      return { intent: 'GOOGLE_CALENDAR_STATUS', ...entities };
+    }
+    if ((text.includes('sincronizar') || text.includes('sincronize')) && (text.includes('google') || text.includes('agenda'))) {
+      return { intent: 'GOOGLE_CALENDAR_SYNC_WITH_LUMINA', ...entities };
+    }
+    if ((text.includes('horario') || text.includes('horarios')) && (text.includes('livre') || text.includes('livres') || text.includes('disponivel') || text.includes('disponiveis'))) {
+      return { intent: 'GOOGLE_CALENDAR_FIND_FREE_TIME', ...entities, date: entities.date || parseDate(raw) };
+    }
+    if (/(procure|buscar|busque|pesquise|resuma|resume|resumir).*(e-mail|email|emails|e-mails)/.test(text) || /(e-mails|emails).*(recentes|sobre|da|do)/.test(text)) {
+      return { intent: 'GMAIL_SEARCH_EMAILS', ...entities, studentName: entities.studentName || this.extractStudentName(raw), topic: raw };
+    }
+    if (/(crie|cria|escreva|faca|prepare|prepara).*(e-mail|email)/.test(text)) {
+      return { intent: 'GMAIL_CREATE_DRAFT', ...entities, studentName: entities.studentName || this.extractStudentName(raw), topic: raw, needsClarification: !entities.studentName ? 'missing_student' : undefined };
+    }
     if (/(envie|enviar|mande|mandar|dispare|disparar).*(e-mail|email)/.test(text) || /(e-mail|email).*(para|ao aluno|a aluna|responsavel|responsavel)/.test(text)) {
       return { intent: 'ENVIAR_EMAIL', ...entities, studentName: entities.studentName || this.extractStudentName(raw), topic: raw, needsClarification: !entities.studentName ? 'missing_student' : undefined };
     }
@@ -1020,6 +1071,11 @@ function coerceIntent(value: unknown): ConversationIntent {
     'GERAR_TEXTO_PARA_PAIS_OU_ALUNO',
     'GERAR_MENSAGEM_PARA_RESPONSAVEL',
     'ENVIAR_EMAIL',
+    'GMAIL_CREATE_DRAFT',
+    'GMAIL_SEARCH_EMAILS',
+    'GOOGLE_CALENDAR_STATUS',
+    'GOOGLE_CALENDAR_FIND_FREE_TIME',
+    'GOOGLE_CALENDAR_SYNC_WITH_LUMINA',
     'ORGANIZAR_SEMANA',
     'RESUMIR_DADOS',
     'PEDIR_AJUDA',
@@ -1421,6 +1477,24 @@ export class BotActionExecutor {
       ]);
     }
 
+    if (action.type === 'CREATE_GMAIL_DRAFT') {
+      await createGmailDraft(connection.teacher_id, {
+        to: action.to,
+        subject: action.subject,
+        body: action.body,
+      });
+      return botMessage([
+        'Rascunho criado com sucesso no Gmail.',
+        '',
+        '*Rascunho:*',
+        bullet('Aluno', action.student_name),
+        bullet('Para', action.to),
+        bullet('Assunto', action.subject),
+        '',
+        'Deseja que eu prepare outro e-mail ou consulte os e-mails recentes?',
+      ]);
+    }
+
     return botMessage([
       'Historico apagado com sucesso.',
       '',
@@ -1586,7 +1660,11 @@ export class ConversationalAssistantService {
       ]);
     }
     if (detected.intent === 'APAGAR_HISTORICO') return this.prepareDeleteHistory(connection);
-    if (detected.intent === 'CONSULTAR_AGENDA') return this.agenda(context, detected.date || todayDate());
+    if (detected.intent === 'CONSULTAR_AGENDA') return this.agenda(connection, context, detected.date || todayDate());
+    if (detected.intent === 'GOOGLE_CALENDAR_STATUS') return this.googleStatus(connection);
+    if (detected.intent === 'GOOGLE_CALENDAR_FIND_FREE_TIME') return this.freeTimes(connection, context, detected.date || todayDate());
+    if (detected.intent === 'GOOGLE_CALENDAR_SYNC_WITH_LUMINA') return this.syncGoogleAgenda(connection);
+    if (detected.intent === 'GMAIL_SEARCH_EMAILS') return this.gmailSearch(connection, context, detected.studentName, detected.topic || originalMessage);
     if (detected.intent === 'ORGANIZAR_SEMANA') return this.organizeWeek(context);
     if (detected.intent === 'LISTAR_PAGAMENTOS_PENDENTES' || detected.intent === 'LISTAR_PENDENCIAS') return this.pendingPayments(context);
     if (detected.intent === 'LISTAR_ALUNOS') return this.studentsList(context);
@@ -1597,7 +1675,8 @@ export class ConversationalAssistantService {
     if (detected.intent === 'CONSULTAR_ALUNO') return this.studentSummary(context, detected.studentName);
     if (detected.intent === 'GERAR_RELATORIO_ALUNO') return this.studentReport(connection, context, detected.studentName, detected.artifactType, detected.artifactDelivery);
     if (detected.intent === 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO' || detected.intent === 'GERAR_MENSAGEM_PARA_RESPONSAVEL') return this.parentText(context, detected.studentName, detected.topic || originalMessage);
-    if (detected.intent === 'ENVIAR_EMAIL') return this.prepareEmail(connection, context, detected, originalMessage);
+    if (detected.intent === 'ENVIAR_EMAIL') return this.prepareEmail(connection, context, detected, originalMessage, 'send');
+    if (detected.intent === 'GMAIL_CREATE_DRAFT') return this.prepareEmail(connection, context, detected, originalMessage, 'draft');
     if (detected.intent === 'CRIAR_AULA') return this.prepareCreateClass(connection, context, detected, originalMessage);
     if (detected.intent === 'ALTERAR_AULA') return this.prepareUpdateClass(connection, context, detected, originalMessage);
     if (detected.intent === 'CANCELAR_AULA') return this.prepareCancelClass(connection, context, detected, originalMessage);
@@ -1662,11 +1741,13 @@ export class ConversationalAssistantService {
     ]);
   }
 
-  private agenda(context: TeacherContext, date: string) {
+  private async agenda(connection: BotConnection, context: TeacherContext, date: string) {
     const classes = context.classes.filter((item) => item.class_date === date).sort((a, b) => a.class_time.localeCompare(b.class_time));
-    if (!classes.length) {
+    const googleEvents = await listGoogleCalendarEvents(connection.teacher_id, date).catch(() => ({ connected: false as const, events: [] }));
+    if (!classes.length && !googleEvents.events.length) {
       return botMessage([
         `Nao encontrei aulas agendadas para ${formatDate(date)}.`,
+        googleEvents.connected ? '- Google Agenda: sem eventos nesse dia.' : '- Google Agenda: nao conectado.',
         '',
         'Deseja marcar uma nova aula para esse dia?',
       ]);
@@ -1678,11 +1759,105 @@ export class ConversationalAssistantService {
       '',
       '*📚 Aulas marcadas:*',
       ...classes.map((item) => `- ${item.students?.full_name || 'Aluno'} - ${formatTime(item.class_time)} - ${item.subject || 'Aula'} - ${shortStatus(item.status)}`),
+      googleEvents.events.length ? '' : null,
+      googleEvents.events.length ? '*Google Agenda:*' : null,
+      ...googleEvents.events.slice(0, 8).map((event) => `- ${event.summary} - ${formatGoogleEventTime(event.start)}${event.description ? ` - ${event.description.slice(0, 80)}` : ''}`),
       pending.length ? '' : null,
       pending.length ? '*⚠️ Pendencias:*' : null,
       ...pending.map((item) => `- ${item.students?.full_name || 'Aluno'} tem pagamento pendente.`),
       '',
       'Posso registrar uma anotacao, pagamento ou falta para voce?',
+    ]);
+  }
+
+  private async googleStatus(connection: BotConnection) {
+    const google = await getValidGoogleConnection(connection.teacher_id).catch(() => null);
+    return botMessage([
+      google ? 'Sua conta Google esta conectada.' : 'Sua conta Google ainda nao esta conectada.',
+      '',
+      '*Status:*',
+      bullet('Google Agenda', google ? 'conectado' : 'nao conectado'),
+      bullet('Gmail', google ? 'conectado, se voce reconectou com as novas permissoes' : 'nao conectado'),
+      google?.google_email ? bullet('Conta', google.google_email) : null,
+      '',
+      google
+        ? 'Posso consultar agenda, criar eventos, preparar rascunhos e enviar e-mails com confirmacao.'
+        : 'Conecte sua conta Google na LuminaAI antes de usar Agenda e Gmail pelo LumiBot.',
+    ]);
+  }
+
+  private async syncGoogleAgenda(connection: BotConnection) {
+    try {
+      const result = await syncTeacherClassesToGoogle(connection.teacher_id);
+      return botMessage([
+        'Sincronizacao concluida.',
+        '',
+        '*Google Agenda:*',
+        bullet('Aulas sincronizadas', result.synced),
+        '',
+        'Deseja consultar sua agenda de hoje?',
+      ]);
+    } catch (error) {
+      return botMessage([
+        'Nao consegui sincronizar com o Google Agenda.',
+        '',
+        '*Motivo:*',
+        `- ${error instanceof Error ? error.message : 'Conta Google desconectada ou permissao insuficiente.'}`,
+        '',
+        'Reconecte sua conta Google na LuminaAI e tente novamente.',
+      ]);
+    }
+  }
+
+  private async freeTimes(connection: BotConnection, context: TeacherContext, date: string) {
+    const googleEvents = await listGoogleCalendarEvents(connection.teacher_id, date).catch(() => ({ connected: false as const, events: [] }));
+    const busy = new Set<string>();
+    for (const item of context.classes.filter((row) => row.class_date === date && row.status === 'scheduled')) busy.add(formatTime(item.class_time));
+    for (const event of googleEvents.events) {
+      const time = formatGoogleEventTime(event.start);
+      if (time) busy.add(time);
+    }
+    const slots = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+    const free = slots.filter((slot) => !busy.has(slot)).slice(0, 6);
+    return botMessage([
+      `Analisei os horarios de ${formatDate(date)}.`,
+      '',
+      '*Horarios livres sugeridos:*',
+      ...(free.length ? free.map((slot) => `- ${slot}`) : ['- Nao encontrei horarios livres nos principais turnos.']),
+      '',
+      '*Base consultada:*',
+      bullet('LuminaAI', `${busy.size} horario${busy.size === 1 ? '' : 's'} ocupado${busy.size === 1 ? '' : 's'}`),
+      bullet('Google Agenda', googleEvents.connected ? 'consultado' : 'nao conectado'),
+      '',
+      'Deseja que eu marque uma aula em um desses horarios?',
+    ]);
+  }
+
+  private async gmailSearch(connection: BotConnection, context: TeacherContext, studentName: string | undefined, topic: string) {
+    const { student } = this.dataContext.findStudent(context, studentName);
+    const query = student?.email || student?.full_name || topic.replace(/(procure|buscar|busque|pesquise|resuma|resume|resumir|e-mails|emails|email|e-mail)/gi, '').trim() || 'LuminaAI';
+    const result = await searchGmailMessages(connection.teacher_id, query, 5).catch(() => ({ connected: false as const, messages: [] }));
+    if (!result.connected) {
+      return botMessage([
+        'Nao consegui consultar o Gmail.',
+        '',
+        'Conecte ou reconecte sua conta Google na LuminaAI com permissao de Gmail.',
+      ]);
+    }
+    if (!result.messages.length) {
+      return botMessage([
+        `Nao encontrei e-mails recentes para "${query}".`,
+        '',
+        'Quer tentar buscar por outro nome, e-mail ou assunto?',
+      ]);
+    }
+    return botMessage([
+      `Encontrei e-mails relacionados a "${query}".`,
+      '',
+      '*E-mails recentes:*',
+      ...result.messages.map((message) => `- ${message.subject}\n  De: ${message.from || 'remetente nao identificado'}\n  Resumo: ${message.snippet || 'sem resumo disponivel'}`),
+      '',
+      'Deseja que eu prepare uma resposta profissional para algum deles?',
     ]);
   }
 
@@ -2221,7 +2396,7 @@ export class ConversationalAssistantService {
     };
   }
 
-  private async prepareEmail(connection: BotConnection, context: TeacherContext, detected: DetectedIntent, originalMessage: string) {
+  private async prepareEmail(connection: BotConnection, context: TeacherContext, detected: DetectedIntent, originalMessage: string, mode: 'send' | 'draft') {
     if (!detected.studentName) {
       return botMessage([
         'Entendi que voce quer enviar um e-mail.',
@@ -2245,9 +2420,7 @@ export class ConversationalAssistantService {
 
     const subject = this.emailSubject(originalMessage, student);
     const body = this.emailBody(originalMessage, student);
-    const action: BotPendingAction = {
-      type: 'SEND_EMAIL',
-      intent: 'ENVIAR_EMAIL',
+    const baseAction = {
       teacher_id: connection.teacher_id,
       telegram_user_id: connection.telegram_user_id,
       entities: { ...(detected as Record<string, unknown>), originalMessage },
@@ -2256,14 +2429,26 @@ export class ConversationalAssistantService {
       to: student.email,
       subject,
       body,
-      summary: `enviar e-mail para ${student.full_name} em ${student.email}`,
       expires_at: pendingExpiration(),
-      status: 'pending',
+      status: 'pending' as const,
     };
+    const action: BotPendingAction = mode === 'send'
+      ? {
+          ...baseAction,
+          type: 'SEND_EMAIL',
+          intent: 'ENVIAR_EMAIL',
+          summary: `enviar e-mail para ${student.full_name} em ${student.email}`,
+        }
+      : {
+          ...baseAction,
+          type: 'CREATE_GMAIL_DRAFT',
+          intent: 'GMAIL_CREATE_DRAFT',
+          summary: `criar rascunho de e-mail para ${student.full_name} em ${student.email}`,
+        };
     await this.state.set(connection, action);
 
     return botMessage([
-      'Preparei o e-mail para envio.',
+      mode === 'send' ? 'Preparei o e-mail para envio.' : 'Preparei o rascunho de e-mail.',
       '',
       '*E-mail:*',
       bullet('Aluno', student.full_name),
@@ -2273,7 +2458,7 @@ export class ConversationalAssistantService {
       '*Mensagem:*',
       body,
       '',
-      'Confirma que posso enviar esse e-mail pelo Gmail?',
+      mode === 'send' ? 'Confirma que posso enviar esse e-mail pelo Gmail?' : 'Confirma que posso criar esse rascunho no Gmail?',
     ]);
   }
 
