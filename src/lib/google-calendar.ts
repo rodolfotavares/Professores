@@ -4,9 +4,11 @@ import { supabaseAdmin } from './supabase-admin';
 const authBase = 'https://accounts.google.com/o/oauth2/v2/auth';
 const tokenUrl = 'https://oauth2.googleapis.com/token';
 const calendarBase = 'https://www.googleapis.com/calendar/v3';
+const gmailBase = 'https://gmail.googleapis.com/gmail/v1';
 const userInfoUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
 const scopes = [
   'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/gmail.send',
   'https://www.googleapis.com/auth/userinfo.email',
 ];
 
@@ -164,6 +166,120 @@ async function googleCalendarFetch(accessToken: string, path: string, init: Requ
   return payload;
 }
 
+async function googleGmailFetch(accessToken: string, path: string, init: RequestInit = {}) {
+  const response = await fetch(`${gmailBase}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(init.headers || {}),
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.error?.message || 'Falha ao enviar e-mail pelo Gmail.');
+  }
+  return payload;
+}
+
+function gmailRawMessage(input: { to: string; subject: string; body: string }) {
+  const mime = [
+    `To: ${input.to}`,
+    `Subject: =?UTF-8?B?${Buffer.from(input.subject, 'utf8').toString('base64')}?=`,
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset=UTF-8',
+    '',
+    input.body,
+  ].join('\r\n');
+  return Buffer.from(mime, 'utf8').toString('base64url');
+}
+
+async function classEventBody(item: any) {
+  return {
+    summary: `Aula - ${item.students?.full_name || 'Aluno'}`,
+    description: `Aula sincronizada pelo LuminaAI.${item.subject ? `\nMateria: ${item.subject}` : ''}`,
+    ...toGoogleDateTime(item.class_date, item.class_time, item.duration_minutes || 60),
+  };
+}
+
+export async function createOrUpdateGoogleEventForClass(teacherId: string, classScheduleId: string) {
+  const connection = await getValidGoogleConnection(teacherId);
+  if (!connection) return { synced: false, reason: 'not_connected' as const };
+
+  const { data: item, error } = await supabaseAdmin
+    .from('class_schedules')
+    .select('*, students(full_name, email)')
+    .eq('teacher_id', teacherId)
+    .eq('id', classScheduleId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!item || item.status !== 'scheduled') return { synced: false, reason: 'not_scheduled' as const };
+
+  const existing = await supabaseAdmin
+    .from('google_calendar_events')
+    .select('google_event_id')
+    .eq('class_schedule_id', item.id)
+    .maybeSingle();
+
+  const eventBody = await classEventBody(item);
+  const eventId = existing.data?.google_event_id;
+  if (eventId) {
+    await googleCalendarFetch(connection.access_token, `/calendars/primary/events/${eventId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(eventBody),
+    });
+    return { synced: true, action: 'updated' as const };
+  }
+
+  const created = await googleCalendarFetch(connection.access_token, '/calendars/primary/events', {
+    method: 'POST',
+    body: JSON.stringify(eventBody),
+  }) as { id?: string };
+  if (created.id) {
+    await supabaseAdmin.from('google_calendar_events').insert({
+      teacher_id: teacherId,
+      class_schedule_id: item.id,
+      google_event_id: created.id,
+    });
+  }
+  return { synced: true, action: 'created' as const };
+}
+
+export async function deleteGoogleEventForClass(teacherId: string, classScheduleId: string) {
+  const connection = await getValidGoogleConnection(teacherId);
+  if (!connection) return { synced: false, reason: 'not_connected' as const };
+
+  const { data: eventRow, error } = await supabaseAdmin
+    .from('google_calendar_events')
+    .select('google_event_id')
+    .eq('teacher_id', teacherId)
+    .eq('class_schedule_id', classScheduleId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!eventRow?.google_event_id) return { synced: false, reason: 'not_found' as const };
+
+  await googleCalendarFetch(connection.access_token, `/calendars/primary/events/${eventRow.google_event_id}`, {
+    method: 'DELETE',
+  });
+  await supabaseAdmin
+    .from('google_calendar_events')
+    .delete()
+    .eq('teacher_id', teacherId)
+    .eq('class_schedule_id', classScheduleId);
+  return { synced: true, action: 'deleted' as const };
+}
+
+export async function sendGmailMessage(teacherId: string, input: { to: string; subject: string; body: string }) {
+  const connection = await getValidGoogleConnection(teacherId);
+  if (!connection) {
+    throw new Error('Conecte sua conta Google antes de enviar e-mails pelo LumiBot.');
+  }
+  return googleGmailFetch(connection.access_token, '/users/me/messages/send', {
+    method: 'POST',
+    body: JSON.stringify({ raw: gmailRawMessage(input) }),
+  });
+}
+
 export async function syncTeacherClassesToGoogle(teacherId: string) {
   const connection = await getValidGoogleConnection(teacherId);
   if (!connection) {
@@ -190,11 +306,7 @@ export async function syncTeacherClassesToGoogle(teacherId: string) {
       .eq('class_schedule_id', item.id)
       .maybeSingle();
 
-    const eventBody = {
-      summary: `Aula - ${item.students?.full_name || 'Aluno'}`,
-      description: `Aula sincronizada pelo LuminaAI.${item.subject ? `\nMateria: ${item.subject}` : ''}`,
-      ...toGoogleDateTime(item.class_date, item.class_time, item.duration_minutes || 60),
-    };
+    const eventBody = await classEventBody(item);
 
     const eventId = existing.data?.google_event_id;
     if (eventId) {

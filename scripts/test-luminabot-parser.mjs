@@ -17,6 +17,13 @@ const module = { exports: {} };
 const sandbox = {
   require(id) {
     if (id === './supabase-admin') return { supabaseAdmin: {} };
+    if (id === './google-calendar') {
+      return {
+        createOrUpdateGoogleEventForClass: async () => ({ synced: false }),
+        deleteGoogleEventForClass: async () => ({ synced: false }),
+        sendGmailMessage: async () => ({}),
+      };
+    }
     if (id === 'zlib') return zlib;
     throw new Error(`Unexpected require: ${id}`);
   },
@@ -181,6 +188,10 @@ assert.equal(financialChartPhoto.artifactDelivery, 'photo');
 const studentDocument = detector.detect('gera um documento com o desempenho do Joao');
 assert.equal(studentDocument.intent, 'GERAR_RELATORIO_ALUNO');
 assert.equal(studentDocument.artifactType, 'document');
+
+const emailRequest = detector.detect('mande um email para Ana confirmando a aula');
+assert.equal(emailRequest.intent, 'ENVIAR_EMAIL');
+assert.equal(emailRequest.studentName, 'Ana');
 
 assert.equal(parser.parseTime('as 15h30'), '15:30:00');
 assert.equal(parser.parseTime('as duas da tarde'), '14:00:00');

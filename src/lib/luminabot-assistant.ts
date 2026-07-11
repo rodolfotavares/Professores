@@ -1,5 +1,6 @@
 import { deflateSync } from 'zlib';
 import { supabaseAdmin } from './supabase-admin';
+import { createOrUpdateGoogleEventForClass, deleteGoogleEventForClass, sendGmailMessage } from './google-calendar';
 
 export type ConversationIntent =
   | 'CONSULTAR_AGENDA'
@@ -19,6 +20,7 @@ export type ConversationIntent =
   | 'CRIAR_ANOTACAO_AULA'
   | 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO'
   | 'GERAR_MENSAGEM_PARA_RESPONSAVEL'
+  | 'ENVIAR_EMAIL'
   | 'ORGANIZAR_SEMANA'
   | 'RESUMIR_DADOS'
   | 'PEDIR_AJUDA'
@@ -37,6 +39,7 @@ type StudentLite = {
   id: string;
   user_id: string | null;
   full_name: string;
+  email?: string | null;
   subject: string | null;
   status: string | null;
   guardian_whatsapp?: string | null;
@@ -166,6 +169,21 @@ type BotPendingAction =
       student_id: string;
       student_name: string;
       note: string;
+      summary: string;
+      expires_at?: string;
+      status?: 'pending';
+    }
+  | {
+      type: 'SEND_EMAIL';
+      intent: 'ENVIAR_EMAIL';
+      teacher_id?: string;
+      telegram_user_id?: string | null;
+      entities?: Record<string, unknown>;
+      student_id: string;
+      student_name: string;
+      to: string;
+      subject: string;
+      body: string;
       summary: string;
       expires_at?: string;
       status?: 'pending';
@@ -354,6 +372,18 @@ function botMessage(lines: Array<string | false | null | undefined>) {
 
 function bullet(label: string, value?: string | number | null) {
   return value === undefined || value === null || value === '' ? `- ${label}` : `- ${label}: ${value}`;
+}
+
+async function safeGoogleSync(action: () => Promise<{ synced: boolean; action?: string; reason?: string }>) {
+  try {
+    const result = await action();
+    if (result.synced) return '- Google Agenda: sincronizado.';
+    if (result.reason === 'not_connected') return '- Google Agenda: nao conectado.';
+    return null;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'nao foi possivel sincronizar.';
+    return `- Google Agenda: ${message}`;
+  }
 }
 
 function escapeXml(value: unknown) {
@@ -636,6 +666,8 @@ export class EntityExtractionService {
 
   private studentName(message: string) {
     const raw = message.trim();
+    const emailTarget = raw.match(/(?:e-mail|email).*?(?:para|ao|a)\s+([A-Za-zÀ-ÿ]+(?:\s+[A-Za-zÀ-ÿ]+)?)(?:\s+(?:confirmando|avisando|cobrando|sobre|que|para)|\s*$)/i);
+    if (emailTarget?.[1]) return emailTarget[1].trim();
     const afterAmount = raw.match(/(?:pagamento|pagou|recebi|recebido|valor|mensalidade).*?(?:para|do|da|de)\s+([A-Za-zÀ-ÿ]+(?:\s+[A-Za-zÀ-ÿ]+)?)(?:\s|$)/i);
     if (afterAmount?.[1] && !/reais|real|valor|aula|mensalidade/i.test(afterAmount[1])) {
       return afterAmount[1].replace(/\s+(do|da|de|com|para)$/i, '').trim();
@@ -725,6 +757,9 @@ export class IntentDetectionService {
       if (text.includes('planilha') || text.includes('grafico') || text.includes('pdf') || text.includes('imagem') || text.includes('relatorio')) return { intent: 'GERAR_RELATORIO_FINANCEIRO', ...entities };
       if (text.includes('pendente') || text.includes('atrasado') || text.includes('devendo')) return { intent: 'LISTAR_PENDENCIAS', ...entities };
       return { intent: 'CONSULTAR_FINANCEIRO', ...entities };
+    }
+    if (/(envie|enviar|mande|mandar|dispare|disparar).*(e-mail|email)/.test(text) || /(e-mail|email).*(para|ao aluno|a aluna|responsavel|responsavel)/.test(text)) {
+      return { intent: 'ENVIAR_EMAIL', ...entities, studentName: entities.studentName || this.extractStudentName(raw), topic: raw, needsClarification: !entities.studentName ? 'missing_student' : undefined };
     }
     if (/(crie|cria|escreva|faca|transforme).*(mensagem|aviso|comunicado)/.test(text) || text.includes('mensagem cobrando') || text.includes('mensagem confirmando')) {
       return { intent: 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO', ...entities, studentName: entities.studentName || this.extractStudentName(raw), topic: raw };
@@ -984,6 +1019,7 @@ function coerceIntent(value: unknown): ConversationIntent {
     'CRIAR_ANOTACAO_AULA',
     'GERAR_TEXTO_PARA_PAIS_OU_ALUNO',
     'GERAR_MENSAGEM_PARA_RESPONSAVEL',
+    'ENVIAR_EMAIL',
     'ORGANIZAR_SEMANA',
     'RESUMIR_DADOS',
     'PEDIR_AJUDA',
@@ -1122,7 +1158,7 @@ export class LuminaDataContextService {
     const currentMonth = monthReference();
 
     const [studentsResult, classesResult, paymentsResult, reportsResult] = await Promise.all([
-      supabaseAdmin.from('students').select('id, user_id, full_name, subject, status, guardian_whatsapp, price_per_class').eq('teacher_id', teacherId).order('full_name').limit(80),
+      supabaseAdmin.from('students').select('id, user_id, full_name, email, subject, status, guardian_whatsapp, price_per_class').eq('teacher_id', teacherId).order('full_name').limit(80),
       supabaseAdmin
         .from('class_schedules')
         .select('id, student_id, class_date, class_time, duration_minutes, subject, status, teacher_notes, students(full_name)')
@@ -1217,7 +1253,7 @@ export class BotInteractionLogService extends BotInteractionLog {}
 export class BotActionExecutor {
   async execute(connection: BotConnection, action: BotPendingAction) {
     if (action.type === 'CREATE_CLASS') {
-      const { error } = await supabaseAdmin.from('class_schedules').insert({
+      const { data, error } = await supabaseAdmin.from('class_schedules').insert({
         teacher_id: connection.teacher_id,
         student_id: action.student_id,
         student_user_id: action.student_user_id,
@@ -1226,8 +1262,9 @@ export class BotActionExecutor {
         class_time: action.class_time,
         duration_minutes: action.duration_minutes,
         status: 'scheduled',
-      });
+      }).select('id').single();
       if (error) throw error;
+      const googleSync = data?.id ? await safeGoogleSync(() => createOrUpdateGoogleEventForClass(connection.teacher_id, data.id)) : null;
       return botMessage([
         'Aula marcada com sucesso.',
         '',
@@ -1235,6 +1272,7 @@ export class BotActionExecutor {
         bullet('Aluno', action.student_name),
         bullet('Data', formatDate(action.class_date)),
         bullet('Horario', formatTime(action.class_time)),
+        googleSync,
         '',
         'Deseja registrar alguma observacao para essa aula?',
       ]);
@@ -1275,6 +1313,7 @@ export class BotActionExecutor {
         .eq('id', action.class_id)
         .eq('teacher_id', connection.teacher_id);
       if (error) throw error;
+      const googleSync = await safeGoogleSync(() => createOrUpdateGoogleEventForClass(connection.teacher_id, action.class_id));
       return botMessage([
         'Aula remarcada com sucesso.',
         '',
@@ -1282,6 +1321,7 @@ export class BotActionExecutor {
         bullet('Aluno', action.student_name),
         bullet('Data', formatDate(action.class_date)),
         bullet('Horario', formatTime(action.class_time)),
+        googleSync,
         '',
         'Deseja enviar uma mensagem de confirmacao ao responsavel?',
       ]);
@@ -1294,6 +1334,8 @@ export class BotActionExecutor {
         .in('id', action.class_ids)
         .eq('teacher_id', connection.teacher_id);
       if (error) throw error;
+      const syncResults = await Promise.all(action.class_ids.map((id) => safeGoogleSync(() => deleteGoogleEventForClass(connection.teacher_id, id))));
+      const googleSync = syncResults.find((item) => item?.includes('Google Agenda')) || null;
       return botMessage([
         action.class_ids.length === 1 ? 'Aula cancelada com sucesso.' : 'Aulas canceladas com sucesso.',
         '',
@@ -1301,6 +1343,7 @@ export class BotActionExecutor {
         bullet('Quantidade', action.class_ids.length),
         action.student_name ? bullet('Aluno', action.student_name) : null,
         action.class_date ? bullet('Data', formatDate(action.class_date)) : null,
+        googleSync,
         '',
         'Deseja reagendar alguma dessas aulas?',
       ]);
@@ -1357,6 +1400,24 @@ export class BotActionExecutor {
         bullet('Origem', 'Telegram'),
         '',
         'Deseja consultar o relatorio desse aluno?',
+      ]);
+    }
+
+    if (action.type === 'SEND_EMAIL') {
+      await sendGmailMessage(connection.teacher_id, {
+        to: action.to,
+        subject: action.subject,
+        body: action.body,
+      });
+      return botMessage([
+        'E-mail enviado com sucesso pelo Gmail.',
+        '',
+        '*Mensagem:*',
+        bullet('Aluno', action.student_name),
+        bullet('Para', action.to),
+        bullet('Assunto', action.subject),
+        '',
+        'Deseja registrar uma anotacao sobre esse contato?',
       ]);
     }
 
@@ -1536,6 +1597,7 @@ export class ConversationalAssistantService {
     if (detected.intent === 'CONSULTAR_ALUNO') return this.studentSummary(context, detected.studentName);
     if (detected.intent === 'GERAR_RELATORIO_ALUNO') return this.studentReport(connection, context, detected.studentName, detected.artifactType, detected.artifactDelivery);
     if (detected.intent === 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO' || detected.intent === 'GERAR_MENSAGEM_PARA_RESPONSAVEL') return this.parentText(context, detected.studentName, detected.topic || originalMessage);
+    if (detected.intent === 'ENVIAR_EMAIL') return this.prepareEmail(connection, context, detected, originalMessage);
     if (detected.intent === 'CRIAR_AULA') return this.prepareCreateClass(connection, context, detected, originalMessage);
     if (detected.intent === 'ALTERAR_AULA') return this.prepareUpdateClass(connection, context, detected, originalMessage);
     if (detected.intent === 'CANCELAR_AULA') return this.prepareCancelClass(connection, context, detected, originalMessage);
@@ -2157,6 +2219,88 @@ export class ConversationalAssistantService {
       caption: 'Documento de evolucao gerado pela LuminaAI.',
       sendAs: 'document' as const,
     };
+  }
+
+  private async prepareEmail(connection: BotConnection, context: TeacherContext, detected: DetectedIntent, originalMessage: string) {
+    if (!detected.studentName) {
+      return botMessage([
+        'Entendi que voce quer enviar um e-mail.',
+        '',
+        '*Falta informar:*',
+        '- Nome do aluno',
+        '',
+        'Exemplo: "mande um e-mail para Ana confirmando a aula de amanha".',
+      ]);
+    }
+
+    const { student, error } = this.dataContext.findStudent(context, detected.studentName);
+    if (!student) return error || 'Nao encontrei esse aluno.';
+    if (!student.email) {
+      return botMessage([
+        `Nao encontrei e-mail cadastrado para ${student.full_name}.`,
+        '',
+        'Cadastre o e-mail do aluno antes de enviar mensagens pelo Gmail.',
+      ]);
+    }
+
+    const subject = this.emailSubject(originalMessage, student);
+    const body = this.emailBody(originalMessage, student);
+    const action: BotPendingAction = {
+      type: 'SEND_EMAIL',
+      intent: 'ENVIAR_EMAIL',
+      teacher_id: connection.teacher_id,
+      telegram_user_id: connection.telegram_user_id,
+      entities: { ...(detected as Record<string, unknown>), originalMessage },
+      student_id: student.id,
+      student_name: student.full_name,
+      to: student.email,
+      subject,
+      body,
+      summary: `enviar e-mail para ${student.full_name} em ${student.email}`,
+      expires_at: pendingExpiration(),
+      status: 'pending',
+    };
+    await this.state.set(connection, action);
+
+    return botMessage([
+      'Preparei o e-mail para envio.',
+      '',
+      '*E-mail:*',
+      bullet('Aluno', student.full_name),
+      bullet('Para', student.email),
+      bullet('Assunto', subject),
+      '',
+      '*Mensagem:*',
+      body,
+      '',
+      'Confirma que posso enviar esse e-mail pelo Gmail?',
+    ]);
+  }
+
+  private emailSubject(message: string, student: StudentLite) {
+    const text = normalize(message);
+    if (text.includes('falta') || text.includes('faltou') || text.includes('nao compareceu')) return `Ausencia na aula - ${student.full_name}`;
+    if (text.includes('pagamento') || text.includes('cobr')) return `Pagamento pendente - ${student.full_name}`;
+    if (text.includes('confirm')) return `Confirmacao de aula - ${student.full_name}`;
+    if (text.includes('reagend') || text.includes('remarc')) return `Remarcacao de aula - ${student.full_name}`;
+    return `Atualizacao de aula - ${student.full_name}`;
+  }
+
+  private emailBody(message: string, student: StudentLite) {
+    const text = normalize(message);
+    if (text.includes('falta') || text.includes('faltou') || text.includes('nao compareceu')) {
+      return `Ola!\n\nPassando para avisar que ${student.full_name} nao compareceu a aula. Caso seja necessario, podemos combinar um novo horario para repor o conteudo.\n\nAtenciosamente.`;
+    }
+    if (text.includes('pagamento') || text.includes('cobr')) {
+      return `Ola!\n\nPassando para lembrar sobre o pagamento pendente relacionado as aulas de ${student.full_name}. Se ja tiver sido realizado, por favor desconsidere esta mensagem.\n\nAtenciosamente.`;
+    }
+    if (text.includes('confirm')) {
+      return `Ola!\n\nPassando para confirmar a proxima aula de ${student.full_name}. Qualquer necessidade de ajuste no horario, fico a disposicao.\n\nAtenciosamente.`;
+    }
+    if (text.includes('reagend') || text.includes('remarc')) {
+      return `Ola!\n\nPassando para alinhar a remarcacao da aula de ${student.full_name}. Podemos confirmar o melhor horario para manter a continuidade dos estudos.\n\nAtenciosamente.`;
+    }
+    return `Ola!\n\nEstou entrando em contato para compartilhar uma atualizacao sobre as aulas de ${student.full_name}. Podemos alinhar os proximos passos para manter uma boa evolucao nos estudos.\n\nAtenciosamente.`;
   }
 
   private parentText(context: TeacherContext, studentName: string | undefined, topic: string) {
