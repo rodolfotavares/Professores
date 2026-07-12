@@ -25,9 +25,11 @@ type TelegramLinkResponse = {
 
 export function TeacherTelegramPanel() {
   const [connection, setConnection] = useState<TelegramConnection | null>(null);
+  const [googleStatus, setGoogleStatus] = useState<{ connected: boolean; google_email: string | null } | null>(null);
   const [botUsername, setBotUsername] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const [linkExpiresAt, setLinkExpiresAt] = useState('');
 
@@ -37,6 +39,9 @@ export function TeacherTelegramPanel() {
       const data = await apiFetch<TelegramResponse>('/api/teacher/telegram');
       setConnection(data.connection);
       setBotUsername(data.bot_username || '');
+      apiFetch<{ connected: boolean; google_email: string | null }>('/api/google/calendar/status')
+        .then(setGoogleStatus)
+        .catch(() => setGoogleStatus(null));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao carregar conexao do assistente.');
     } finally {
@@ -48,6 +53,14 @@ export function TeacherTelegramPanel() {
     load();
     const timer = window.setInterval(load, 12000);
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const google = params.get('google');
+    if (google === 'connected') setError('Google conectado com sucesso. Agora o Lumi Assistente pode usar Google Agenda e Gmail.');
+    if (google === 'error') setError('Nao foi possivel conectar sua conta Google.');
+    if (google === 'invalid_state') setError('A conexao com Google expirou. Clique em conectar novamente.');
   }, []);
 
   async function connectTelegram() {
@@ -62,6 +75,31 @@ export function TeacherTelegramPanel() {
       setError(err instanceof Error ? err.message : 'Falha ao abrir conexao do Telegram.');
     } finally {
       setActionLoading(false);
+    }
+  }
+
+  async function connectGoogle() {
+    setGoogleLoading(true);
+    setError('');
+    try {
+      const data = await apiFetch<{ url: string }>('/api/google/calendar/auth?return_to=/teacher/telegram');
+      window.location.href = data.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao iniciar conexao com Google.');
+      setGoogleLoading(false);
+    }
+  }
+
+  async function syncGoogleCalendar() {
+    setGoogleLoading(true);
+    setError('');
+    try {
+      const data = await apiFetch<{ synced: number }>('/api/google/calendar/sync', { method: 'POST' });
+      setError(`${data.synced} aula${data.synced === 1 ? '' : 's'} sincronizada${data.synced === 1 ? '' : 's'} com Google Agenda.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao sincronizar Google Agenda.');
+    } finally {
+      setGoogleLoading(false);
     }
   }
 
@@ -116,6 +154,52 @@ export function TeacherTelegramPanel() {
         <div className="panel-actions">
           <button className="btn primary" type="button" onClick={connectTelegram} disabled={actionLoading || !botUsername}>
             {actionLoading ? 'Abrindo Telegram...' : connection?.connected ? 'Reconectar meu Telegram' : 'Conectar meu Telegram'}
+          </button>
+        </div>
+      </GlassCard>
+
+      <GlassCard className="portal-summary-card telegram-connect-card">
+        <div className="glass-card-head">
+          <div>
+            <span className="eyebrow">Google Agenda e Gmail</span>
+            <h2>Conecte sua conta Google ao Lumi Assistente</h2>
+          </div>
+          <StatusBadge tone={googleStatus?.connected ? 'success' : 'warning'}>
+            {googleStatus?.connected ? 'Conectado' : 'Nao conectado'}
+          </StatusBadge>
+        </div>
+
+        <p className="muted">
+          Com essa conexao, o Lumi Assistente pode consultar o Google Agenda, criar eventos de aula, preparar rascunhos e enviar e-mails pelo Gmail quando voce confirmar.
+        </p>
+
+        {googleStatus?.connected && (
+          <p className="muted">
+            Conta conectada: {googleStatus.google_email || 'Google'}.
+          </p>
+        )}
+
+        <div className="support-shortcuts lumi-assistant-benefits">
+          <span className="support-shortcut">
+            <strong>Agenda sincronizada</strong>
+            <small>Crie ou consulte aulas no Google Agenda pelo Telegram.</small>
+          </span>
+          <span className="support-shortcut">
+            <strong>Gmail com confirmacao</strong>
+            <small>O bot prepara mensagens e so envia quando voce autorizar.</small>
+          </span>
+          <span className="support-shortcut">
+            <strong>Controle de destino</strong>
+            <small>Voce escolhe LuminaAI, Google Agenda ou os dois antes de alterar aulas.</small>
+          </span>
+        </div>
+
+        <div className="panel-actions">
+          <button className="btn" type="button" onClick={connectGoogle} disabled={googleLoading}>
+            {googleLoading ? 'Abrindo Google...' : googleStatus?.connected ? 'Reconectar Google' : 'Conectar Google'}
+          </button>
+          <button className="btn primary" type="button" onClick={syncGoogleCalendar} disabled={googleLoading || !googleStatus?.connected}>
+            {googleLoading ? 'Sincronizando...' : 'Sincronizar aulas'}
           </button>
         </div>
       </GlassCard>

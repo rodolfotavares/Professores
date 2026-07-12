@@ -9,7 +9,8 @@ export async function GET(req: NextRequest) {
       return json({ error: 'Sem permissao.' }, { status: 403 });
     }
 
-    const url = await createGoogleAuthUrl(user.id, req.nextUrl.origin);
+    const returnTo = req.nextUrl.searchParams.get('return_to') || undefined;
+    const url = await createGoogleAuthUrl(user.id, req.nextUrl.origin, returnTo);
     return json({ url });
   } catch (error) {
     return apiError(error);

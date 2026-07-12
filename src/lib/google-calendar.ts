@@ -31,9 +31,26 @@ export function getGoogleCredentials() {
   return { clientId, clientSecret };
 }
 
-export async function createGoogleAuthUrl(teacherId: string, origin: string) {
+function encodeReturnTo(returnTo?: string) {
+  if (!returnTo || !returnTo.startsWith('/teacher')) return '';
+  return Buffer.from(returnTo.slice(0, 160), 'utf8').toString('base64url');
+}
+
+export function decodeGoogleReturnTo(state?: string | null) {
+  const encoded = state?.split('.')[1];
+  if (!encoded) return '/teacher/schedule';
+  try {
+    const path = Buffer.from(encoded, 'base64url').toString('utf8');
+    return path.startsWith('/teacher') ? path : '/teacher/schedule';
+  } catch {
+    return '/teacher/schedule';
+  }
+}
+
+export async function createGoogleAuthUrl(teacherId: string, origin: string, returnTo?: string) {
   const { clientId } = getGoogleCredentials();
-  const state = randomBytes(24).toString('hex');
+  const returnState = encodeReturnTo(returnTo);
+  const state = `${randomBytes(24).toString('hex')}${returnState ? `.${returnState}` : ''}`;
 
   await supabaseAdmin.from('google_oauth_states').insert({
     state,

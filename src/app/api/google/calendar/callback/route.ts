@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { exchangeGoogleCode, expiresAt, getGoogleEmail } from '@/lib/google-calendar';
+import { decodeGoogleReturnTo, exchangeGoogleCode, expiresAt, getGoogleEmail } from '@/lib/google-calendar';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function GET(req: NextRequest) {
@@ -7,9 +7,10 @@ export async function GET(req: NextRequest) {
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
   const error = url.searchParams.get('error');
+  const returnTo = decodeGoogleReturnTo(state);
 
   if (error || !code || !state) {
-    return Response.redirect(new URL('/teacher/schedule?google=error', req.url));
+    return Response.redirect(new URL(`${returnTo}?google=error`, req.url));
   }
 
   try {
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
       .maybeSingle();
 
     if (!oauthState) {
-      return Response.redirect(new URL('/teacher/schedule?google=invalid_state', req.url));
+      return Response.redirect(new URL(`${returnTo}?google=invalid_state`, req.url));
     }
 
     const token = await exchangeGoogleCode(code, url.origin);
@@ -51,8 +52,8 @@ export async function GET(req: NextRequest) {
     }
 
     await supabaseAdmin.from('google_oauth_states').delete().eq('state', state);
-    return Response.redirect(new URL('/teacher/schedule?google=connected', req.url));
+    return Response.redirect(new URL(`${returnTo}?google=connected`, req.url));
   } catch {
-    return Response.redirect(new URL('/teacher/schedule?google=error', req.url));
+    return Response.redirect(new URL(`${returnTo}?google=error`, req.url));
   }
 }
