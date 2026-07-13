@@ -58,7 +58,7 @@ export function TeacherTelegramPanel() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const google = params.get('google');
-    if (google === 'connected') setError('Google conectado com sucesso. Agora o Lumi Assistente pode usar Google Agenda e Gmail.');
+    if (google === 'connected') setError('Google Agenda conectado com sucesso. Agora o Lumi Assistente pode consultar e criar eventos.');
     if (google === 'error') setError('Nao foi possivel conectar sua conta Google.');
     if (google === 'invalid_state') setError('A conexao com Google expirou. Clique em conectar novamente.');
   }, []);
@@ -161,7 +161,7 @@ export function TeacherTelegramPanel() {
       <GlassCard className="portal-summary-card telegram-connect-card">
         <div className="glass-card-head">
           <div>
-            <span className="eyebrow">Google Agenda e Gmail</span>
+            <span className="eyebrow">Google Agenda</span>
             <h2>Conecte sua conta Google ao Lumi Assistente</h2>
           </div>
           <StatusBadge tone={googleStatus?.connected ? 'success' : 'warning'}>
@@ -170,7 +170,7 @@ export function TeacherTelegramPanel() {
         </div>
 
         <p className="muted">
-          Com essa conexao, o Lumi Assistente pode consultar o Google Agenda, criar eventos de aula, preparar rascunhos e enviar e-mails pelo Gmail quando voce confirmar.
+          Com essa conexao, o Lumi Assistente pode consultar o Google Agenda e criar eventos de aula quando voce confirmar.
         </p>
 
         {googleStatus?.connected && (
@@ -185,8 +185,8 @@ export function TeacherTelegramPanel() {
             <small>Crie ou consulte aulas no Google Agenda pelo Telegram.</small>
           </span>
           <span className="support-shortcut">
-            <strong>Gmail com confirmacao</strong>
-            <small>O bot prepara mensagens e so envia quando voce autorizar.</small>
+            <strong>Menos alertas do Google</strong>
+            <small>Por enquanto, solicitamos apenas permissao de agenda.</small>
           </span>
           <span className="support-shortcut">
             <strong>Controle de destino</strong>

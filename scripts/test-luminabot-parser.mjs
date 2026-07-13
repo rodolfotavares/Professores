@@ -21,12 +21,9 @@ const sandbox = {
       return {
         createOrUpdateGoogleEventForClass: async () => ({ synced: false }),
         createStandaloneGoogleCalendarEvent: async () => ({ synced: false }),
-        createGmailDraft: async () => ({}),
         deleteGoogleEventForClass: async () => ({ synced: false }),
         getValidGoogleConnection: async () => null,
         listGoogleCalendarEvents: async () => ({ connected: false, events: [] }),
-        searchGmailMessages: async () => ({ connected: false, messages: [] }),
-        sendGmailMessage: async () => ({}),
         syncTeacherClassesToGoogle: async () => ({ synced: 0 }),
       };
     }
@@ -212,15 +209,15 @@ assert.equal(studentDocument.intent, 'GERAR_RELATORIO_ALUNO');
 assert.equal(studentDocument.artifactType, 'document');
 
 const emailRequest = detector.detect('mande um email para Ana confirmando a aula');
-assert.equal(emailRequest.intent, 'ENVIAR_EMAIL');
+assert.equal(emailRequest.intent, 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO');
 assert.equal(emailRequest.studentName, 'Ana');
 
 const draftRequest = detector.detect('crie um email para Ana cobrando pagamento');
-assert.equal(draftRequest.intent, 'GMAIL_CREATE_DRAFT');
+assert.equal(draftRequest.intent, 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO');
 assert.equal(draftRequest.studentName, 'Ana');
 
 const searchEmailRequest = detector.detect('procure emails da Ana');
-assert.equal(searchEmailRequest.intent, 'GMAIL_SEARCH_EMAILS');
+assert.equal(searchEmailRequest.intent, 'CONVERSA_GERAL');
 
 assert.equal(parser.parseTime('as 15h30'), '15:30:00');
 assert.equal(parser.parseTime('as duas da tarde'), '14:00:00');
