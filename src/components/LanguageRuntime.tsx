@@ -1198,33 +1198,20 @@ function translateTree(language: string) {
 
 export function LanguageRuntime() {
   useEffect(() => {
-    let language = window.localStorage.getItem('lumina-language') || 'pt-BR';
-    let scheduled = false;
-
-    function scheduleTranslation(nextLanguage = language) {
-      language = nextLanguage;
-      if (scheduled) return;
-      scheduled = true;
-      window.requestAnimationFrame(() => {
-        scheduled = false;
-        translateTree(language);
-      });
-    }
+    const applyDocumentLanguage = (nextLanguage = window.localStorage.getItem('lumina-language') || 'pt-BR') => {
+      document.documentElement.lang = nextLanguage === 'en-US' ? 'en' : 'pt-BR';
+    };
 
     function handleLanguageChange(event: Event) {
       const customEvent = event as CustomEvent<string>;
       const nextLanguage = customEvent.detail || window.localStorage.getItem('lumina-language') || 'pt-BR';
-      scheduleTranslation(nextLanguage);
+      applyDocumentLanguage(nextLanguage);
     }
 
-    const observer = new MutationObserver(() => scheduleTranslation());
-    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-
     window.addEventListener('lumina-language-change', handleLanguageChange);
-    scheduleTranslation(language);
+    applyDocumentLanguage();
 
     return () => {
-      observer.disconnect();
       window.removeEventListener('lumina-language-change', handleLanguageChange);
     };
   }, []);
