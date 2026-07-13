@@ -1082,7 +1082,7 @@ export function TeacherMessagesPanel() {
   }
 
   return (
-    <div className="stack">
+    <div className="stack portal-tab messages-panel">
       <PanelHeader eyebrow="Comunicação" title="Recados" text="Converse com cada aluno em um histórico simples." />
       <div className="grid grid-2">
       <div className="card stack message-composer-card">

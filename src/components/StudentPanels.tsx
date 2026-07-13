@@ -316,7 +316,7 @@ export function StudentMessagesPanel() {
   }
 
   return (
-    <div className="stack">
+    <div className="stack portal-tab messages-panel">
       <PanelHeader eyebrow="Comunicação" title="Recados" text="Envie mensagens e acompanhe respostas do professor." />
       <div className="grid grid-2">
       <form className="card stack message-composer-card" onSubmit={send}>

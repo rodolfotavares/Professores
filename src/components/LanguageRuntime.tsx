@@ -1072,7 +1072,13 @@ Object.assign(dictionary, {
 });
 
 const sortedEntries = Object.entries(dictionary).sort((a, b) => b[0].length - a[0].length);
-const fallbackEntries = Object.entries(fallbackWords).sort((a, b) => b[0].length - a[0].length);
+const unsafeFallbackWords = new Set([
+  'a', 'o', 'e', 'de', 'da', 'do', 'das', 'dos', 'em', 'no', 'na', 'nos', 'nas',
+  'os', 'as', 'um', 'uma', 'para', 'por', 'com', 'sem',
+]);
+const fallbackEntries = Object.entries(fallbackWords)
+  .filter(([source]) => source.trim().length > 2 && !unsafeFallbackWords.has(source.trim().toLowerCase()))
+  .sort((a, b) => b[0].length - a[0].length);
 const textOriginals = new WeakMap<Text, string>();
 const translatedAttributes = ['placeholder', 'title', 'aria-label'];
 const ignoredTags = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'CODE', 'PRE']);
@@ -1122,7 +1128,10 @@ function translateText(original: string, language: string) {
 
   let translated = original;
   for (const [source, target] of sortedEntries) {
-    translated = replaceExpression(translated, source, target);
+    const compactSource = source.trim();
+    if (compactSource.length <= 2) continue;
+    const isSingleWord = /^[\p{L}\p{N}_-]+$/u.test(compactSource);
+    translated = replaceExpression(translated, source, target, isSingleWord);
   }
 
   for (const [source, target] of fallbackEntries) {

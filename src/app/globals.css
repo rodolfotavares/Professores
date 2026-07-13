@@ -3871,6 +3871,16 @@ select.input option {
   align-self: start;
 }
 
+.messages-panel {
+  width: 100%;
+  max-width: none;
+}
+
+.messages-panel > .grid.grid-2 {
+  grid-template-columns: minmax(360px, 0.9fr) minmax(420px, 1.1fr);
+  align-items: start;
+}
+
 .message-compose-form {
   display: grid;
   gap: 12px;
@@ -3912,6 +3922,7 @@ select.input option {
 .message-thread {
   display: grid;
   gap: 14px;
+  min-width: 0;
   max-height: min(66vh, 680px);
   overflow-y: auto;
   padding: 4px 6px 4px 2px;
@@ -4015,6 +4026,10 @@ select.input option {
 }
 
 @media (max-width: 760px) {
+  .messages-panel > .grid.grid-2 {
+    grid-template-columns: 1fr;
+  }
+
   .message-bubble {
     width: min(92%, 520px);
   }
