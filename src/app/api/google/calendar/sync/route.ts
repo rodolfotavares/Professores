@@ -9,7 +9,15 @@ export async function POST(req: NextRequest) {
       return json({ error: 'Sem permissao.' }, { status: 403 });
     }
 
-    const result = await syncTeacherClassesToGoogle(user.id);
+    let createMeet = true;
+    try {
+      const body = await req.json();
+      createMeet = body?.createMeet !== false;
+    } catch {
+      createMeet = true;
+    }
+
+    const result = await syncTeacherClassesToGoogle(user.id, { createMeet });
     return json(result);
   } catch (error) {
     return apiError(error);

@@ -4149,6 +4149,38 @@ select.input option {
   gap: 18px;
 }
 
+.google-meet-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 18px;
+  background: rgba(37, 99, 235, 0.06);
+  color: #0f172a;
+}
+
+.google-meet-option input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: #2563eb;
+}
+
+.google-meet-option span {
+  display: grid;
+  gap: 4px;
+}
+
+.google-meet-option strong {
+  font-size: 0.95rem;
+}
+
+.google-meet-option small {
+  color: #64748b;
+  line-height: 1.35;
+}
+
 .telegram-code-box {
   display: grid;
   gap: 5px;

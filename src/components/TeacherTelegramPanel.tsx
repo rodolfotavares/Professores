@@ -32,6 +32,7 @@ export function TeacherTelegramPanel() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const [linkExpiresAt, setLinkExpiresAt] = useState('');
+  const [createMeetLinks, setCreateMeetLinks] = useState(true);
 
   async function load() {
     try {
@@ -94,8 +95,14 @@ export function TeacherTelegramPanel() {
     setGoogleLoading(true);
     setError('');
     try {
-      const data = await apiFetch<{ synced: number }>('/api/google/calendar/sync', { method: 'POST' });
-      setError(`${data.synced} aula${data.synced === 1 ? '' : 's'} sincronizada${data.synced === 1 ? '' : 's'} com Google Agenda.`);
+      const data = await apiFetch<{ synced: number; meetLinks?: number }>('/api/google/calendar/sync', {
+        method: 'POST',
+        body: JSON.stringify({ createMeet: createMeetLinks }),
+      });
+      const meetText = createMeetLinks
+        ? ` ${data.meetLinks || 0} aula${data.meetLinks === 1 ? '' : 's'} com link do Meet.`
+        : '';
+      setError(`${data.synced} aula${data.synced === 1 ? '' : 's'} sincronizada${data.synced === 1 ? '' : 's'} com Google Agenda.${meetText}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao sincronizar Google Agenda.');
     } finally {
@@ -181,8 +188,8 @@ export function TeacherTelegramPanel() {
 
         <div className="support-shortcuts lumi-assistant-benefits">
           <span className="support-shortcut">
-            <strong>Agenda sincronizada</strong>
-            <small>Crie ou consulte aulas no Google Agenda pelo Telegram.</small>
+            <strong>Agenda e Meet sincronizados</strong>
+            <small>Crie aulas no Google Agenda com link do Meet pronto para professor e aluno.</small>
           </span>
           <span className="support-shortcut">
             <strong>Menos alertas do Google</strong>
@@ -194,12 +201,24 @@ export function TeacherTelegramPanel() {
           </span>
         </div>
 
+        <label className="google-meet-option">
+          <input
+            type="checkbox"
+            checked={createMeetLinks}
+            onChange={(event) => setCreateMeetLinks(event.target.checked)}
+          />
+          <span>
+            <strong>Criar link do Meet automaticamente</strong>
+            <small>Ao sincronizar, todas as aulas futuras passam a ter um link para iniciar ou entrar na aula.</small>
+          </span>
+        </label>
+
         <div className="panel-actions">
           <button className="btn" type="button" onClick={connectGoogle} disabled={googleLoading}>
             {googleLoading ? 'Abrindo Google...' : googleStatus?.connected ? 'Reconectar Google' : 'Conectar Google'}
           </button>
           <button className="btn primary" type="button" onClick={syncGoogleCalendar} disabled={googleLoading || !googleStatus?.connected}>
-            {googleLoading ? 'Sincronizando...' : 'Sincronizar aulas'}
+            {googleLoading ? 'Sincronizando...' : 'Sincronizar aulas existentes'}
           </button>
         </div>
       </GlassCard>

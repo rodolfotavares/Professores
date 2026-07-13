@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { apiError, getApiUser, json } from '@/lib/api-auth';
+import { createOrUpdateGoogleEventForClass } from '@/lib/google-calendar';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 const schema = z.object({
@@ -33,6 +34,9 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       .single();
 
     if (error) throw error;
+    if (data?.status === 'scheduled') {
+      await createOrUpdateGoogleEventForClass(user.id, data.id).catch(() => null);
+    }
     return json({ class: data });
   } catch (error) {
     return apiError(error);

@@ -166,6 +166,15 @@ export function StudentHome() {
     await load();
   }
 
+  async function handleNextClassAction() {
+    if (!nextClass) return;
+    if (nextClass.meeting_url) {
+      window.open(nextClass.meeting_url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    await confirmNextClass();
+  }
+
   return (
     <div className="student-home">
       <StatusMessage error={error} loading={loading} />
@@ -307,9 +316,10 @@ export function StudentHome() {
           <p>{nextClass ? `${nextClass.class_date === todayKey ? 'Hoje' : formatDate(nextClass.class_date)} - ${nextClass.class_time?.slice(0, 5)}` : 'Sem próxima aula'}</p>
           <p>{nextClass?.duration_minutes || student?.duration_minutes || 60} minutos</p>
           <p>{nextClass?.subject || student?.subject || 'Matéria não definida'}</p>
+          <p>{nextClass?.meeting_url ? 'Link do Meet disponível' : 'Link do Meet ainda não disponível'}</p>
         </div>
-        <button className="btn student side-primary" type="button" onClick={confirmNextClass} disabled={!nextClass || nextClass.student_confirmed}>
-          {nextClass?.student_confirmed ? 'Confirmada' : 'Confirmar aula'}
+        <button className="btn student side-primary" type="button" onClick={handleNextClassAction} disabled={!nextClass || (!nextClass.meeting_url && nextClass.student_confirmed)}>
+          {nextClass?.meeting_url ? 'Entrar na aula' : nextClass?.student_confirmed ? 'Confirmada' : 'Confirmar aula'}
         </button>
         <div className="student-today-list">
           <h3>Para hoje</h3>

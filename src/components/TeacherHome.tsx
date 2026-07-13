@@ -160,6 +160,18 @@ export function TeacherHome() {
     }
   }
 
+  async function startSelectedClass() {
+    if (!selectedClass) return;
+    const meetingLink = selectedClass.meeting_start_url || selectedClass.meeting_url;
+    if (meetingLink) {
+      window.open(meetingLink, '_blank', 'noopener,noreferrer');
+    }
+    await smartLessonAction('start');
+    if (!meetingLink) {
+      setError('Esta aula ainda nao tem link do Meet. Conecte o Google Agenda em Lumi Assistente e sincronize as aulas existentes.');
+    }
+  }
+
   async function rescheduleClass() {
     if (!selectedStudent || !rescheduleDate || !rescheduleTime) return;
     setActionLoading('reschedule');
@@ -423,11 +435,12 @@ export function TeacherHome() {
           <p><span>Data</span>{selectedClass ? new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(new Date(`${selectedClass.class_date}T00:00:00`)) : 'Nenhuma aula selecionada'}</p>
           <p><span>Horário</span>{selectedClass ? `${selectedClass.class_time.slice(0, 5)} · ${selectedClass.duration_minutes} min` : 'Horário não definido'}</p>
           <p><span>Matéria</span>{selectedClass?.subject || selectedStudent?.subject || 'Matéria não definida'}</p>
+          <p><span>Link da aula</span>{selectedClass?.meeting_url ? <a href={selectedClass.meeting_url} target="_blank" rel="noreferrer">Abrir Meet</a> : 'Sincronize com Google Agenda'}</p>
         </div>
         <div className="lesson-action-box">
           <h3>Ações da aula</h3>
           <div className="smart-lesson-actions-inline">
-            <button type="button" className="outline-action" onClick={() => smartLessonAction('start')} disabled={!selectedClass || actionLoading === 'start'}>
+            <button type="button" className="outline-action" onClick={startSelectedClass} disabled={!selectedClass || actionLoading === 'start'}>
               {actionLoading === 'start' ? 'Iniciando...' : 'Iniciar aula'}
             </button>
             <button type="button" className="side-primary" onClick={() => smartLessonAction('finish')} disabled={!selectedClass || actionLoading === 'finish'}>
