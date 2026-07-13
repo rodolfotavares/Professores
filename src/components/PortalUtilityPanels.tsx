@@ -750,8 +750,11 @@ export function StudentMaterialsPanel() {
 
 export function StudentSettingsPanel() {
   const [student, setStudent] = useState<Student | null>(null);
+  const [inviteToken, setInviteToken] = useState('');
+  const [inviteSaving, setInviteSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   async function load() {
     try {
@@ -768,6 +771,26 @@ export function StudentSettingsPanel() {
   usePanelLoad(load, 30000);
 
   const days = useMemo(() => (student?.days_of_week || []).join(', ') || 'Não definido', [student]);
+
+  async function acceptInvite() {
+    if (!inviteToken.trim()) return;
+    setInviteSaving(true);
+    setError('');
+    setSuccess('');
+    try {
+      await apiFetch('/api/student/invites/accept', {
+        method: 'POST',
+        body: JSON.stringify({ invite_token: inviteToken.trim() }),
+      });
+      setInviteToken('');
+      setSuccess('Professor vinculado com sucesso.');
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao vincular professor.');
+    } finally {
+      setInviteSaving(false);
+    }
+  }
 
   return (
     <div className="stack portal-tab">
@@ -789,6 +812,14 @@ export function StudentSettingsPanel() {
       </div>
       <div className="grid grid-2">
         <LanguagePreferenceCard />
+        <GlassCard className="portal-summary-card">
+          <span className="eyebrow">Novo professor</span>
+          <h2>Vincular convite</h2>
+          <p className="muted">Cole o token do convite ou abra o link enviado pelo professor para conectar esta conta a outra aula.</p>
+          {success && <p className="success">{success}</p>}
+          <label className="label">Token do convite<input className="input" value={inviteToken} onChange={(event) => setInviteToken(event.target.value)} placeholder="Cole o codigo do link recebido" /></label>
+          <button className="flow-login-button" type="button" onClick={acceptInvite} disabled={inviteSaving || !inviteToken.trim()}>{inviteSaving ? 'Vinculando...' : 'Vincular professor'}</button>
+        </GlassCard>
       </div>
     </div>
   );

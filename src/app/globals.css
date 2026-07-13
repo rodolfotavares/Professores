@@ -6290,6 +6290,24 @@ select.input option {
   color: #0b64e9;
 }
 
+.student-invite-box {
+  display: grid;
+  gap: 8px;
+  padding: 12px 0;
+  border-top: 1px solid #e5ecf5;
+  border-bottom: 1px solid #e5ecf5;
+}
+
+.student-invite-box small {
+  color: #5d6f89;
+  line-height: 1.45;
+}
+
+.student-invite-box input {
+  height: 40px;
+  font-size: 12px;
+}
+
 .student-edit-actions {
   display: grid;
   grid-template-columns: 1fr 1.35fr;

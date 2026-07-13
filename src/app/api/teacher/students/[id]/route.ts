@@ -4,6 +4,7 @@ import { apiError, getApiUser, json } from '@/lib/api-auth';
 import { parseDays } from '@/lib/codes';
 import { makeUpcomingClassDates } from '@/lib/schedule';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { upsertTeacherStudentLink } from '@/lib/student-links';
 import { isValidBrazilPhone, normalizeBrazilPhone } from '@/lib/validation';
 
 const schema = z.object({
@@ -56,6 +57,15 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       .single();
 
     if (error) throw error;
+    await upsertTeacherStudentLink({
+      teacherId: user.id,
+      studentId: student.id,
+      studentUserId: student.user_id,
+      subject: student.subject,
+      pricePerClass: student.price_per_class,
+      classesPerWeek: student.classes_per_week,
+      status: student.status,
+    });
 
     if (body.regenerate_schedule) {
       await supabaseAdmin

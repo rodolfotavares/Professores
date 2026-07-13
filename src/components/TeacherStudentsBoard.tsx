@@ -58,6 +58,8 @@ export function TeacherStudentsBoard() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [inviteUrl, setInviteUrl] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
 
   async function load() {
     try {
@@ -176,6 +178,32 @@ export function TeacherStudentsBoard() {
     }
   }
 
+  async function createInvite() {
+    setInviteLoading(true);
+    setError('');
+    setInviteUrl('');
+    try {
+      const payload = selectedStudent && !isNew
+        ? { student_id: selectedStudent.id }
+        : {
+            email: form.email || undefined,
+            subject: form.subject || undefined,
+            price_per_class: Number(form.price_per_class || 0) || undefined,
+            classes_per_week: Number(form.classes_per_week || 0) || undefined,
+          };
+      const data = await apiFetch<{ invite_url: string }>('/api/teacher/student-invites', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      setInviteUrl(data.invite_url);
+      await navigator.clipboard?.writeText(data.invite_url).catch(() => undefined);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao gerar convite.');
+    } finally {
+      setInviteLoading(false);
+    }
+  }
+
   const monthlyValue = Number(form.classes_per_week || 0) * Number(form.price_per_class || 0) * 4;
 
   return (
@@ -253,6 +281,13 @@ export function TeacherStudentsBoard() {
             <option value="inactive">Inativo</option>
           </select></label>
           <div className="student-edit-total">Previsão mensal <strong>{currency(monthlyValue)}</strong></div>
+          <div className="student-invite-box">
+            <button className="outline-action" type="button" onClick={createInvite} disabled={inviteLoading || (!selectedStudent && !form.email)}>
+              {inviteLoading ? 'Gerando convite...' : 'Copiar link de acesso do aluno'}
+            </button>
+            <small>Use este link para o aluno criar a conta ou vincular este professor ao login que ele ja usa.</small>
+            {inviteUrl && <input readOnly value={inviteUrl} onFocus={(event) => event.currentTarget.select()} />}
+          </div>
           <div className="student-edit-actions">
             <button className="outline-action" type="button" onClick={() => { setIsNew(false); if (students[0]) setSelectedId(students[0].id); }}>Cancelar</button>
             <button className="side-primary" disabled={saving}>{saving ? 'Salvando...' : 'Salvar alterações'}</button>

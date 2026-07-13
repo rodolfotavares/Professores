@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { apiError, getApiUser, json } from '@/lib/api-auth';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { studentIdsForUser } from '@/lib/student-links';
 
 const schema = z.object({
   answer_text: z.string().optional(),
@@ -16,29 +17,37 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
     const body = schema.parse(await req.json());
     const params = await context.params;
 
-    const { data: student, error: studentError } = await supabaseAdmin
-      .from('students')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-    if (studentError || !student) return json({ error: 'Aluno não encontrado.' }, { status: 404 });
+    const studentIds = await studentIdsForUser(user.id);
+    if (!studentIds.length) return json({ error: 'Aluno nao encontrado.' }, { status: 404 });
 
     const { data: activity, error: activityError } = await supabaseAdmin
       .from('activities')
       .select('*')
       .eq('id', params.id)
       .single();
-    if (activityError || !activity) return json({ error: 'Atividade não encontrada.' }, { status: 404 });
+    if (activityError || !activity) return json({ error: 'Atividade nao encontrada.' }, { status: 404 });
 
-    const isAllowed = activity.student_id === student.id || (!activity.student_id && activity.teacher_id === student.teacher_id);
-    if (!isAllowed) return json({ error: 'Atividade não pertence ao aluno.' }, { status: 403 });
+    let studentId = activity.student_id && studentIds.includes(activity.student_id) ? activity.student_id : '';
+
+    if (!studentId && !activity.student_id) {
+      const { data: link } = await supabaseAdmin
+        .from('teacher_student_links')
+        .select('student_id')
+        .eq('teacher_id', activity.teacher_id)
+        .in('student_id', studentIds)
+        .eq('status', 'active')
+        .maybeSingle();
+      studentId = link?.student_id || '';
+    }
+
+    if (!studentId) return json({ error: 'Atividade nao pertence ao aluno.' }, { status: 403 });
 
     const isLate = activity.due_date ? new Date() > new Date(`${activity.due_date}T23:59:59`) : false;
 
     const payload = {
       activity_id: activity.id,
       teacher_id: activity.teacher_id,
-      student_id: student.id,
+      student_id: studentId,
       student_user_id: user.id,
       answer_text: body.answer_text?.trim() || '',
       answer_file_url: body.answer_file_url || null,
@@ -52,7 +61,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
       .from('activity_submissions')
       .select('id')
       .eq('activity_id', activity.id)
-      .eq('student_id', student.id)
+      .eq('student_id', studentId)
       .maybeSingle();
     if (existingError) throw existingError;
 
@@ -61,7 +70,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
           .from('activity_submissions')
           .update(payload)
           .eq('id', existing.id)
-          .eq('student_id', student.id)
+          .eq('student_id', studentId)
       : supabaseAdmin
           .from('activity_submissions')
           .insert({

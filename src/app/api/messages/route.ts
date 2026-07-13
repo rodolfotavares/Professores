@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { apiError, getApiUser, json } from '@/lib/api-auth';
 import { isPushConfigured, sendPushToUser } from '@/lib/push';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { studentIdsForUser } from '@/lib/student-links';
 
 const schema = z.object({
   student_id: z.string().uuid(),
@@ -20,15 +21,23 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const studentId = url.searchParams.get('student_id');
 
-    let query = supabaseAdmin.from('messages').select('*').order('created_at');
-    if (studentId) query = query.eq('student_id', studentId);
-
     if (user.role === 'teacher' || user.role === 'admin') {
-      query = query.eq('teacher_id', user.id);
-    } else {
-      const { data: student } = await supabaseAdmin.from('students').select('id').eq('user_id', user.id).single();
-      query = query.eq('student_id', student?.id || '00000000-0000-0000-0000-000000000000');
+      let query = supabaseAdmin.from('messages').select('*').eq('teacher_id', user.id).order('created_at');
+      if (studentId) query = query.eq('student_id', studentId);
+      const { data, error } = await query;
+      if (error) throw error;
+      return json({ messages: data || [] });
     }
+
+    const studentIds = await studentIdsForUser(user.id);
+    if (!studentIds.length) return json({ messages: [] });
+
+    if (studentId && !studentIds.includes(studentId)) {
+      return json({ error: 'Sem permissao.' }, { status: 403 });
+    }
+
+    let query = supabaseAdmin.from('messages').select('*').in('student_id', studentIds).order('created_at');
+    if (studentId) query = query.eq('student_id', studentId);
 
     const { data, error } = await query;
     if (error) throw error;
@@ -48,11 +57,11 @@ export async function POST(req: NextRequest) {
       .select('*')
       .eq('id', body.student_id)
       .single();
-    if (studentError || !student) return json({ error: 'Aluno não encontrado.' }, { status: 404 });
+    if (studentError || !student) return json({ error: 'Aluno nao encontrado.' }, { status: 404 });
 
     const isTeacher = student.teacher_id === user.id;
     const isStudent = student.user_id === user.id;
-    if (!isTeacher && !isStudent) return json({ error: 'Sem permissão.' }, { status: 403 });
+    if (!isTeacher && !isStudent) return json({ error: 'Sem permissao.' }, { status: 403 });
 
     const { data, error } = await supabaseAdmin
       .from('messages')

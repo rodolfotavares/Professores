@@ -179,7 +179,7 @@ export function ResetPasswordForm() {
   );
 }
 
-export function RegisterForm({ mode }: { mode: RegisterMode }) {
+export function RegisterForm({ mode, inviteToken = '' }: { mode: RegisterMode; inviteToken?: string }) {
   const router = useRouter();
   const [form, setForm] = useState({
     full_name: '',
@@ -217,7 +217,7 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
       const result = await fetch(path, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, whatsapp: normalizeBrazilPhone(form.whatsapp) }),
+        body: JSON.stringify({ ...form, invite_token: inviteToken || undefined, whatsapp: normalizeBrazilPhone(form.whatsapp) }),
       });
       const payload = await result.json();
       if (!result.ok) throw new Error(payload.error || 'Falha no cadastro.');
@@ -251,12 +251,13 @@ export function RegisterForm({ mode }: { mode: RegisterMode }) {
       <div className="auth-heading">
         <span className="eyebrow">{mode === 'teacher' ? 'Portal do professor' : 'Portal do aluno'}</span>
         <h1>{mode === 'teacher' ? 'Criar conta de professor' : 'Criar conta de aluno'}</h1>
-        <p>{mode === 'teacher' ? 'Comece organizando sua rotina de aulas em um painel profissional.' : 'Entre com o código recebido do professor para vincular sua conta.'}</p>
+        <p>{mode === 'teacher' ? 'Comece organizando sua rotina de aulas em um painel profissional.' : inviteToken ? 'Convite recebido. Crie sua conta para entrar no portal do aluno.' : 'Entre com o código ou link recebido do professor para vincular sua conta.'}</p>
       </div>
       {error && <p className="error">{error}</p>}
       {success && <p className="success">{success}</p>}
+      {mode === 'student' && inviteToken && <p className="success">Convite do professor detectado. Não é necessário digitar código.</p>}
       {mode === 'student' && (
-        <label className="label">Código do professor<input className="input" value={form.access_code} onChange={(e) => set('access_code', e.target.value.toUpperCase())} required /></label>
+        <label className="label">Código do professor<input className="input" value={form.access_code} onChange={(e) => set('access_code', e.target.value.toUpperCase())} required={!inviteToken} disabled={Boolean(inviteToken)} placeholder={inviteToken ? 'Convite usado automaticamente' : 'Código recebido do professor'} /></label>
       )}
       <label className="label">Nome completo<input className="input" value={form.full_name} onChange={(e) => set('full_name', e.target.value)} required /></label>
       <label className="label">E-mail<input className="input" type="email" value={form.email} onChange={(e) => set('email', e.target.value)} required /></label>

@@ -4,6 +4,7 @@ import { apiError, getApiUser, json } from '@/lib/api-auth';
 import { parseDays } from '@/lib/codes';
 import { makeUpcomingClassDates } from '@/lib/schedule';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { ensureLinksForExistingStudents, upsertTeacherStudentLink } from '@/lib/student-links';
 import { isValidBrazilPhone, normalizeBrazilPhone } from '@/lib/validation';
 
 const schema = z.object({
@@ -22,7 +23,8 @@ const schema = z.object({
 export async function GET(req: NextRequest) {
   try {
     const user = await getApiUser(req);
-    if (user.role !== 'teacher' && user.role !== 'admin') return json({ error: 'Sem permissão.' }, { status: 403 });
+    if (user.role !== 'teacher' && user.role !== 'admin') return json({ error: 'Sem permissao.' }, { status: 403 });
+    await ensureLinksForExistingStudents(user.id).catch(() => undefined);
 
     const { data, error } = await supabaseAdmin
       .from('students')
@@ -40,7 +42,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user = await getApiUser(req);
-    if (user.role !== 'teacher' && user.role !== 'admin') return json({ error: 'Sem permissão.' }, { status: 403 });
+    if (user.role !== 'teacher' && user.role !== 'admin') return json({ error: 'Sem permissao.' }, { status: 403 });
 
     const body = schema.parse(await req.json());
     const daysOfWeek = parseDays(body.days_of_week || '');
@@ -69,6 +71,16 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) throw error;
+
+    await upsertTeacherStudentLink({
+      teacherId: user.id,
+      studentId: student.id,
+      studentUserId: student.user_id,
+      subject: student.subject,
+      pricePerClass: student.price_per_class,
+      classesPerWeek: student.classes_per_week,
+      status: student.status,
+    });
 
     if (classTime && daysOfWeek.length > 0) {
       const classes = makeUpcomingClassDates(daysOfWeek).map((classDate) => ({

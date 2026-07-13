@@ -1,22 +1,32 @@
 import { NextRequest } from 'next/server';
 import { apiError, getApiUser, json } from '@/lib/api-auth';
+import { studentIdsForUser } from '@/lib/student-links';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function GET(req: NextRequest) {
   try {
     const user = await getApiUser(req);
-    const { data: student, error: studentError } = await supabaseAdmin
-      .from('students')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-    if (studentError || !student) return json({ error: 'Aluno não encontrado.' }, { status: 404 });
+    const studentIds = await studentIdsForUser(user.id);
+    if (!studentIds.length) return json({ activities: [], submissions: [] });
+
+    const { data: links, error: linksError } = await supabaseAdmin
+      .from('teacher_student_links')
+      .select('teacher_id')
+      .in('student_id', studentIds)
+      .eq('status', 'active');
+    if (linksError) throw linksError;
+    const teacherIds = Array.from(new Set((links || []).map((link) => link.teacher_id)));
+
+    const filters = [
+      `student_id.in.(${studentIds.join(',')})`,
+      teacherIds.length ? `and(student_id.is.null,teacher_id.in.(${teacherIds.join(',')}))` : '',
+    ].filter(Boolean).join(',');
 
     const { data: activities, error } = await supabaseAdmin
       .from('activities')
       .select('*')
       .eq('visible_to_student', true)
-      .or(`student_id.eq.${student.id},and(student_id.is.null,teacher_id.eq.${student.teacher_id})`)
+      .or(filters)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -24,7 +34,7 @@ export async function GET(req: NextRequest) {
     const { data: submissions } = await supabaseAdmin
       .from('activity_submissions')
       .select('*, activities(title)')
-      .eq('student_id', student.id);
+      .in('student_id', studentIds);
 
     return json({ activities: activities || [], submissions: submissions || [] });
   } catch (error) {

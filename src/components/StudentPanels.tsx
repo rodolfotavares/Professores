@@ -275,9 +275,9 @@ export function StudentMessagesPanel() {
   async function load() {
     try {
       setError('');
-      const me = await apiFetch<{ student: Student }>('/api/student/me');
+      const me = await apiFetch<{ student: Student | null }>('/api/student/me');
       setStudent(me.student);
-      const data = await apiFetch<{ messages: Message[] }>(`/api/messages?student_id=${me.student.id}`);
+      const data = await apiFetch<{ messages: Message[] }>('/api/messages');
       setMessages(data.messages);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao carregar recados.');

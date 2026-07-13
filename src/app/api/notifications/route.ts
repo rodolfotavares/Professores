@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { apiError, getApiUser, json } from '@/lib/api-auth';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { studentIdsForUser } from '@/lib/student-links';
 
 function toDateTime(date: string, time: string) {
   return new Date(`${date}T${(time || '00:00').slice(0, 5)}:00`);
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
           title: 'Aula nas proximas 24h',
           message: `${item.students?.full_name || 'Aluno'} - ${item.subject || 'aula'} as ${String(item.class_time).slice(0, 5)}`,
           type: 'schedule',
-          link: '/teacher/schedule',
+          link: '/teacher',
         });
       });
 
@@ -44,11 +45,11 @@ export async function GET(req: NextRequest) {
         });
       });
     } else {
-      const { data: student } = await supabaseAdmin.from('students').select('id').eq('user_id', user.id).single();
-      if (student?.id) {
+      const studentIds = await studentIdsForUser(user.id);
+      if (studentIds.length) {
         const [{ data: classes }, { data: messages }] = await Promise.all([
-          supabaseAdmin.from('class_schedules').select('id, class_date, class_time, subject').eq('student_id', student.id).eq('status', 'scheduled').order('class_date').order('class_time').limit(20),
-          supabaseAdmin.from('messages').select('id, text').eq('student_id', student.id).eq('sender_role', 'teacher').eq('is_read', false).limit(10),
+          supabaseAdmin.from('class_schedules').select('id, class_date, class_time, subject').in('student_id', studentIds).eq('status', 'scheduled').order('class_date').order('class_time').limit(20),
+          supabaseAdmin.from('messages').select('id, text').in('student_id', studentIds).eq('sender_role', 'teacher').eq('is_read', false).limit(10),
         ]);
 
         (classes || []).filter((item: any) => isWithinHours(item.class_date, item.class_time, 24)).forEach((item: any) => {

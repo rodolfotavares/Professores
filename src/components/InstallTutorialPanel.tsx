@@ -4,7 +4,7 @@ import { GlassCard } from '@/components/AppShell';
 
 const androidSteps = [
   'Abra o LuminaAI no Chrome do Android.',
-  'Toque nos tres pontinhos no canto superior direito.',
+  'Toque nos tres pontos no canto superior direito.',
   'Escolha Instalar app ou Adicionar a tela inicial.',
   'Confirme em Instalar.',
   'Depois disso, abra o LuminaAI pelo icone criado na tela inicial.',
@@ -19,13 +19,13 @@ const iphoneSteps = [
 ];
 
 const studentLoginSteps = [
-  'O professor abre Configuracoes e copia o Codigo do professor.',
-  'O professor envia esse codigo para o aluno pelo WhatsApp ou informa durante a aula.',
-  'O aluno abre o LuminaAI e toca em Sou aluno ou Cadastro de aluno.',
-  'O aluno preenche nome, e-mail, WhatsApp, senha e confirma a senha.',
-  'No campo Codigo do professor, o aluno cola o codigo recebido.',
+  'O professor abre a aba Alunos, seleciona o aluno ou cria um novo cadastro.',
+  'No painel lateral, o professor clica em Copiar link de acesso do aluno.',
+  'O professor envia esse link pelo WhatsApp para o aluno ou responsavel.',
+  'Se o aluno ainda nao tiver conta, ele abre o link e cria a conta de aluno normalmente.',
+  'Se o aluno ja tiver conta, ele entra no portal do aluno e cola o token do convite em Perfil > Vincular convite.',
+  'O codigo antigo do professor continua funcionando como alternativa no cadastro.',
   'Depois do cadastro, o aluno entra pelo Login usando o e-mail e a senha criados.',
-  'Se o aluno entrar no portal errado, oriente-o a sair e fazer login novamente com a conta correta.',
 ];
 
 export function InstallTutorialPanel() {

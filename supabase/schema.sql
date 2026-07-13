@@ -49,6 +49,40 @@ create table public.students (
   updated_at timestamptz not null default now()
 );
 
+create table public.teacher_student_links (
+  id uuid primary key default gen_random_uuid(),
+  teacher_id uuid not null references public.profiles(id) on delete cascade,
+  student_id uuid not null references public.students(id) on delete cascade,
+  student_user_id uuid references public.profiles(id) on delete set null,
+  subject text,
+  price_per_class numeric(10,2),
+  classes_per_week integer,
+  status public.student_status not null default 'active',
+  invite_id uuid,
+  accepted_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(teacher_id, student_id)
+);
+
+create table public.student_invites (
+  id uuid primary key default gen_random_uuid(),
+  teacher_id uuid not null references public.profiles(id) on delete cascade,
+  student_id uuid references public.students(id) on delete set null,
+  email text,
+  subject text,
+  price_per_class numeric(10,2),
+  classes_per_week integer,
+  token_hash text not null unique,
+  status text not null default 'pending' check (status in ('pending', 'accepted', 'cancelled', 'expired')),
+  expires_at timestamptz not null,
+  used_at timestamptz,
+  used_by_student_id uuid references public.students(id) on delete set null,
+  used_by_user_id uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table public.class_schedules (
   id uuid primary key default gen_random_uuid(),
   teacher_id uuid not null references public.profiles(id) on delete cascade,
@@ -295,6 +329,11 @@ create table public.telegram_bot_connection_tokens (
 
 create index students_teacher_id_idx on public.students(teacher_id);
 create index students_user_id_idx on public.students(user_id);
+create index teacher_student_links_teacher_idx on public.teacher_student_links(teacher_id, status);
+create index teacher_student_links_student_idx on public.teacher_student_links(student_id, status);
+create index teacher_student_links_student_user_idx on public.teacher_student_links(student_user_id, status);
+create index student_invites_teacher_idx on public.student_invites(teacher_id, created_at desc);
+create index student_invites_token_lookup_idx on public.student_invites(token_hash, expires_at, used_at);
 create index class_schedules_teacher_student_idx on public.class_schedules(teacher_id, student_id);
 create index lesson_reports_teacher_status_idx on public.lesson_reports(teacher_id, status);
 create index lesson_reports_student_status_idx on public.lesson_reports(student_id, status);
@@ -313,6 +352,8 @@ create index telegram_bot_connection_tokens_lookup_idx on public.telegram_bot_co
 alter table public.profiles enable row level security;
 alter table public.teacher_profiles enable row level security;
 alter table public.students enable row level security;
+alter table public.teacher_student_links enable row level security;
+alter table public.student_invites enable row level security;
 alter table public.class_schedules enable row level security;
 alter table public.lesson_reports enable row level security;
 alter table public.activities enable row level security;
@@ -337,6 +378,10 @@ create policy "profiles own update" on public.profiles for update using (auth.ui
 
 create policy "teacher own profile" on public.teacher_profiles for select using (auth.uid() = user_id);
 create policy "students teacher or linked user read" on public.students for select using (auth.uid() = teacher_id or auth.uid() = user_id);
+create policy "teacher student links teacher or student read" on public.teacher_student_links for select to authenticated using ((select auth.uid()) = teacher_id or (select auth.uid()) = student_user_id);
+create policy "student invites teacher read" on public.student_invites for select to authenticated using ((select auth.uid()) = teacher_id);
+create policy "student invites teacher insert" on public.student_invites for insert to authenticated with check ((select auth.uid()) = teacher_id);
+create policy "student invites teacher update" on public.student_invites for update to authenticated using ((select auth.uid()) = teacher_id) with check ((select auth.uid()) = teacher_id);
 create policy "classes teacher or student read" on public.class_schedules for select using (auth.uid() = teacher_id or auth.uid() = student_user_id);
 create policy "lesson reports teacher read" on public.lesson_reports for select using (auth.uid() = teacher_id);
 create policy "lesson reports student published read" on public.lesson_reports for select using (auth.uid() = student_user_id and status = 'PUBLISHED');

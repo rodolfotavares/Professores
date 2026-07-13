@@ -251,10 +251,62 @@ const onboardingSteps = {
   ],
 } as const;
 
+const currentOnboardingSteps = {
+  teacher: [
+    {
+      title: 'Bem-vindo ao LuminaAI',
+      text: 'Voce tem 7 dias gratis para testar o app. Depois desse periodo, a mensalidade de R$ 19,90 libera o acesso completo.',
+      hint: 'Use esse tempo para cadastrar alunos e validar sua rotina.',
+    },
+    {
+      title: 'Cadastre seus alunos',
+      text: 'Entre em Alunos para criar o perfil, definir dias, horarios, valor por aula e dados do responsavel.',
+      hint: 'Depois de salvar, copie o link de acesso do aluno e envie pelo WhatsApp. O codigo antigo continua funcionando.',
+    },
+    {
+      title: 'Organize a agenda',
+      text: 'No Inicio, arraste aulas no calendario, confirme, reagende ou desmarque encontros sem sair da tela principal.',
+      hint: 'A agenda e o centro do uso diario do professor.',
+    },
+    {
+      title: 'Use a Aula Inteligente',
+      text: 'Ao fim da aula, registre o resumo. A IA ajuda a gerar relatorio, mensagem para responsavel e evolucao do aluno.',
+      hint: 'Quanto melhor o relato, mais fiel fica a analise.',
+    },
+    {
+      title: 'Acompanhe o financeiro',
+      text: 'Em Financeiro voce controla pagamentos dos alunos e tambem paga a assinatura do app quando o teste acabar.',
+      hint: 'Professores ja cadastrados como isentos continuam liberados.',
+    },
+  ],
+  student: [
+    {
+      title: 'Bem-vindo ao LuminaAI',
+      text: 'Seu portal mostra aulas, mensagens e sua evolucao conforme o professor registra os relatorios.',
+      hint: 'Alunos nao pagam assinatura do app.',
+    },
+    {
+      title: 'Veja sua proxima aula',
+      text: 'No Inicio voce acompanha horario, materia e status da proxima aula cadastrada pelo professor.',
+      hint: 'Use o botao de confirmar aula quando estiver tudo certo.',
+    },
+    {
+      title: 'Vincule novos professores',
+      text: 'Se outro professor enviar um convite, abra o link ou cole o token em Perfil para conectar a mesma conta.',
+      hint: 'Assim voce pode ter mais de um professor sem criar outro login.',
+    },
+    {
+      title: 'Converse com o professor',
+      text: 'Use Mensagens para tirar duvidas, enviar combinados e manter o historico organizado.',
+      hint: 'Tudo fica vinculado ao seu professor.',
+    },
+  ],
+} as const;
+
 function OnboardingGuide({ area }: { area: 'teacher' | 'student' }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
-  const steps = onboardingSteps[area];
+  const steps = currentOnboardingSteps[area];
   const storageKey = `lumina-onboarding-${area}`;
 
   useEffect(() => {
