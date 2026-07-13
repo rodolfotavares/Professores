@@ -5,6 +5,8 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { GlassCard, MetricCard, StatusBadge } from '@/components/AppShell';
 import { EmptyState, StatusMessage } from '@/components/PanelState';
 import { apiFetch } from '@/lib/fetcher';
+import { supabaseBrowser } from '@/lib/supabase-browser';
+import { isStrongPassword, passwordRuleMessage } from '@/lib/validation';
 import type { Activity, ActivitySubmission, ClassSchedule, Student } from '@/types';
 
 function usePanelLoad(load: () => Promise<void>, interval = 15000) {
@@ -45,6 +47,63 @@ function statusLabel(status?: string) {
     corrected: 'Corrigida',
   };
   return status ? labels[status] || status : '';
+}
+
+function PasswordChangeCard() {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      if (!isStrongPassword(newPassword)) throw new Error(passwordRuleMessage);
+      if (newPassword !== confirmPassword) throw new Error('A confirmacao da senha precisa ser igual a nova senha.');
+
+      const { data: userData, error: userError } = await supabaseBrowser.auth.getUser();
+      const email = userData.user?.email;
+      if (userError || !email) throw new Error('Nao foi possivel confirmar sua sessao.');
+
+      const { error: signInError } = await supabaseBrowser.auth.signInWithPassword({ email, password: currentPassword });
+      if (signInError) throw new Error('Senha atual incorreta.');
+
+      const { error: updateError } = await supabaseBrowser.auth.updateUser({ password: newPassword });
+      if (updateError) throw updateError;
+
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setSuccess('Senha alterada com seguranca.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Nao foi possivel alterar a senha.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <GlassCard className="portal-summary-card">
+      <span className="eyebrow">Seguranca</span>
+      <h2>Alterar senha</h2>
+      <p className="muted">Confirme sua senha atual antes de criar uma nova senha de acesso.</p>
+      {error && <p className="error">{error}</p>}
+      {success && <p className="success">{success}</p>}
+      <form className="stack password-change-form" onSubmit={submit}>
+        <label className="label">Senha atual<input className="input" type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required /></label>
+        <label className="label">Nova senha<input className="input" type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required minLength={6} /></label>
+        <label className="label">Confirmar nova senha<input className="input" type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required minLength={6} /></label>
+        <p className="muted auth-hint">{passwordRuleMessage}</p>
+        <button className="flow-login-button" disabled={loading}>{loading ? 'Alterando...' : 'Alterar senha'}</button>
+      </form>
+    </GlassCard>
+  );
 }
 
 function LanguagePreferenceCard() {
@@ -508,6 +567,9 @@ export function TeacherSettingsPanel() {
         <LanguagePreferenceCard />
         <TelegramSettingsCard />
       </div>
+      <div className="grid grid-2">
+        <PasswordChangeCard />
+      </div>
       <GlassCard className="support-shortcuts-card">
         <div className="glass-card-head">
           <div>
@@ -812,6 +874,7 @@ export function StudentSettingsPanel() {
       </div>
       <div className="grid grid-2">
         <LanguagePreferenceCard />
+        <PasswordChangeCard />
         <GlassCard className="portal-summary-card">
           <span className="eyebrow">Novo professor</span>
           <h2>Vincular convite</h2>

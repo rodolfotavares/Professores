@@ -25,9 +25,6 @@ export async function POST(req: NextRequest) {
     const body = schema.parse(await req.json());
     const invite = await findValidStudentInvite(normalizeInviteToken(body.invite_token.trim()));
     if (!invite) return json({ error: 'Convite invalido ou expirado.' }, { status: 400 });
-    if (invite.email && user.email && invite.email.toLowerCase() !== user.email.toLowerCase()) {
-      return json({ error: 'Este convite foi gerado para outro e-mail.' }, { status: 400 });
-    }
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
@@ -36,15 +33,22 @@ export async function POST(req: NextRequest) {
       .single();
     if (profileError) throw profileError;
 
-    const { data: existingStudent, error: existingError } = await supabaseAdmin
-      .from('students')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('teacher_id', invite.teacher_id)
-      .maybeSingle();
-    if (existingError) throw existingError;
+    const existingResult = invite.student_id
+      ? await supabaseAdmin
+        .from('students')
+        .select('*')
+        .eq('id', invite.student_id)
+        .eq('teacher_id', invite.teacher_id)
+        .maybeSingle()
+      : await supabaseAdmin
+        .from('students')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('teacher_id', invite.teacher_id)
+        .maybeSingle();
+    if (existingResult.error) throw existingResult.error;
 
-    let student = existingStudent;
+    let student = existingResult.data;
     if (!student) {
       const { data: created, error: createError } = await supabaseAdmin
         .from('students')
@@ -64,6 +68,26 @@ export async function POST(req: NextRequest) {
         .single();
       if (createError) throw createError;
       student = created;
+    } else {
+      const classesPerWeek = student.classes_per_week || invite.classes_per_week || null;
+      const { data: updated, error: updateError } = await supabaseAdmin
+        .from('students')
+        .update({
+          user_id: user.id,
+          full_name: profile.full_name || student.full_name,
+          email: user.email || student.email || invite.email || '',
+          whatsapp: profile.whatsapp || student.whatsapp || null,
+          subject: student.subject || invite.subject || null,
+          price_per_class: student.price_per_class || invite.price_per_class || 100,
+          classes_per_week: classesPerWeek,
+          classes_per_month: classesPerWeek ? classesPerWeek * 4 : null,
+          status: student.status || 'active',
+        })
+        .eq('id', student.id)
+        .select('*')
+        .single();
+      if (updateError) throw updateError;
+      student = updated;
     }
 
     await upsertTeacherStudentLink({

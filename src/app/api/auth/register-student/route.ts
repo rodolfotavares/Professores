@@ -46,10 +46,6 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: 'Codigo ou convite do professor invalido.' }, { status: 400 });
     }
 
-    if (invite?.email && invite.email.toLowerCase() !== body.email.toLowerCase()) {
-      return Response.json({ error: 'Este convite foi gerado para outro e-mail.' }, { status: 400 });
-    }
-
     const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: body.email,
       password: body.password,
@@ -70,19 +66,51 @@ export async function POST(req: NextRequest) {
     });
     if (profileError) throw profileError;
 
-    const { data: student, error: studentError } = await supabaseAdmin.from('students').insert({
-      teacher_id: teacher.user_id,
-      user_id: userId,
-      full_name: body.full_name,
-      email: body.email,
-      whatsapp,
-      subject: invite?.subject || null,
-      price_per_class: invite?.price_per_class || 100,
-      classes_per_week: invite?.classes_per_week || null,
-      classes_per_month: invite?.classes_per_week ? invite.classes_per_week * 4 : null,
-      status: 'active',
-    }).select('*').single();
+    const existingStudentResult = invite?.student_id
+      ? await supabaseAdmin
+        .from('students')
+        .select('*')
+        .eq('id', invite.student_id)
+        .eq('teacher_id', teacher.user_id)
+        .maybeSingle()
+      : { data: null, error: null };
+    if (existingStudentResult.error) throw existingStudentResult.error;
+
+    let student = existingStudentResult.data;
+    let studentError = null;
+    if (student) {
+      const classesPerWeek = student.classes_per_week || invite?.classes_per_week || null;
+      const result = await supabaseAdmin.from('students').update({
+        user_id: userId,
+        full_name: body.full_name,
+        email: body.email,
+        whatsapp,
+        subject: student.subject || invite?.subject || null,
+        price_per_class: student.price_per_class || invite?.price_per_class || 100,
+        classes_per_week: classesPerWeek,
+        classes_per_month: classesPerWeek ? classesPerWeek * 4 : null,
+        status: student.status || 'active',
+      }).eq('id', student.id).select('*').single();
+      student = result.data;
+      studentError = result.error;
+    } else {
+      const result = await supabaseAdmin.from('students').insert({
+        teacher_id: teacher.user_id,
+        user_id: userId,
+        full_name: body.full_name,
+        email: body.email,
+        whatsapp,
+        subject: invite?.subject || null,
+        price_per_class: invite?.price_per_class || 100,
+        classes_per_week: invite?.classes_per_week || null,
+        classes_per_month: invite?.classes_per_week ? invite.classes_per_week * 4 : null,
+        status: 'active',
+      }).select('*').single();
+      student = result.data;
+      studentError = result.error;
+    }
     if (studentError) throw studentError;
+    if (!student) throw new Error('Erro ao vincular aluno.');
 
     await upsertTeacherStudentLink({
       teacherId: teacher.user_id,
