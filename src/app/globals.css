@@ -11385,3 +11385,57 @@ select {
     max-height: 30px !important;
   }
 }
+
+/* Desktop sidebar must remain blue through the whole scroll viewport */
+@media (min-width: 761px) {
+  .teacher-portal,
+  .student-portal {
+    --portal-sidebar-width: 114px;
+    position: relative !important;
+    grid-template-columns: var(--portal-sidebar-width) minmax(0, 1fr) !important;
+  }
+
+  .teacher-portal .teacher-icon-sidebar,
+  .student-portal .teacher-icon-sidebar,
+  .teacher-portal:has(.teacher-agenda-home) .teacher-icon-sidebar,
+  .teacher-portal:has(.students-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.activities-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.finance-reference-page) .teacher-icon-sidebar,
+  .student-portal:has(.student-home) .teacher-icon-sidebar {
+    position: fixed !important;
+    inset: 0 auto 0 0 !important;
+    z-index: 110 !important;
+    width: var(--portal-sidebar-width) !important;
+    min-width: var(--portal-sidebar-width) !important;
+    max-width: var(--portal-sidebar-width) !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: linear-gradient(180deg, #0b3b8f 0%, #082766 48%, #061b45 100%) !important;
+    border-radius: 0 !important;
+    border-right: 1px solid rgba(147, 197, 253, 0.32) !important;
+    box-shadow: 18px 0 44px rgba(10, 38, 96, 0.14) !important;
+  }
+
+  .teacher-portal .app-glass-shell,
+  .student-portal .app-glass-shell {
+    min-width: 0 !important;
+  }
+}
+
+.support-language-strip {
+  display: grid;
+  grid-template-columns: minmax(260px, 520px);
+  align-items: stretch;
+}
+
+.support-language-strip .language-card {
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .support-language-strip {
+    grid-template-columns: 1fr;
+  }
+}

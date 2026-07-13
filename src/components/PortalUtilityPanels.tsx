@@ -188,6 +188,9 @@ export function TeacherSupportPanel() {
   return (
     <div className="stack portal-tab">
       <SectionIntro title="Suporte" text="Contato direto e ajuda rápida sobre as funções do LuminaAI." />
+      <div className="support-language-strip">
+        <LanguagePreferenceCard />
+      </div>
       <div className="grid grid-2">
         <GlassCard className="support-contact-card">
           <span className="eyebrow">WhatsApp</span>
@@ -211,9 +214,6 @@ export function TeacherSupportPanel() {
             <button className="btn primary">Enviar</button>
           </form>
         </GlassCard>
-      </div>
-      <div className="grid grid-2">
-        <LanguagePreferenceCard />
       </div>
       <GlassCard className="support-shortcuts-card">
         <div className="glass-card-head">
@@ -258,6 +258,9 @@ export function StudentSupportPanel() {
   return (
     <div className="stack portal-tab">
       <SectionIntro title="Suporte" text="Ajuda rápida para usar o portal do aluno no LuminaAI." />
+      <div className="support-language-strip">
+        <LanguagePreferenceCard />
+      </div>
       <div className="grid grid-2">
         <GlassCard className="support-contact-card">
           <span className="eyebrow">WhatsApp</span>
@@ -281,9 +284,6 @@ export function StudentSupportPanel() {
             <button className="btn primary">Enviar</button>
           </form>
         </GlassCard>
-      </div>
-      <div className="grid grid-2">
-        <LanguagePreferenceCard />
       </div>
       <GlassCard className="support-shortcuts-card">
         <div className="glass-card-head">
@@ -887,3 +887,4 @@ export function StudentSettingsPanel() {
     </div>
   );
 }
+
