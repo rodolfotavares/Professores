@@ -49,13 +49,13 @@ export default function PrivacyPage() {
 
         <h2>8. Compartilhamento de dados</h2>
         <p>
-          Dados podem ser compartilhados com provedores necessários para funcionamento do app, como hospedagem, banco de dados, autenticação, armazenamento, pagamentos, agenda, notificações e ferramentas de IA.
-          O LuminaAI não vende dados pessoais e não usa dados do Google Agenda para publicidade.
+          Dados podem ser compartilhados com provedores necessários para funcionamento do app, como hospedagem, banco de dados, autenticação, armazenamento, pagamentos, links de aula, notificações e ferramentas de IA.
+          O LuminaAI não vende dados pessoais e não usa dados de agenda para publicidade.
         </p>
 
-        <h2>9. Google Agenda, Mercado Pago e notificações</h2>
+        <h2>9. Agenda, Mercado Pago e notificações</h2>
         <p>
-          Se o professor conectar o Google Agenda, o app usa a autorização apenas para criar ou atualizar eventos de aulas.
+          O app pode gerar links para adicionar aulas ao Google Agenda sem solicitar permissões sensíveis da conta Google.
           O Mercado Pago processa pagamentos da assinatura do professor conforme suas próprias políticas.
           Push notifications dependem da permissão do navegador e podem ser desativadas a qualquer momento nas configurações do dispositivo.
         </p>

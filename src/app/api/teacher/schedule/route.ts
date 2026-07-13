@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { apiError, getApiUser, json } from '@/lib/api-auth';
-import { createOrUpdateGoogleEventForClass } from '@/lib/google-calendar';
+import { ensureClassMeetingLink } from '@/lib/class-meeting';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 const schema = z.object({
@@ -56,8 +56,8 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) throw error;
-    await createOrUpdateGoogleEventForClass(user.id, data.id).catch(() => null);
-    return json({ class: data });
+    const classWithMeeting = await ensureClassMeetingLink(user.id, data.id).catch(() => data);
+    return json({ class: classWithMeeting });
   } catch (error) {
     return apiError(error);
   }

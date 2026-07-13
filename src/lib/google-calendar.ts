@@ -1,4 +1,5 @@
 import { randomBytes } from 'crypto';
+import { ensureClassMeetingLink, ensureFutureClassMeetingLinks } from './class-meeting';
 import { supabaseAdmin } from './supabase-admin';
 
 const authBase = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -6,8 +7,9 @@ const tokenUrl = 'https://oauth2.googleapis.com/token';
 const calendarBase = 'https://www.googleapis.com/calendar/v3';
 const userInfoUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
 const scopes = [
-  'https://www.googleapis.com/auth/calendar.events',
+  'openid',
   'https://www.googleapis.com/auth/userinfo.email',
+  'https://www.googleapis.com/auth/userinfo.profile',
 ];
 
 function cleanEnv(value?: string) {
@@ -118,6 +120,8 @@ export function expiresAt(expiresIn?: number) {
 }
 
 export async function getValidGoogleConnection(teacherId: string) {
+  return null;
+
   const { data: connection, error } = await supabaseAdmin
     .from('google_calendar_connections')
     .select('*')
@@ -253,9 +257,6 @@ export async function createOrUpdateGoogleEventForClass(
   classScheduleId: string,
   options: GoogleMeetOptions = { createMeet: true },
 ): Promise<GoogleCalendarSyncResult> {
-  const connection = await getValidGoogleConnection(teacherId);
-  if (!connection) return { synced: false, reason: 'not_connected' as const };
-
   const { data: item, error } = await supabaseAdmin
     .from('class_schedules')
     .select('*, students(full_name, email)')
@@ -264,38 +265,8 @@ export async function createOrUpdateGoogleEventForClass(
     .maybeSingle();
   if (error) throw error;
   if (!item || item.status !== 'scheduled') return { synced: false, reason: 'not_scheduled' as const };
-
-  const existing = await supabaseAdmin
-    .from('google_calendar_events')
-    .select('google_event_id')
-    .eq('class_schedule_id', item.id)
-    .maybeSingle();
-
-  const createMeetForThisEvent = Boolean(options.createMeet && !item.meeting_url);
-  const eventBody = await classEventBody(item, { createMeet: createMeetForThisEvent });
-  const eventId = existing.data?.google_event_id;
-  if (eventId) {
-    const updated = await googleCalendarFetch(connection.access_token, withConferenceDataVersion(`/calendars/primary/events/${eventId}`, createMeetForThisEvent), {
-      method: 'PATCH',
-      body: JSON.stringify(eventBody),
-    });
-    const meetLink = await saveClassMeetingLink(teacherId, item.id, updated);
-    return { synced: true, action: 'updated' as const, meetLink };
-  }
-
-  const created = await googleCalendarFetch(connection.access_token, withConferenceDataVersion('/calendars/primary/events', createMeetForThisEvent), {
-    method: 'POST',
-    body: JSON.stringify(eventBody),
-  }) as { id?: string };
-  if (created.id) {
-    await supabaseAdmin.from('google_calendar_events').insert({
-      teacher_id: teacherId,
-      class_schedule_id: item.id,
-      google_event_id: created.id,
-    });
-  }
-  const meetLink = await saveClassMeetingLink(teacherId, item.id, created);
-  return { synced: true, action: 'created' as const, meetLink };
+  const classWithMeeting = await ensureClassMeetingLink(teacherId, classScheduleId);
+  return { synced: true, action: item.meeting_url ? 'updated' as const : 'created' as const, meetLink: classWithMeeting.meeting_url };
 }
 
 export async function createStandaloneGoogleCalendarEvent(teacherId: string, input: {
@@ -305,19 +276,7 @@ export async function createStandaloneGoogleCalendarEvent(teacherId: string, inp
   class_time: string;
   duration_minutes?: number | null;
 }, options: GoogleMeetOptions = { createMeet: true }) {
-  const connection = await getValidGoogleConnection(teacherId);
-  if (!connection) return { synced: false, reason: 'not_connected' as const };
-
-  const created = await googleCalendarFetch(connection.access_token, withConferenceDataVersion('/calendars/primary/events', options.createMeet), {
-    method: 'POST',
-    body: JSON.stringify({
-      summary: input.title,
-      description: input.description || 'Evento criado pelo LumiBot.',
-      ...toGoogleDateTime(input.class_date, input.class_time, input.duration_minutes || 60),
-      ...buildMeetConferenceData(`${input.class_date}-${input.class_time}-${input.title}`, options.createMeet),
-    }),
-  });
-  return { synced: true, action: 'created' as const, meetLink: extractMeetLink(created) };
+  return { synced: false, reason: 'not_connected' as const, meetLink: null };
 }
 
 export async function listGoogleCalendarEvents(teacherId: string, date: string) {
@@ -371,59 +330,5 @@ export async function deleteGoogleEventForClass(teacherId: string, classSchedule
 }
 
 export async function syncTeacherClassesToGoogle(teacherId: string, options: GoogleMeetOptions = { createMeet: true }) {
-  const connection = await getValidGoogleConnection(teacherId);
-  if (!connection) {
-    throw new Response(JSON.stringify({ error: 'Conecte o Google Agenda antes de sincronizar.' }), { status: 400 });
-  }
-
-  const today = new Date().toISOString().slice(0, 10);
-  const { data: classes, error } = await supabaseAdmin
-    .from('class_schedules')
-    .select('*, students(full_name, email)')
-    .eq('teacher_id', teacherId)
-    .eq('status', 'scheduled')
-    .gte('class_date', today)
-    .order('class_date')
-    .order('class_time');
-
-  if (error) throw error;
-  let synced = 0;
-  let meetLinks = 0;
-
-  for (const item of classes || []) {
-    const existing = await supabaseAdmin
-      .from('google_calendar_events')
-      .select('google_event_id')
-      .eq('class_schedule_id', item.id)
-      .maybeSingle();
-
-    const createMeetForThisEvent = Boolean(options.createMeet && !item.meeting_url);
-    const eventBody = await classEventBody(item, { createMeet: createMeetForThisEvent });
-
-    const eventId = existing.data?.google_event_id;
-    let googleEvent: any;
-    if (eventId) {
-      googleEvent = await googleCalendarFetch(connection.access_token, withConferenceDataVersion(`/calendars/primary/events/${eventId}`, createMeetForThisEvent), {
-        method: 'PATCH',
-        body: JSON.stringify(eventBody),
-      });
-    } else {
-      googleEvent = await googleCalendarFetch(connection.access_token, withConferenceDataVersion('/calendars/primary/events', createMeetForThisEvent), {
-        method: 'POST',
-        body: JSON.stringify(eventBody),
-      }) as { id?: string };
-      if (googleEvent.id) {
-        await supabaseAdmin.from('google_calendar_events').insert({
-          teacher_id: teacherId,
-          class_schedule_id: item.id,
-          google_event_id: googleEvent.id,
-        });
-      }
-    }
-    const meetLink = await saveClassMeetingLink(teacherId, item.id, googleEvent);
-    if (meetLink || item.meeting_url) meetLinks += 1;
-    synced += 1;
-  }
-
-  return { synced, meetLinks };
+  return ensureFutureClassMeetingLinks(teacherId);
 }

@@ -64,8 +64,8 @@ export default function TermsPage() {
 
         <h2>10. Integrações externas</h2>
         <p>
-          Integrações como Mercado Pago, Google Agenda, notificações do navegador e outros serviços externos dependem de plataformas de terceiros.
-          O LuminaAI usa essas integrações apenas para executar ações solicitadas pelo usuário, como pagamento, sincronização de agenda ou envio de lembretes.
+          Integrações como Mercado Pago, links para agenda, notificações do navegador e outros serviços externos dependem de plataformas de terceiros.
+          O LuminaAI usa essas integrações apenas para executar ações solicitadas pelo usuário, como pagamento, exportação de agenda ou envio de lembretes.
         </p>
 
         <h2>11. Disponibilidade e alterações</h2>

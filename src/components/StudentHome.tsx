@@ -316,7 +316,7 @@ export function StudentHome() {
           <p>{nextClass ? `${nextClass.class_date === todayKey ? 'Hoje' : formatDate(nextClass.class_date)} - ${nextClass.class_time?.slice(0, 5)}` : 'Sem próxima aula'}</p>
           <p>{nextClass?.duration_minutes || student?.duration_minutes || 60} minutos</p>
           <p>{nextClass?.subject || student?.subject || 'Matéria não definida'}</p>
-          <p>{nextClass?.meeting_url ? 'Link do Meet disponível' : 'Link do Meet ainda não disponível'}</p>
+          <p>{nextClass?.meeting_url ? 'Link da aula disponível' : 'Link da aula ainda não disponível'}</p>
         </div>
         <button className="btn student side-primary" type="button" onClick={handleNextClassAction} disabled={!nextClass || (!nextClass.meeting_url && nextClass.student_confirmed)}>
           {nextClass?.meeting_url ? 'Entrar na aula' : nextClass?.student_confirmed ? 'Confirmada' : 'Confirmar aula'}

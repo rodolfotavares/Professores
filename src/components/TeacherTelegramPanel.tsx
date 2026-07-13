@@ -25,14 +25,12 @@ type TelegramLinkResponse = {
 
 export function TeacherTelegramPanel() {
   const [connection, setConnection] = useState<TelegramConnection | null>(null);
-  const [googleStatus, setGoogleStatus] = useState<{ connected: boolean; google_email: string | null } | null>(null);
   const [botUsername, setBotUsername] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [meetingLoading, setMeetingLoading] = useState(false);
   const [error, setError] = useState('');
   const [linkExpiresAt, setLinkExpiresAt] = useState('');
-  const [createMeetLinks, setCreateMeetLinks] = useState(true);
 
   async function load() {
     try {
@@ -40,9 +38,6 @@ export function TeacherTelegramPanel() {
       const data = await apiFetch<TelegramResponse>('/api/teacher/telegram');
       setConnection(data.connection);
       setBotUsername(data.bot_username || '');
-      apiFetch<{ connected: boolean; google_email: string | null }>('/api/google/calendar/status')
-        .then(setGoogleStatus)
-        .catch(() => setGoogleStatus(null));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao carregar conexao do assistente.');
     } finally {
@@ -54,14 +49,6 @@ export function TeacherTelegramPanel() {
     load();
     const timer = window.setInterval(load, 12000);
     return () => window.clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const google = params.get('google');
-    if (google === 'connected') setError('Google Agenda conectado com sucesso. Agora o Lumi Assistente pode consultar e criar eventos.');
-    if (google === 'error') setError('Nao foi possivel conectar sua conta Google.');
-    if (google === 'invalid_state') setError('A conexao com Google expirou. Clique em conectar novamente.');
   }, []);
 
   async function connectTelegram() {
@@ -79,34 +66,18 @@ export function TeacherTelegramPanel() {
     }
   }
 
-  async function connectGoogle() {
-    setGoogleLoading(true);
-    setError('');
-    try {
-      const data = await apiFetch<{ url: string }>('/api/google/calendar/auth?return_to=/teacher/telegram');
-      window.location.href = data.url;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao iniciar conexao com Google.');
-      setGoogleLoading(false);
-    }
-  }
-
-  async function syncGoogleCalendar() {
-    setGoogleLoading(true);
+  async function generateMeetingLinks() {
+    setMeetingLoading(true);
     setError('');
     try {
       const data = await apiFetch<{ synced: number; meetLinks?: number }>('/api/google/calendar/sync', {
         method: 'POST',
-        body: JSON.stringify({ createMeet: createMeetLinks }),
       });
-      const meetText = createMeetLinks
-        ? ` ${data.meetLinks || 0} aula${data.meetLinks === 1 ? '' : 's'} com link do Meet.`
-        : '';
-      setError(`${data.synced} aula${data.synced === 1 ? '' : 's'} sincronizada${data.synced === 1 ? '' : 's'} com Google Agenda.${meetText}`);
+      setError(`${data.meetLinks || 0} aula${data.meetLinks === 1 ? '' : 's'} com link online pronto. ${data.synced} link${data.synced === 1 ? '' : 's'} novo${data.synced === 1 ? '' : 's'} gerado${data.synced === 1 ? '' : 's'}.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao sincronizar Google Agenda.');
+      setError(err instanceof Error ? err.message : 'Falha ao gerar links das aulas.');
     } finally {
-      setGoogleLoading(false);
+      setMeetingLoading(false);
     }
   }
 
@@ -168,57 +139,36 @@ export function TeacherTelegramPanel() {
       <GlassCard className="portal-summary-card telegram-connect-card">
         <div className="glass-card-head">
           <div>
-            <span className="eyebrow">Google Agenda</span>
-            <h2>Conecte sua conta Google ao Lumi Assistente</h2>
+            <span className="eyebrow">Aulas online</span>
+            <h2>Links de aula sem aprovação do Google</h2>
           </div>
-          <StatusBadge tone={googleStatus?.connected ? 'success' : 'warning'}>
-            {googleStatus?.connected ? 'Conectado' : 'Nao conectado'}
+          <StatusBadge tone="success">
+            Sem OAuth
           </StatusBadge>
         </div>
 
         <p className="muted">
-          Com essa conexao, o Lumi Assistente pode consultar o Google Agenda e criar eventos de aula quando voce confirmar.
+          O LuminaAI cria links de aula automaticamente e permite adicionar eventos ao Google Agenda por link, sem pedir permissao sensivel e sem verificacao rigorosa do Google.
         </p>
-
-        {googleStatus?.connected && (
-          <p className="muted">
-            Conta conectada: {googleStatus.google_email || 'Google'}.
-          </p>
-        )}
 
         <div className="support-shortcuts lumi-assistant-benefits">
           <span className="support-shortcut">
-            <strong>Agenda e Meet sincronizados</strong>
-            <small>Crie aulas no Google Agenda com link do Meet pronto para professor e aluno.</small>
+            <strong>Link online automatico</strong>
+            <small>Cada aula recebe uma sala exclusiva para professor e aluno entrarem.</small>
           </span>
           <span className="support-shortcut">
-            <strong>Menos alertas do Google</strong>
-            <small>Por enquanto, solicitamos apenas permissao de agenda.</small>
+            <strong>Google Agenda sem login</strong>
+            <small>O professor pode adicionar a aula ao calendario usando um link seguro de template.</small>
           </span>
           <span className="support-shortcut">
-            <strong>Controle de destino</strong>
-            <small>Voce escolhe LuminaAI, Google Agenda ou os dois antes de alterar aulas.</small>
+            <strong>Sem tela de verificacao</strong>
+            <small>Nao usamos escopos sensiveis como calendar.events.</small>
           </span>
         </div>
 
-        <label className="google-meet-option">
-          <input
-            type="checkbox"
-            checked={createMeetLinks}
-            onChange={(event) => setCreateMeetLinks(event.target.checked)}
-          />
-          <span>
-            <strong>Criar link do Meet automaticamente</strong>
-            <small>Ao sincronizar, todas as aulas futuras passam a ter um link para iniciar ou entrar na aula.</small>
-          </span>
-        </label>
-
         <div className="panel-actions">
-          <button className="btn" type="button" onClick={connectGoogle} disabled={googleLoading}>
-            {googleLoading ? 'Abrindo Google...' : googleStatus?.connected ? 'Reconectar Google' : 'Conectar Google'}
-          </button>
-          <button className="btn primary" type="button" onClick={syncGoogleCalendar} disabled={googleLoading || !googleStatus?.connected}>
-            {googleLoading ? 'Sincronizando...' : 'Sincronizar aulas existentes'}
+          <button className="btn primary" type="button" onClick={generateMeetingLinks} disabled={meetingLoading}>
+            {meetingLoading ? 'Gerando...' : 'Gerar links das aulas existentes'}
           </button>
         </div>
       </GlassCard>

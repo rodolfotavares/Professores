@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { apiError, getApiUser, json } from '@/lib/api-auth';
-import { createOrUpdateGoogleEventForClass } from '@/lib/google-calendar';
+import { ensureClassMeetingLink } from '@/lib/class-meeting';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 const schema = z.object({
@@ -35,7 +35,8 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
 
     if (error) throw error;
     if (data?.status === 'scheduled') {
-      await createOrUpdateGoogleEventForClass(user.id, data.id).catch(() => null);
+      const classWithMeeting = await ensureClassMeetingLink(user.id, data.id).catch(() => data);
+      return json({ class: classWithMeeting });
     }
     return json({ class: data });
   } catch (error) {

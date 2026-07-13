@@ -38,6 +38,32 @@ function money(value: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 }
 
+function googleCalendarTemplateUrl(item: ClassSchedule, studentName: string) {
+  const [hours, minutes] = item.class_time.slice(0, 5).split(':').map(Number);
+  const start = new Date(`${item.class_date}T00:00:00`);
+  start.setHours(hours || 0, minutes || 0, 0, 0);
+  const end = new Date(start);
+  end.setMinutes(end.getMinutes() + (item.duration_minutes || 60));
+  const format = (date: Date) => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    return `${yyyy}${mm}${dd}T${hh}${min}00`;
+  };
+  const meetingLink = item.meeting_url || item.meeting_start_url || '';
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `Aula - ${studentName}`,
+    dates: `${format(start)}/${format(end)}`,
+    details: ['Aula cadastrada no LuminaAI.', item.subject ? `Materia: ${item.subject}` : null, meetingLink ? `Link da aula: ${meetingLink}` : null].filter(Boolean).join('\n'),
+    location: meetingLink,
+    ctz: 'America/Sao_Paulo',
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
 function SearchGlyph() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
@@ -168,7 +194,7 @@ export function TeacherHome() {
     }
     await smartLessonAction('start');
     if (!meetingLink) {
-      setError('Esta aula ainda nao tem link do Meet. Conecte o Google Agenda em Lumi Assistente e sincronize as aulas existentes.');
+      setError('Esta aula ainda nao tem link online. Abra Lumi Assistente e clique em gerar links das aulas existentes.');
     }
   }
 
@@ -435,7 +461,7 @@ export function TeacherHome() {
           <p><span>Data</span>{selectedClass ? new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(new Date(`${selectedClass.class_date}T00:00:00`)) : 'Nenhuma aula selecionada'}</p>
           <p><span>Horário</span>{selectedClass ? `${selectedClass.class_time.slice(0, 5)} · ${selectedClass.duration_minutes} min` : 'Horário não definido'}</p>
           <p><span>Matéria</span>{selectedClass?.subject || selectedStudent?.subject || 'Matéria não definida'}</p>
-          <p><span>Link da aula</span>{selectedClass?.meeting_url ? <a href={selectedClass.meeting_url} target="_blank" rel="noreferrer">Abrir Meet</a> : 'Sincronize com Google Agenda'}</p>
+          <p><span>Link da aula</span>{selectedClass?.meeting_url ? <a href={selectedClass.meeting_url} target="_blank" rel="noreferrer">Abrir aula online</a> : 'Gere os links em Lumi Assistente'}</p>
         </div>
         <div className="lesson-action-box">
           <h3>Ações da aula</h3>
@@ -448,6 +474,9 @@ export function TeacherHome() {
             </button>
             <button type="button" className="outline-action" onClick={() => selectedClass && router.push(`/teacher/smart-lesson?lesson_id=${selectedClass.id}`)} disabled={!selectedClass}>
               Aula Inteligente
+            </button>
+            <button type="button" className="outline-action" onClick={() => selectedClass && window.open(googleCalendarTemplateUrl(selectedClass, selectedStudent?.full_name || 'Aluno'), '_blank', 'noopener,noreferrer')} disabled={!selectedClass}>
+              Adicionar ao Google Agenda
             </button>
           </div>
           <label>
