@@ -8,6 +8,7 @@ import {
   listGoogleCalendarEvents,
   syncTeacherClassesToGoogle,
 } from './google-calendar';
+import { ensureClassMeetingLink, ensureFutureClassMeetingLinks } from './class-meeting';
 
 type CalendarTarget = 'LUMINAI' | 'GOOGLE_CALENDAR' | 'BOTH' | 'UNSPECIFIED';
 
@@ -35,6 +36,8 @@ export type ConversationIntent =
   | 'GOOGLE_CALENDAR_STATUS'
   | 'GOOGLE_CALENDAR_FIND_FREE_TIME'
   | 'GOOGLE_CALENDAR_SYNC_WITH_LUMINA'
+  | 'GERAR_LINKS_AULAS'
+  | 'ENVIAR_LINK_AULA'
   | 'ORGANIZAR_SEMANA'
   | 'RESUMIR_DADOS'
   | 'PEDIR_AJUDA'
@@ -69,6 +72,9 @@ type ClassLite = {
   subject: string | null;
   status: string;
   teacher_notes?: string | null;
+  meeting_url?: string | null;
+  meeting_start_url?: string | null;
+  meeting_provider?: string | null;
   students?: { full_name: string } | null;
 };
 
@@ -241,6 +247,18 @@ type BotPendingAction =
       summary: string;
       expires_at?: string;
       status?: 'pending';
+    }
+  | {
+      type: 'SUGGEST_INTENT';
+      intent: 'CONVERSA_GERAL';
+      teacher_id?: string;
+      telegram_user_id?: string | null;
+      entities?: Record<string, unknown>;
+      original_message: string;
+      options: Array<{ label: string; intent: ConversationIntent; sample: string }>;
+      summary: string;
+      expires_at?: string;
+      status?: 'waiting_option';
     };
 
 type DetectedIntent = {
@@ -859,6 +877,19 @@ export class IntentDetectionService {
     if ((text.includes('sincronizar') || text.includes('sincronize')) && (text.includes('google') || text.includes('agenda'))) {
       return { intent: 'GOOGLE_CALENDAR_SYNC_WITH_LUMINA', ...entities };
     }
+    if (
+      /(gerar|gere|criar|crie|preparar|prepare|atualizar|atualize).*(link|links|sala|salas)/.test(text) ||
+      /(link|links|sala|salas).*(aulas existentes|aulas futuras|todas as aulas|minhas aulas|agenda)/.test(text)
+    ) {
+      return { intent: 'GERAR_LINKS_AULAS', ...entities };
+    }
+    if (
+      /(mandar|mande|enviar|envie|mostrar|mostre|passar|passe|pegar|pega|copiar|copie).*(link|links|sala|salas)/.test(text) ||
+      /(link|links|sala|salas).*(aula|aluno|aluna|hoje|amanha|proxima|proximo)/.test(text) ||
+      /(entrar na aula|iniciar aula|aula online|videoaula|video chamada|videoconferencia)/.test(text)
+    ) {
+      return { intent: 'ENVIAR_LINK_AULA', ...entities, studentName: entities.studentName || this.extractStudentName(raw), date: entities.date || (/(hoje|amanha|ontem|segunda|terca|quarta|quinta|sexta|sabado|domingo|\d{1,2}[/-]\d{1,2})/.test(text) ? parseDate(raw) : undefined) };
+    }
     if ((text.includes('horario') || text.includes('horarios')) && (text.includes('livre') || text.includes('livres') || text.includes('disponivel') || text.includes('disponiveis'))) {
       return { intent: 'GOOGLE_CALENDAR_FIND_FREE_TIME', ...entities, date: entities.date || parseDate(raw) };
     }
@@ -1137,6 +1168,8 @@ function coerceIntent(value: unknown): ConversationIntent {
     'GOOGLE_CALENDAR_STATUS',
     'GOOGLE_CALENDAR_FIND_FREE_TIME',
     'GOOGLE_CALENDAR_SYNC_WITH_LUMINA',
+    'GERAR_LINKS_AULAS',
+    'ENVIAR_LINK_AULA',
     'ORGANIZAR_SEMANA',
     'RESUMIR_DADOS',
     'PEDIR_AJUDA',
@@ -1279,7 +1312,7 @@ export class LuminaDataContextService {
       supabaseAdmin.from('students').select('id, user_id, full_name, email, subject, status, guardian_whatsapp, price_per_class').eq('teacher_id', teacherId).order('full_name').limit(80),
       supabaseAdmin
         .from('class_schedules')
-        .select('id, student_id, class_date, class_time, duration_minutes, subject, status, teacher_notes, students(full_name)')
+        .select('id, student_id, class_date, class_time, duration_minutes, subject, status, teacher_notes, meeting_url, meeting_start_url, meeting_provider, students(full_name)')
         .eq('teacher_id', teacherId)
         .gte('class_date', addDays(today, -7))
         .lte('class_date', inThirtyDays)
@@ -1371,37 +1404,26 @@ export class BotInteractionLogService extends BotInteractionLog {}
 export class BotActionExecutor {
   async execute(connection: BotConnection, action: BotPendingAction) {
     if (action.type === 'CREATE_CLASS') {
-      const target = action.target_calendar || 'LUMINAI';
+      const target = 'LUMINAI';
       let luminaResult: string | null = null;
-      let googleSync: string | null = null;
+      let meetingUrl: string | null = null;
 
-      if (target === 'LUMINAI' || target === 'BOTH') {
-        const { data, error } = await supabaseAdmin.from('class_schedules').insert({
-          teacher_id: connection.teacher_id,
-          student_id: action.student_id,
-          student_user_id: action.student_user_id,
-          subject: action.subject,
-          class_date: action.class_date,
-          class_time: action.class_time,
-          duration_minutes: action.duration_minutes,
-          status: 'scheduled',
-        }).select('id').single();
-        if (error) throw error;
-        luminaResult = '- LuminaAI: aula salva.';
-        if (target === 'BOTH' && data?.id) {
-          googleSync = await safeGoogleSync(() => createOrUpdateGoogleEventForClass(connection.teacher_id, data.id));
-        }
+      const { data, error } = await supabaseAdmin.from('class_schedules').insert({
+        teacher_id: connection.teacher_id,
+        student_id: action.student_id,
+        student_user_id: action.student_user_id,
+        subject: action.subject,
+        class_date: action.class_date,
+        class_time: action.class_time,
+        duration_minutes: action.duration_minutes,
+        status: 'scheduled',
+      }).select('id').single();
+      if (error) throw error;
+      if (data?.id) {
+        const classWithMeeting = await ensureClassMeetingLink(connection.teacher_id, data.id);
+        meetingUrl = classWithMeeting?.meeting_url || null;
       }
-
-      if (target === 'GOOGLE_CALENDAR') {
-        googleSync = await safeGoogleSync(() => createStandaloneGoogleCalendarEvent(connection.teacher_id, {
-          title: `Aula - ${action.student_name}`,
-          description: action.subject ? `Materia: ${action.subject}` : 'Aula criada pelo LumiBot.',
-          class_date: action.class_date,
-          class_time: action.class_time,
-          duration_minutes: action.duration_minutes,
-        }));
-      }
+      luminaResult = '- LuminaAI: aula salva.';
 
       return botMessage([
         'Aula marcada com sucesso.',
@@ -1412,9 +1434,9 @@ export class BotActionExecutor {
         bullet('Horario', formatTime(action.class_time)),
         bullet('Destino', calendarTargetLabel(target)),
         luminaResult,
-        googleSync,
+        meetingUrl ? bullet('Link da aula', meetingUrl) : '- Link da aula: sera gerado ao abrir a aula no painel.',
         '',
-        'Deseja registrar alguma observacao para essa aula?',
+        'Deseja que eu envie esse link para voce novamente mais tarde?',
       ]);
     }
 
@@ -1668,6 +1690,46 @@ export class ConversationalAssistantService {
       ]);
     }
 
+    if (action.type === 'SUGGEST_INTENT') {
+      const selected = this.selectSuggestionOption(action.options, message);
+      if (!selected) {
+        return botMessage([
+          'Ainda nao consegui escolher a melhor opcao com seguranca.',
+          '',
+          '*Talvez voce queira:*',
+          ...action.options.map((option, index) => `- ${index + 1}. ${option.label}`),
+          '',
+          'Toque em uma opcao ou responda com o numero dela.',
+        ]);
+      }
+      await this.trainingExamples.save({
+        teacherId: connection.teacher_id,
+        phrase: action.original_message,
+        interpretation: {
+          intent: selected.intent,
+          topic: selected.sample,
+          confidence: 1,
+          source: 'local_rules',
+        } as InterpretationResult,
+        status: 'auto',
+        source: 'suggestion_selection',
+      });
+      await this.state.clear(connection);
+      const context = await this.dataContext.build(connection.teacher_id);
+      return this.respond(
+        connection,
+        {
+          intent: selected.intent,
+          topic: selected.sample,
+          confidence: 1,
+          source: 'training_example',
+          missing_fields: [],
+        },
+        context,
+        selected.sample
+      );
+    }
+
     if (action.type === 'SELECT_CALENDAR_TARGET') {
       const target = calendarTargetResolver.fromChoice(message);
       if (target === 'UNSPECIFIED') {
@@ -1773,25 +1835,19 @@ export class ConversationalAssistantService {
 
   private async respond(connection: BotConnection, detected: InterpretationResult, context: TeacherContext, originalMessage: string) {
     if (detected.intent === 'PEDIR_AJUDA') return this.help();
+    if (isCalendarIntent(detected.intent) && (!detected.targetCalendar || detected.targetCalendar === 'UNSPECIFIED')) {
+      detected.targetCalendar = 'LUMINAI';
+    }
     if (detected.source === 'fallback' && detected.natural_response) {
-      return botMessage([
-        detected.natural_response,
-        '',
-        '*Exemplo que eu entendo bem:*',
-        '- Marque a aula do Joao para amanha as 14h.',
-        '- Registre pagamento da Maria de 100 reais.',
-        '',
-        'Qual acao voce deseja fazer agora?',
-      ]);
+      return this.unknownWithOptions(connection, originalMessage, detected.natural_response);
     }
     if (detected.intent === 'APAGAR_HISTORICO') return this.prepareDeleteHistory(connection);
-    if (isCalendarIntent(detected.intent) && (!detected.targetCalendar || detected.targetCalendar === 'UNSPECIFIED')) {
-      return this.prepareCalendarTargetChoice(connection, detected, originalMessage);
-    }
     if (detected.intent === 'CONSULTAR_AGENDA') return this.agenda(connection, context, detected.date || todayDate(), detected.targetCalendar || 'LUMINAI');
     if (detected.intent === 'GOOGLE_CALENDAR_STATUS') return this.googleStatus(connection);
     if (detected.intent === 'GOOGLE_CALENDAR_FIND_FREE_TIME') return this.freeTimes(connection, context, detected.date || todayDate());
     if (detected.intent === 'GOOGLE_CALENDAR_SYNC_WITH_LUMINA') return this.syncGoogleAgenda(connection);
+    if (detected.intent === 'GERAR_LINKS_AULAS') return this.generateClassLinks(connection);
+    if (detected.intent === 'ENVIAR_LINK_AULA') return this.classLinks(connection, context, detected);
     if (detected.intent === 'GMAIL_SEARCH_EMAILS') return this.gmailDisabled();
     if (detected.intent === 'ORGANIZAR_SEMANA') return this.organizeWeek(context);
     if (detected.intent === 'LISTAR_PAGAMENTOS_PENDENTES' || detected.intent === 'LISTAR_PENDENCIAS') return this.pendingPayments(context);
@@ -1825,18 +1881,129 @@ export class ConversationalAssistantService {
     });
     if (llmAnswer) return llmAnswer;
 
+    return this.unknownWithOptions(connection, originalMessage, 'Entendi sua mensagem, mas preciso escolher melhor a acao.');
+  }
+
+  private async generateClassLinks(connection: BotConnection) {
+    try {
+      const result = await ensureFutureClassMeetingLinks(connection.teacher_id);
+      return botMessage([
+        'Preparei os links das suas aulas futuras.',
+        '',
+        '*Resultado:*',
+        bullet('Aulas com link', result.meetLinks),
+        bullet('Links novos gerados agora', result.synced),
+        '',
+        'Agora voce pode pedir: "mande o link da aula de hoje" ou "mande o link da aula da Ana".',
+      ]);
+    } catch (error) {
+      return botMessage([
+        'Nao consegui gerar os links das aulas agora.',
+        '',
+        '*Motivo:*',
+        `- ${error instanceof Error ? error.message : 'Falha inesperada ao atualizar as aulas.'}`,
+        '',
+        'Tente novamente em alguns minutos.',
+      ]);
+    }
+  }
+
+  private async classLinks(connection: BotConnection, context: TeacherContext, detected: DetectedIntent) {
+    let classes = context.classes.filter((item) => item.status === 'scheduled');
+    const studentName = detected.studentName;
+    if (studentName) {
+      const { student, error } = this.dataContext.findStudent(context, studentName);
+      if (!student) return error || 'Nao encontrei esse aluno.';
+      classes = classes.filter((item) => item.student_id === student.id);
+    }
+    if (detected.date) classes = classes.filter((item) => item.class_date === detected.date);
+    if (!detected.date && !studentName) classes = classes.filter((item) => item.class_date >= todayDate()).slice(0, 5);
+    classes = classes.sort((a, b) => `${a.class_date} ${a.class_time}`.localeCompare(`${b.class_date} ${b.class_time}`)).slice(0, 6);
+
+    if (!classes.length) {
+      return botMessage([
+        'Nao encontrei aula agendada com esses dados.',
+        '',
+        '*Tente assim:*',
+        '- Mande o link da aula de hoje.',
+        '- Mande o link da aula da Ana.',
+        '- Gere links das aulas futuras.',
+        '',
+        'Quer que eu mostre sua agenda de hoje?',
+      ]);
+    }
+
+    const rows: string[] = [];
+    for (const item of classes) {
+      const classWithLink = item.meeting_url ? item : await ensureClassMeetingLink(connection.teacher_id, item.id) as ClassLite;
+      const link = classWithLink.meeting_url || item.meeting_url;
+      rows.push([
+        `- ${item.students?.full_name || 'Aluno'} - ${formatDate(item.class_date)} as ${formatTime(item.class_time)}`,
+        link ? `  Link: ${link}` : '  Link: indisponivel no momento',
+      ].join('\n'));
+    }
+
     return botMessage([
-      'Entendi sua mensagem.',
+      classes.length === 1 ? 'Encontrei o link da aula.' : 'Encontrei os links das aulas.',
       '',
-      '*Posso ajudar com:*',
-      '- Agenda e aulas',
-      '- Alunos e relatorios',
-      '- Pagamentos',
-      '- Mensagens para responsaveis',
-      '- Organizacao da semana',
+      '*Aulas:*',
+      ...rows,
       '',
-      'Qual dessas opcoes voce deseja resolver agora?',
+      'Deseja que eu gere links para todas as aulas futuras tambem?',
     ]);
+  }
+
+  private async unknownWithOptions(connection: BotConnection, originalMessage: string, reason: string) {
+    const options = this.suggestionOptions(originalMessage);
+    const action: BotPendingAction = {
+      type: 'SUGGEST_INTENT',
+      intent: 'CONVERSA_GERAL',
+      teacher_id: connection.teacher_id,
+      telegram_user_id: connection.telegram_user_id,
+      original_message: originalMessage,
+      options,
+      summary: 'escolher a melhor acao para a mensagem',
+      expires_at: pendingExpiration(),
+      status: 'waiting_option',
+    };
+    await this.state.set(connection, action);
+    return botMessage([
+      reason,
+      '',
+      '*Talvez voce queira:*',
+      ...options.map((option, index) => `- ${index + 1}. ${option.label}`),
+      '',
+      'Toque em uma opcao ou responda com o numero dela. Assim eu aprendo para as proximas mensagens parecidas.',
+    ]);
+  }
+
+  private suggestionOptions(message: string) {
+    const text = normalize(message);
+    const base = [
+      { label: 'Enviar link de uma aula', intent: 'ENVIAR_LINK_AULA' as ConversationIntent, sample: 'mande o link da aula de hoje' },
+      { label: 'Gerar links das aulas futuras', intent: 'GERAR_LINKS_AULAS' as ConversationIntent, sample: 'gerar links das aulas futuras' },
+      { label: 'Consultar agenda de hoje', intent: 'CONSULTAR_AGENDA' as ConversationIntent, sample: 'como esta minha agenda de hoje' },
+      { label: 'Ver resumo financeiro', intent: 'CONSULTAR_FINANCEIRO' as ConversationIntent, sample: 'me de um resumo financeiro deste mes' },
+      { label: 'Listar alunos', intent: 'LISTAR_ALUNOS' as ConversationIntent, sample: 'listar alunos' },
+    ];
+    if (/(pagamento|financeiro|recebi|devendo|pendente)/.test(text)) {
+      return [base[3], { label: 'Listar pagamentos pendentes', intent: 'LISTAR_PENDENCIAS' as ConversationIntent, sample: 'quem esta com pagamento pendente' }, base[4], base[2], base[0]];
+    }
+    if (/(aluno|aluna|relatorio|evolucao|desempenho)/.test(text)) {
+      return [base[4], { label: 'Gerar relatorio de aluno', intent: 'GERAR_RELATORIO_ALUNO' as ConversationIntent, sample: 'gera relatorio de um aluno' }, base[2], base[0], base[3]];
+    }
+    if (/(link|sala|online|video|aula)/.test(text)) return [base[0], base[1], base[2], base[4], base[3]];
+    return base;
+  }
+
+  private selectSuggestionOption(options: Array<{ label: string; intent: ConversationIntent; sample: string }>, message: string) {
+    const text = normalize(message);
+    const number = Number(text.match(/\d+/)?.[0] || 0);
+    if (number >= 1 && number <= options.length) return options[number - 1];
+    return options.find((option) => {
+      const normalizedLabel = normalize(option.label);
+      return normalizedLabel.includes(text) || text.includes(normalizedLabel) || normalize(option.sample).includes(text);
+    });
   }
 
   private async prepareCalendarTargetChoice(connection: BotConnection, detected: InterpretationResult, originalMessage: string) {
@@ -1874,6 +2041,7 @@ export class ConversationalAssistantService {
       '',
       '*Posso ajudar com:*',
       '- Agenda',
+      '- Links de aula online',
       '- Alunos',
       '- Pagamentos',
       '- Relatorios',
@@ -1885,6 +2053,8 @@ export class ConversationalAssistantService {
       '- Tenho algum aluno com pagamento atrasado?',
       '- Me ajude a organizar minha semana.',
       '- Marque aula com Ana amanha as 15h.',
+      '- Gere links das aulas futuras.',
+      '- Mande o link da aula de hoje.',
       '- O Pedro faltou hoje, registra pra mim.',
       '- Como foi a evolucao da Maria nas ultimas aulas?',
       '- Me mande uma planilha com o relatorio financeiro mensal.',
@@ -1977,23 +2147,24 @@ export class ConversationalAssistantService {
 
   private async syncGoogleAgenda(connection: BotConnection) {
     try {
-      const result = await syncTeacherClassesToGoogle(connection.teacher_id);
+      const result = await ensureFutureClassMeetingLinks(connection.teacher_id);
       return botMessage([
-        'Sincronizacao concluida.',
+        'Links das aulas atualizados.',
         '',
-        '*Google Agenda:*',
-        bullet('Aulas sincronizadas', result.synced),
+        '*LuminaAI:*',
+        bullet('Aulas com link', result.meetLinks),
+        bullet('Links novos gerados agora', result.synced),
         '',
-        'Deseja consultar sua agenda de hoje?',
+        'Agora o botao "Iniciar aula" pode abrir a sala da aula no painel.',
       ]);
     } catch (error) {
       return botMessage([
-        'Nao consegui sincronizar com o Google Agenda.',
+        'Nao consegui atualizar os links das aulas.',
         '',
         '*Motivo:*',
-        `- ${error instanceof Error ? error.message : 'Conta Google desconectada ou permissao insuficiente.'}`,
+        `- ${error instanceof Error ? error.message : 'Falha inesperada ao gerar links.'}`,
         '',
-        'Reconecte sua conta Google na LuminaAI e tente novamente.',
+        'Tente novamente em alguns minutos.',
       ]);
     }
   }
@@ -2688,16 +2859,7 @@ export class ConversationalAssistantService {
   }
 
   private async prepareCreateClass(connection: BotConnection, context: TeacherContext, detected: DetectedIntent, originalMessage: string) {
-    const targetCalendar = detected.targetCalendar && detected.targetCalendar !== 'UNSPECIFIED' ? detected.targetCalendar : 'LUMINAI';
-    if ((targetCalendar === 'GOOGLE_CALENDAR' || targetCalendar === 'BOTH') && !(await getValidGoogleConnection(connection.teacher_id).catch(() => null))) {
-      return botMessage([
-        'Seu Google Agenda ainda nao esta conectado.',
-        '',
-        'Conecte sua conta Google nas configuracoes da LuminaAI para salvar aulas no Google Agenda.',
-        '',
-        'Deseja salvar essa aula apenas na LuminaAI?',
-      ]);
-    }
+    const targetCalendar: CalendarTarget = 'LUMINAI';
     if (!detected.studentName || !detected.date || !detected.time) {
       return botMessage([
         'Entendi que voce quer marcar uma aula.',
@@ -2746,16 +2908,7 @@ export class ConversationalAssistantService {
   }
 
   private async prepareUpdateClass(connection: BotConnection, context: TeacherContext, detected: DetectedIntent, originalMessage: string) {
-    const targetCalendar = detected.targetCalendar && detected.targetCalendar !== 'UNSPECIFIED' ? detected.targetCalendar : 'LUMINAI';
-    if ((targetCalendar === 'GOOGLE_CALENDAR' || targetCalendar === 'BOTH') && !(await getValidGoogleConnection(connection.teacher_id).catch(() => null))) {
-      return botMessage([
-        'Seu Google Agenda ainda nao esta conectado.',
-        '',
-        'Conecte sua conta Google nas configuracoes da LuminaAI para remarcar aulas no Google Agenda.',
-        '',
-        'Deseja remarcar apenas na LuminaAI?',
-      ]);
-    }
+    const targetCalendar: CalendarTarget = 'LUMINAI';
     if (!detected.studentName) {
       return botMessage([
         'Entendi que voce quer remarcar uma aula.',
@@ -2812,16 +2965,7 @@ export class ConversationalAssistantService {
   }
 
   private async prepareCancelClass(connection: BotConnection, context: TeacherContext, detected: DetectedIntent, originalMessage: string) {
-    const targetCalendar = detected.targetCalendar && detected.targetCalendar !== 'UNSPECIFIED' ? detected.targetCalendar : 'LUMINAI';
-    if ((targetCalendar === 'GOOGLE_CALENDAR' || targetCalendar === 'BOTH') && !(await getValidGoogleConnection(connection.teacher_id).catch(() => null))) {
-      return botMessage([
-        'Seu Google Agenda ainda nao esta conectado.',
-        '',
-        'Conecte sua conta Google nas configuracoes da LuminaAI para cancelar eventos no Google Agenda.',
-        '',
-        'Deseja cancelar apenas na LuminaAI?',
-      ]);
-    }
+    const targetCalendar: CalendarTarget = 'LUMINAI';
     const date = detected.date;
     let classes = context.classes.filter((item) => item.status === 'scheduled');
     let studentName = detected.studentName;

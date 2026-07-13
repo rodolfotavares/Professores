@@ -16,6 +16,17 @@ type TelegramMessage = {
   from?: TelegramUser;
 };
 
+type TelegramCallbackQuery = {
+  id: string;
+  data?: string;
+  message?: { message_id: number; text?: string; chat: { id: number; type: string } };
+  from?: TelegramUser;
+};
+
+type TelegramReplyMarkup = {
+  inline_keyboard: Array<Array<{ text: string; callback_data: string }>>;
+};
+
 type BotConnection = {
   id: string;
   teacher_id: string;
@@ -296,13 +307,21 @@ function invalidTokenMessage(reason: 'invalid' | 'expired' | 'used') {
   return 'Link de conexao invalido. Volte na LuminaAI e clique novamente em "Conectar meu Telegram".';
 }
 
-async function telegramSendMessage(chatId: string, text: string) {
+async function telegramSendMessage(chatId: string, text: string, replyMarkup?: TelegramReplyMarkup) {
   const response = await fetch(`https://api.telegram.org/bot${token()}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' }),
+    body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: replyMarkup }),
   });
   if (!response.ok) throw new Error('Falha ao responder no Telegram.');
+}
+
+async function telegramAnswerCallbackQuery(callbackQueryId: string, text?: string) {
+  await fetch(`https://api.telegram.org/bot${token()}/answerCallbackQuery`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ callback_query_id: callbackQueryId, text }),
+  }).catch(() => null);
 }
 
 async function logInteraction(input: {
@@ -331,8 +350,8 @@ async function logInteraction(input: {
   }
 }
 
-async function reply(chatId: string, text: string, context: { teacherId?: string | null; telegramUserId?: string | null; intent?: string; status?: string }) {
-  await telegramSendMessage(chatId, text);
+async function reply(chatId: string, text: string, context: { teacherId?: string | null; telegramUserId?: string | null; intent?: string; status?: string }, replyMarkup?: TelegramReplyMarkup) {
+  await telegramSendMessage(chatId, text, replyMarkup);
   await logInteraction({
     teacherId: context.teacherId,
     telegramUserId: context.telegramUserId,
@@ -341,6 +360,7 @@ async function reply(chatId: string, text: string, context: { teacherId?: string
     message: text,
     intent: context.intent,
     status: context.status,
+    metadata: replyMarkup ? { reply_markup: replyMarkup } : undefined,
   });
 }
 
@@ -556,7 +576,72 @@ async function handleConnectedMessage(connection: BotConnection, text: string) {
   return 'Não entendi esse comando. Envie /ajuda para ver exemplos.';
 }
 
-export async function handleTelegramUpdate(update: { message?: TelegramMessage }) {
+function suggestionReplyMarkup(answer: string): TelegramReplyMarkup | undefined {
+  if (!answer.includes('*Talvez voce queira:*')) return undefined;
+  const options = answer
+    .split('\n')
+    .map((line) => line.match(/^-\s+(\d+)\.\s+(.+)$/))
+    .filter((match): match is RegExpMatchArray => Boolean(match))
+    .slice(0, 5);
+  if (options.length) {
+    return {
+      inline_keyboard: options.map((match) => [{ text: match[2].slice(0, 48), callback_data: `LBOT_OPT:${match[1]}` }]),
+    };
+  }
+  return {
+    inline_keyboard: [
+      [{ text: 'Enviar link de aula', callback_data: 'LBOT_OPT:1' }],
+      [{ text: 'Gerar links futuros', callback_data: 'LBOT_OPT:2' }],
+      [{ text: 'Agenda de hoje', callback_data: 'LBOT_OPT:3' }],
+      [{ text: 'Resumo financeiro', callback_data: 'LBOT_OPT:4' }],
+      [{ text: 'Listar alunos', callback_data: 'LBOT_OPT:5' }],
+    ],
+  };
+}
+
+function callbackText(data?: string) {
+  if (!data) return '';
+  if (data.startsWith('LBOT_OPT:')) return data.replace('LBOT_OPT:', '');
+  if (data === 'LBOT_LINKS') return 'gerar links das aulas futuras';
+  if (data === 'LBOT_LINK_TODAY') return 'mande o link da aula de hoje';
+  if (data === 'LBOT_AGENDA') return 'como esta minha agenda de hoje';
+  if (data === 'LBOT_FINANCE') return 'me de um resumo financeiro deste mes';
+  if (data === 'LBOT_STUDENTS') return 'listar alunos';
+  return data;
+}
+
+async function handleTelegramCallback(callback: TelegramCallbackQuery) {
+  const from = callback.from;
+  const chatId = callback.message?.chat?.id ? String(callback.message.chat.id) : '';
+  const telegramUserId = from?.id ? String(from.id) : '';
+  const text = callbackText(callback.data);
+  if (!from || !chatId || !telegramUserId || !text) return;
+
+  await telegramAnswerCallbackQuery(callback.id, 'Opcao recebida.');
+  await logInteraction({
+    telegramUserId,
+    telegramChatId: chatId,
+    direction: 'inbound',
+    message: text,
+    metadata: { callback_data: callback.data },
+  });
+
+  const existing = await getConnectionByTelegram(telegramUserId);
+  if (!existing) {
+    await reply(chatId, helpText(false), { telegramUserId, intent: 'START' });
+    return;
+  }
+
+  const answer = await handleConnectedMessage(existing, text);
+  await reply(chatId, answer, { teacherId: existing.teacher_id, telegramUserId, intent: parseIntent(text).type }, suggestionReplyMarkup(answer));
+}
+
+export async function handleTelegramUpdate(update: { message?: TelegramMessage; callback_query?: TelegramCallbackQuery }) {
+  if (update.callback_query) {
+    await handleTelegramCallback(update.callback_query);
+    return;
+  }
+
   const message = update.message;
   const text = message?.text?.trim();
   const from = message?.from;
@@ -590,7 +675,7 @@ export async function handleTelegramUpdate(update: { message?: TelegramMessage }
   }
 
   const answer = await handleConnectedMessage(existing, text);
-  await reply(chatId, answer, { teacherId: existing.teacher_id, telegramUserId, intent: parseIntent(text).type });
+  await reply(chatId, answer, { teacherId: existing.teacher_id, telegramUserId, intent: parseIntent(text).type }, suggestionReplyMarkup(answer));
 }
 
 export function newConnectionCode() {

@@ -27,6 +27,12 @@ const sandbox = {
         syncTeacherClassesToGoogle: async () => ({ synced: 0 }),
       };
     }
+    if (id === './class-meeting') {
+      return {
+        ensureClassMeetingLink: async () => ({ meeting_url: 'https://meet.jit.si/luminaai-aula-teste' }),
+        ensureFutureClassMeetingLinks: async () => ({ synced: 0, meetLinks: 0 }),
+      };
+    }
     if (id === 'zlib') return zlib;
     throw new Error(`Unexpected require: ${id}`);
   },
@@ -72,6 +78,9 @@ const cases = [
   ['me fala meus compromissos de hoje', 'CONSULTAR_AGENDA'],
   ['tem aula marcada para segunda?', 'CONSULTAR_AGENDA'],
   ['quero ver minha agenda do mes', 'CONSULTAR_AGENDA'],
+  ['gere links das aulas futuras', 'GERAR_LINKS_AULAS'],
+  ['mande o link da aula de hoje', 'ENVIAR_LINK_AULA'],
+  ['qual e a sala da aula da Ana?', 'ENVIAR_LINK_AULA'],
 
   ['muda a aula do Joao para amanha as 15h', 'ALTERAR_AULA'],
   ['remarca a aula da Maria para sexta', 'ALTERAR_AULA'],
