@@ -11439,3 +11439,90 @@ select {
     grid-template-columns: 1fr;
   }
 }
+
+/* Mobile nav final shape: one clean horizontal row */
+@media (max-width: 760px) {
+  .teacher-portal,
+  .student-portal,
+  .teacher-portal:has(.teacher-agenda-home),
+  .teacher-portal:has(.students-reference-page),
+  .teacher-portal:has(.activities-reference-page),
+  .teacher-portal:has(.finance-reference-page),
+  .student-portal:has(.student-home) {
+    padding-bottom: calc(92px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .teacher-portal .teacher-icon-sidebar,
+  .teacher-portal:has(.teacher-agenda-home) .teacher-icon-sidebar,
+  .teacher-portal:has(.students-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.activities-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.finance-reference-page) .teacher-icon-sidebar {
+    min-height: 68px !important;
+    height: 68px !important;
+    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+    grid-auto-rows: 48px !important;
+    gap: 4px !important;
+    padding: 9px 8px !important;
+    overflow: hidden !important;
+  }
+
+  .student-portal .teacher-icon-sidebar,
+  .student-portal:has(.student-home) .teacher-icon-sidebar {
+    min-height: 68px !important;
+    height: 68px !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    grid-auto-rows: 48px !important;
+    gap: 6px !important;
+    padding: 9px 8px !important;
+    overflow: hidden !important;
+  }
+
+  .teacher-portal .compact-brand,
+  .student-portal .compact-brand {
+    display: none !important;
+  }
+
+  .teacher-portal .icon-nav,
+  .student-portal .icon-nav,
+  .teacher-portal .sidebar-actions,
+  .student-portal .sidebar-actions {
+    display: contents !important;
+  }
+
+  .teacher-portal .share-app,
+  .student-portal .share-app {
+    display: none !important;
+  }
+
+  .teacher-portal .icon-nav a,
+  .student-portal .icon-nav a,
+  .teacher-portal .sidebar-action-button,
+  .student-portal .sidebar-action-button,
+  .teacher-portal .logout,
+  .student-portal .logout {
+    width: 100% !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    border-radius: 15px !important;
+  }
+
+  .teacher-portal .icon-nav a svg,
+  .student-portal .icon-nav a svg,
+  .teacher-portal .sidebar-action-button svg,
+  .student-portal .sidebar-action-button svg {
+    width: 23px !important;
+    height: 23px !important;
+    min-width: 23px !important;
+    min-height: 23px !important;
+  }
+
+  .teacher-portal .lumi-nav-avatar,
+  .student-portal .lumi-nav-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+  }
+}
