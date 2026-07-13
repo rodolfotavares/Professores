@@ -1,4 +1,4 @@
-const CACHE_NAME = 'luminaai-v3';
+const CACHE_NAME = 'luminaai-v4';
 const STATIC_ASSETS = [
   '/manifest.webmanifest',
   '/icons/lumina-premium-192.png',

@@ -11541,3 +11541,165 @@ select {
     min-height: 28px !important;
   }
 }
+
+/* Layout recovery layer: keep sidebar and content in a stable shell */
+@media (min-width: 761px) {
+  body:has(.teacher-portal),
+  body:has(.student-portal) {
+    overflow-x: hidden !important;
+    background: #f8fbff !important;
+  }
+
+  .teacher-portal,
+  .student-portal {
+    --portal-sidebar-width: 114px;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 100vh !important;
+    display: grid !important;
+    grid-template-columns: var(--portal-sidebar-width) minmax(0, 1fr) !important;
+    align-items: stretch !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow-x: hidden !important;
+    background: #f8fbff !important;
+  }
+
+  .teacher-portal .teacher-icon-sidebar,
+  .student-portal .teacher-icon-sidebar,
+  .teacher-portal:has(.teacher-agenda-home) .teacher-icon-sidebar,
+  .teacher-portal:has(.students-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.activities-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.finance-reference-page) .teacher-icon-sidebar,
+  .student-portal:has(.student-home) .teacher-icon-sidebar {
+    position: fixed !important;
+    inset: 0 auto 0 0 !important;
+    z-index: 120 !important;
+    width: var(--portal-sidebar-width) !important;
+    min-width: var(--portal-sidebar-width) !important;
+    max-width: var(--portal-sidebar-width) !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    max-height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 14px !important;
+    padding: 22px 18px !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: linear-gradient(180deg, #1555bd 0%, #0b3b8f 45%, #06255f 100%) !important;
+    box-shadow: 14px 0 36px rgba(13, 41, 93, 0.12) !important;
+  }
+
+  .teacher-portal .app-glass-shell,
+  .student-portal .app-glass-shell,
+  .teacher-portal .clean-shell,
+  .student-portal .clean-shell {
+    grid-column: 2 !important;
+    width: calc(100vw - var(--portal-sidebar-width)) !important;
+    max-width: calc(100vw - var(--portal-sidebar-width)) !important;
+    min-width: 0 !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+    background: transparent !important;
+  }
+
+  .teacher-portal .clean-topbar,
+  .student-portal .clean-topbar {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 70 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    display: grid !important;
+    grid-template-columns: minmax(220px, 0.8fr) minmax(280px, 1fr) auto !important;
+    align-items: center !important;
+    gap: 18px !important;
+    padding: 24px 42px 18px !important;
+    background: rgba(248, 251, 255, 0.92) !important;
+    border-bottom: 1px solid rgba(213, 224, 239, 0.75) !important;
+    backdrop-filter: blur(18px) !important;
+  }
+
+  .teacher-portal .app-content,
+  .student-portal .app-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 30px 42px 42px !important;
+    overflow-x: hidden !important;
+  }
+
+  .teacher-portal .portal-tab,
+  .student-portal .portal-tab,
+  .teacher-portal .app-content > .stack,
+  .student-portal .app-content > .stack {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .teacher-portal .grid,
+  .student-portal .grid {
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body:has(.teacher-portal),
+  body:has(.student-portal) {
+    overflow-x: hidden !important;
+    background: #f8fbff !important;
+  }
+
+  .teacher-portal,
+  .student-portal,
+  .teacher-portal:has(.teacher-agenda-home),
+  .teacher-portal:has(.students-reference-page),
+  .teacher-portal:has(.activities-reference-page),
+  .teacher-portal:has(.finance-reference-page),
+  .student-portal:has(.student-home) {
+    width: 100% !important;
+    min-width: 0 !important;
+    display: block !important;
+    padding: 0 0 calc(88px + env(safe-area-inset-bottom)) !important;
+    margin: 0 !important;
+    overflow-x: hidden !important;
+    background: #f8fbff !important;
+  }
+
+  .teacher-portal .app-glass-shell,
+  .student-portal .app-glass-shell,
+  .teacher-portal .clean-shell,
+  .student-portal .clean-shell {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  .teacher-portal .clean-topbar,
+  .student-portal .clean-topbar {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 12px 14px !important;
+  }
+
+  .teacher-portal .app-content,
+  .student-portal .app-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 14px !important;
+    overflow-x: hidden !important;
+  }
+}
