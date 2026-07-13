@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
       (classes || []).filter((item: any) => isWithinHours(item.class_date, item.class_time, 24)).forEach((item: any) => {
         notifications.push({
           id: `class-${item.id}`,
-          title: 'Aula nas proximas 24h',
+          title: 'Aula nas próximas 24h',
           message: `${item.students?.full_name || 'Aluno'} - ${item.subject || 'aula'} as ${String(item.class_time).slice(0, 5)}`,
           type: 'schedule',
           link: '/teacher',
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
         (classes || []).filter((item: any) => isWithinHours(item.class_date, item.class_time, 24)).forEach((item: any) => {
           notifications.push({
             id: `class-${item.id}`,
-            title: 'Aula nas proximas 24h',
+            title: 'Aula nas próximas 24h',
             message: `${item.subject || 'Aula'} as ${String(item.class_time).slice(0, 5)}`,
             type: 'schedule',
             link: '/student',

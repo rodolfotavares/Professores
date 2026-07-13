@@ -139,7 +139,7 @@ function PushNotificationButton() {
   useEffect(() => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
       setStatus('unsupported');
-      setMessage('Este navegador nao suporta push notification.');
+      setMessage('Este navegador não suporta notificações push.');
       return;
     }
 
@@ -148,24 +148,24 @@ function PushNotificationButton() {
       setMessage('Push ativado neste dispositivo.');
     } else if (Notification.permission === 'denied') {
       setStatus('blocked');
-      setMessage('Permissao bloqueada no navegador.');
+      setMessage('Permissão bloqueada no navegador.');
     }
   }, []);
 
   async function enablePush() {
     try {
       setStatus('loading');
-      setMessage('Preparando notificacoes...');
+      setMessage('Preparando notificações...');
 
       const keyData = await apiFetch<{ publicKey: string; configured: boolean }>('/api/push/public-key');
       if (!keyData.configured || !keyData.publicKey) {
-        throw new Error('As chaves de push ainda nao foram configuradas no servidor.');
+        throw new Error('As chaves de push ainda não foram configuradas no servidor.');
       }
 
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
         setStatus(permission === 'denied' ? 'blocked' : 'idle');
-        setMessage(permission === 'denied' ? 'Permissao bloqueada no navegador.' : 'Permissao nao concedida.');
+        setMessage(permission === 'denied' ? 'Permissão bloqueada no navegador.' : 'Permissão não concedida.');
         return;
       }
 
@@ -186,7 +186,7 @@ function PushNotificationButton() {
       setMessage('Push ativado. Enviamos um teste para este dispositivo.');
     } catch (error) {
       setStatus('error');
-      setMessage(error instanceof Error ? error.message : 'Nao foi possivel ativar notificacoes.');
+      setMessage(error instanceof Error ? error.message : 'Não foi possível ativar notificações.');
     }
   }
 
@@ -195,7 +195,7 @@ function PushNotificationButton() {
   return (
     <div className={`push-enable-card ${status}`}>
       <span>
-        <strong>Push notification</strong>
+        <strong>Notificações push</strong>
         <small>{message}</small>
       </span>
       <button type="button" onClick={enablePush} disabled={disabled}>
@@ -261,49 +261,49 @@ const currentOnboardingSteps = {
   teacher: [
     {
       title: 'Bem-vindo ao LuminaAI',
-      text: 'Voce tem 7 dias gratis para testar o app. Depois desse periodo, a mensalidade de R$ 19,90 libera o acesso completo.',
+      text: 'Você tem 7 dias grátis para testar o app. Depois desse período, a mensalidade de R$ 19,90 libera o acesso completo.',
       hint: 'Use esse tempo para cadastrar alunos e validar sua rotina.',
     },
     {
       title: 'Cadastre seus alunos',
-      text: 'Entre em Alunos para criar o perfil, definir dias, horarios, valor por aula e dados do responsavel.',
-      hint: 'Depois de salvar, copie o link de acesso do aluno e envie pelo WhatsApp. O codigo antigo continua funcionando.',
+      text: 'Entre em Alunos para criar o perfil, definir dias, horários, valor por aula e dados do responsável.',
+      hint: 'Depois de salvar, copie o link de acesso do aluno e envie pelo WhatsApp. O código antigo continua funcionando.',
     },
     {
       title: 'Organize a agenda',
-      text: 'No Inicio, arraste aulas no calendario, confirme, reagende ou desmarque encontros sem sair da tela principal.',
-      hint: 'A agenda e o centro do uso diario do professor.',
+      text: 'No Início, arraste aulas no calendário, confirme, reagende ou desmarque encontros sem sair da tela principal.',
+      hint: 'A agenda é o centro do uso diário do professor.',
     },
     {
       title: 'Use a Aula Inteligente',
-      text: 'Ao fim da aula, registre o resumo. A IA ajuda a gerar relatorio, mensagem para responsavel e evolucao do aluno.',
-      hint: 'Quanto melhor o relato, mais fiel fica a analise.',
+      text: 'Ao fim da aula, registre o resumo. A IA ajuda a gerar relatório, mensagem para responsável e evolução do aluno.',
+      hint: 'Quanto melhor o relato, mais fiel fica a análise.',
     },
     {
       title: 'Acompanhe o financeiro',
-      text: 'Em Financeiro voce controla pagamentos dos alunos e tambem paga a assinatura do app quando o teste acabar.',
-      hint: 'Professores ja cadastrados como isentos continuam liberados.',
+      text: 'Em Financeiro você controla pagamentos dos alunos e também paga a assinatura do app quando o teste acabar.',
+      hint: 'Professores já cadastrados como isentos continuam liberados.',
     },
   ],
   student: [
     {
       title: 'Bem-vindo ao LuminaAI',
-      text: 'Seu portal mostra aulas, mensagens e sua evolucao conforme o professor registra os relatorios.',
-      hint: 'Alunos nao pagam assinatura do app.',
+      text: 'Seu portal mostra aulas, mensagens e sua evolução conforme o professor registra os relatórios.',
+      hint: 'Alunos não pagam assinatura do app.',
     },
     {
-      title: 'Veja sua proxima aula',
-      text: 'No Inicio voce acompanha horario, materia e status da proxima aula cadastrada pelo professor.',
-      hint: 'Use o botao de confirmar aula quando estiver tudo certo.',
+      title: 'Veja sua próxima aula',
+      text: 'No Início você acompanha horário, matéria e status da próxima aula cadastrada pelo professor.',
+      hint: 'Use o botão de confirmar aula quando estiver tudo certo.',
     },
     {
       title: 'Vincule novos professores',
       text: 'Se outro professor enviar um convite, abra o link ou cole o token em Perfil para conectar a mesma conta.',
-      hint: 'Assim voce pode ter mais de um professor sem criar outro login.',
+      hint: 'Assim você pode ter mais de um professor sem criar outro login.',
     },
     {
       title: 'Converse com o professor',
-      text: 'Use Mensagens para tirar duvidas, enviar combinados e manter o historico organizado.',
+      text: 'Use Mensagens para tirar dúvidas, enviar combinados e manter o histórico organizado.',
       hint: 'Tudo fica vinculado ao seu professor.',
     },
   ],

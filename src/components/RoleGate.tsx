@@ -30,7 +30,7 @@ export function RoleGate({ expected, children }: { expected: Role; children: Rea
             && profile.subscription?.status !== 'trial';
           if (subscriptionPending && pathname !== '/teacher/finance') {
             setStatus('blocked');
-            setMessage('Seu teste gratis de 7 dias terminou. Acesse Financeiro e pague a mensalidade para liberar o app.');
+            setMessage('Seu teste grátis de 7 dias terminou. Acesse Financeiro e pague a mensalidade para liberar o app.');
             window.setTimeout(() => router.replace('/teacher/finance'), 900);
             return;
           }

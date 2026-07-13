@@ -285,7 +285,7 @@ export function TeacherStudentsBoard() {
             <button className="outline-action" type="button" onClick={createInvite} disabled={inviteLoading || (!selectedStudent && !form.email)}>
               {inviteLoading ? 'Gerando convite...' : 'Copiar link de acesso do aluno'}
             </button>
-            <small>Use este link para o aluno criar a conta ou vincular este professor ao login que ele ja usa.</small>
+            <small>Use este link para o aluno criar a conta ou vincular este professor ao login que ele já usa.</small>
             {inviteUrl && <input readOnly value={inviteUrl} onFocus={(event) => event.currentTarget.select()} />}
           </div>
           <div className="student-edit-actions">

@@ -134,7 +134,7 @@ export function TeacherDashboard() {
       {!loading && !hasStudents && (
         <div className="empty dashboard-empty-state">
           <h2>Comece cadastrando seu primeiro aluno</h2>
-          <p>Depois disso, este painel vai mostrar aulas da semana, atividades, frequencia e desempenho com dados reais.</p>
+          <p>Depois disso, este painel vai mostrar aulas da semana, atividades, frequência e desempenho com dados reais.</p>
         </div>
       )}
       <div className="teacher-dashboard-grid">

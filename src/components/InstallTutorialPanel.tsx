@@ -7,24 +7,24 @@ const androidSteps = [
   'Toque nos tres pontos no canto superior direito.',
   'Escolha Instalar app ou Adicionar a tela inicial.',
   'Confirme em Instalar.',
-  'Depois disso, abra o LuminaAI pelo icone criado na tela inicial.',
+  'Depois disso, abra o LuminaAI pelo ícone criado na tela inicial.',
 ];
 
 const iphoneSteps = [
   'Abra o LuminaAI no Safari do iPhone.',
-  'Toque no botao Compartilhar, o icone de um quadrado com uma seta para cima.',
-  'Role as opcoes e toque em Adicionar a Tela de Inicio.',
+  'Toque no botão Compartilhar, o ícone de um quadrado com uma seta para cima.',
+  'Role as opcoes e toque em Adicionar a Tela de Início.',
   'Confira o nome LuminaAI e toque em Adicionar.',
-  'Depois disso, abra o LuminaAI pelo icone criado na tela inicial.',
+  'Depois disso, abra o LuminaAI pelo ícone criado na tela inicial.',
 ];
 
 const studentLoginSteps = [
   'O professor abre a aba Alunos, seleciona o aluno ou cria um novo cadastro.',
   'No painel lateral, o professor clica em Copiar link de acesso do aluno.',
-  'O professor envia esse link pelo WhatsApp para o aluno ou responsavel.',
-  'Se o aluno ainda nao tiver conta, ele abre o link e cria a conta de aluno normalmente.',
-  'Se o aluno ja tiver conta, ele entra no portal do aluno e cola o token do convite em Perfil > Vincular convite.',
-  'O codigo antigo do professor continua funcionando como alternativa no cadastro.',
+  'O professor envia esse link pelo WhatsApp para o aluno ou responsável.',
+  'Se o aluno ainda não tiver conta, ele abre o link e cria a conta de aluno normalmente.',
+  'Se o aluno já tiver conta, ele entra no portal do aluno e cola o token do convite em Perfil > Vincular convite.',
+  'O código antigo do professor continua funcionando como alternativa no cadastro.',
   'Depois do cadastro, o aluno entra pelo Login usando o e-mail e a senha criados.',
 ];
 

@@ -497,10 +497,121 @@ Object.assign(dictionary, {
   'Este navegador n\u00e3o suporta notifica\u00e7\u00f5es locais.': 'This browser does not support local notifications.',
 });
 
+Object.assign(dictionary, {
+  'Bem-vindo ao LuminaAI': 'Welcome to LuminaAI',
+  'Você tem 7 dias grátis para testar o app. Depois desse período, a mensalidade de R$ 19,90 libera o acesso completo.': 'You have 7 free days to test the app. After that period, the R$ 19.90 monthly fee unlocks full access.',
+  'Use esse tempo para cadastrar alunos e validar sua rotina.': 'Use this time to register students and validate your routine.',
+  'Cadastre seus alunos': 'Register your students',
+  'Entre em Alunos para criar o perfil, definir dias, horários, valor por aula e dados do responsável.': 'Go to Students to create the profile, set days, times, class price and guardian information.',
+  'Depois de salvar, copie o link de acesso do aluno e envie pelo WhatsApp. O código antigo continua funcionando.': 'After saving, copy the student access link and send it through WhatsApp. The old code still works.',
+  'Organize a agenda': 'Organize the schedule',
+  'No Início, arraste aulas no calendário, confirme, reagende ou desmarque encontros sem sair da tela principal.': 'On Home, drag classes on the calendar, confirm, reschedule or cancel meetings without leaving the main screen.',
+  'A agenda é o centro do uso diário do professor.': 'The schedule is the center of the teacher daily workflow.',
+  'Use a Aula Inteligente': 'Use Smart Class',
+  'Ao fim da aula, registre o resumo. A IA ajuda a gerar relatório, mensagem para responsável e evolução do aluno.': 'At the end of the class, record the summary. AI helps generate a report, a message for the guardian and the student progress.',
+  'Quanto melhor o relato, mais fiel fica a análise.': 'The better the note, the more accurate the analysis becomes.',
+  'Acompanhe o financeiro': 'Track finances',
+  'Em Financeiro você controla pagamentos dos alunos e também paga a assinatura do app quando o teste acabar.': 'In Finance, you manage student payments and also pay the app subscription when the trial ends.',
+  'Professores já cadastrados como isentos continuam liberados.': 'Teachers already registered as exempt remain unlocked.',
+  'Seu portal mostra aulas, mensagens e sua evolução conforme o professor registra os relatórios.': 'Your portal shows classes, messages and your progress as the teacher records reports.',
+  'Alunos não pagam assinatura do app.': 'Students do not pay for the app subscription.',
+  'Veja sua próxima aula': 'See your next class',
+  'No Início você acompanha horário, matéria e status da próxima aula cadastrada pelo professor.': 'On Home, you can see the time, subject and status of the next class registered by the teacher.',
+  'Use o botão de confirmar aula quando estiver tudo certo.': 'Use the confirm class button when everything is correct.',
+  'Vincule novos professores': 'Link new teachers',
+  'Se outro professor enviar um convite, abra o link ou cole o token em Perfil para conectar a mesma conta.': 'If another teacher sends an invitation, open the link or paste the token in Profile to connect the same account.',
+  'Assim você pode ter mais de um professor sem criar outro login.': 'This way you can have more than one teacher without creating another login.',
+  'Use Mensagens para tirar dúvidas, enviar combinados e manter o histórico organizado.': 'Use Messages to ask questions, send agreements and keep the history organized.',
+  'Guia rápido': 'Quick guide',
+  'Pular tutorial': 'Skip tutorial',
+  'Pular': 'Skip',
+  'Voltar': 'Back',
+  'Próximo': 'Next',
+  'Começar a usar': 'Start using',
+  'Receba lembretes mesmo fora do app.': 'Receive reminders even outside the app.',
+  'Este navegador não suporta push notification.': 'This browser does not support push notifications.',
+  'Este navegador não suporta notificações push.': 'This browser does not support push notifications.',
+  'Notificações push': 'Push notifications',
+  'Permissão bloqueada no navegador.': 'Permission blocked in the browser.',
+  'Preparando notificações...': 'Preparing notifications...',
+  'As chaves de push ainda não foram configuradas no servidor.': 'Push keys have not been configured on the server yet.',
+  'Permissão não concedida.': 'Permission not granted.',
+  'Push ativado. Enviamos um teste para este dispositivo.': 'Push enabled. We sent a test to this device.',
+  'Não foi possível ativar notificações.': 'Could not enable notifications.',
+  'Quer praticidade? contate-me!': 'Want practicality? Contact me!',
+  'Lumi Assistente': 'Lumi Assistant',
+  'Conectar assistente': 'Connect assistant',
+  'Gerenciar assistente': 'Manage assistant',
+  'Conecte o Lumi Assistente para organizar agenda e pagamentos pelo Telegram.': 'Connect Lumi Assistant to organize schedule and payments through Telegram.',
+  'Conecte o Lumi Assistente para consultar agenda, acompanhar pagamentos, gerar relatórios, criar planilhas e organizar sua rotina de professor sem abrir o painel.': 'Connect Lumi Assistant to check schedules, track payments, generate reports, create spreadsheets and organize your teaching routine without opening the dashboard.',
+  'Cada aula recebe uma sala exclusiva para professor e aluno entrarem.': 'Each class receives an exclusive room for teacher and student to join.',
+  'O professor pode adicionar a aula ao calendário usando um link seguro de template.': 'The teacher can add the class to the calendar using a secure template link.',
+  'Confirme sua senha atual antes de criar uma nova senha de acesso.': 'Confirm your current password before creating a new access password.',
+  'Senha atual': 'Current password',
+  'Confirmar nova senha': 'Confirm new password',
+  'Alterar senha': 'Change password',
+  'Alterando...': 'Changing...',
+  'Senha alterada com segurança.': 'Password changed securely.',
+  'A confirmação da senha precisa ser igual a nova senha.': 'Password confirmation must match the new password.',
+  'Não foi possível confirmar sua sessão.': 'Could not confirm your session.',
+  'Senha atual incorreta.': 'Current password is incorrect.',
+  'Contato direto e ajuda rápida sobre as funções do LuminaAI.': 'Direct contact and quick help with LuminaAI features.',
+  'Ajuda rápida para usar o portal do aluno no LuminaAI.': 'Quick help for using the student portal in LuminaAI.',
+  'Fale com o suporte pelo WhatsApp para dúvidas sobre uso do app.': 'Contact support on WhatsApp for questions about using the app.',
+  'Pergunte sobre uma função do LuminaAI': 'Ask about a LuminaAI feature',
+  'Ferramentas secundárias': 'Secondary tools',
+  'Atalhos úteis': 'Useful shortcuts',
+  'Tutorial de instalação': 'Installation tutorial',
+  'Como colocar o app na tela inicial.': 'How to add the app to the home screen.',
+  'Contato e assistente de ajuda do LuminaAI.': 'LuminaAI contact and help assistant.',
+  'Cole o token do convite ou abra o link enviado pelo professor para conectar esta conta a outra aula.': 'Paste the invitation token or open the link sent by the teacher to connect this account to another class.',
+  'Token do convite': 'Invitation token',
+  'Cole o código do link recebido': 'Paste the code from the received link',
+  'Vincular professor': 'Link teacher',
+  'Vinculando...': 'Linking...',
+  'Professor vinculado com sucesso.': 'Teacher linked successfully.',
+});
+
+const fallbackWords: Record<string, string> = {
+  professor: 'teacher',
+  professores: 'teachers',
+  aluno: 'student',
+  alunos: 'students',
+  aula: 'class',
+  aulas: 'classes',
+  agenda: 'schedule',
+  financeiro: 'finance',
+  pagamento: 'payment',
+  pagamentos: 'payments',
+  mensagem: 'message',
+  mensagens: 'messages',
+  relatório: 'report',
+  relatórios: 'reports',
+  evolução: 'progress',
+  frequência: 'attendance',
+  configuração: 'setting',
+  configurações: 'settings',
+  suporte: 'support',
+  responsável: 'guardian',
+  responsáveis: 'guardians',
+  matéria: 'subject',
+  matérias: 'subjects',
+  horário: 'time',
+  horários: 'times',
+  próximo: 'next',
+  próxima: 'next',
+  pendente: 'pending',
+  pendentes: 'pending',
+};
+
 const sortedEntries = Object.entries(dictionary).sort((a, b) => b[0].length - a[0].length);
 const textOriginals = new WeakMap<Text, string>();
 const translatedAttributes = ['placeholder', 'title', 'aria-label'];
 const ignoredTags = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'CODE', 'PRE']);
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 function translateText(original: string, language: string) {
   if (language !== 'en-US') return original;
@@ -518,6 +629,10 @@ function translateText(original: string, language: string) {
     if (translated.includes(source)) {
       translated = translated.split(source).join(target);
     }
+  }
+
+  for (const [source, target] of Object.entries(fallbackWords)) {
+    translated = translated.replace(new RegExp(`\\b${escapeRegex(source)}\\b`, 'gi'), target);
   }
   return translated;
 }

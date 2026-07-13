@@ -5,94 +5,94 @@ export default function PrivacyPage() {
     <main className="marketing-page legal-page">
       <section className="card legal-card stack">
         <span className="eyebrow">LuminaAI</span>
-        <h1>Politica de Privacidade</h1>
-        <p className="muted">Ultima atualizacao: 13 de julho de 2026.</p>
+        <h1>Política de Privacidade</h1>
+        <p className="muted">Última atualização: 13 de julho de 2026.</p>
 
         <h2>1. Compromisso com a privacidade</h2>
         <p>
-          O LuminaAI trata dados pessoais para oferecer uma plataforma de organizacao de aulas particulares para professores, alunos e responsaveis.
-          Esta Politica explica quais dados podem ser tratados, para quais finalidades, com quem podem ser compartilhados e como o titular pode exercer seus direitos previstos na LGPD.
+          O LuminaAI trata dados pessoais para oferecer uma plataforma de organização de aulas particulares para professores, alunos e responsáveis.
+          Esta Política explica quais dados podem ser tratados, para quais finalidades, com quem podem ser compartilhados e como o titular pode exercer seus direitos previstos na LGPD.
         </p>
 
         <h2>2. Papeis no tratamento de dados</h2>
         <p>
-          O LuminaAI atua como fornecedor da plataforma. O professor e responsavel pelos dados que cadastra sobre alunos, responsaveis, aulas, mensagens, pagamentos e relatorios.
-          Em muitas situacoes, o professor define a finalidade do tratamento, e o LuminaAI opera os dados para executar o servico solicitado.
+          O LuminaAI atua como fornecedor da plataforma. O professor e responsável pelos dados que cadastra sobre alunos, responsáveis, aulas, mensagens, pagamentos e relatórios.
+          Em muitas situacoes, o professor define a finalidade do tratamento, e o LuminaAI opera os dados para executar o serviço solicitado.
         </p>
 
         <h2>3. Dados tratados</h2>
         <p>
-          Podemos tratar nome, e-mail, telefone, WhatsApp, tipo de perfil, dados do responsavel, materia, serie, agenda, frequencia, mensagens, arquivos, relatorios de aula, evolucao pedagogica, status de pagamentos, preferencias de idioma, tokens de convite, registros de conexao e dados tecnicos necessarios para seguranca e funcionamento.
+          Podemos tratar nome, e-mail, telefone, WhatsApp, tipo de perfil, dados do responsável, matéria, série, agenda, frequência, mensagens, arquivos, relatórios de aula, evolução pedagógica, status de pagamentos, preferências de idioma, tokens de convite, registros de conexão e dados técnicos necessários para segurança e funcionamento.
         </p>
 
         <h2>4. Alunos menores de idade</h2>
         <p>
-          Quando houver dados de criancas ou adolescentes, o professor deve possuir autorizacao do responsavel legal ou outra base legal aplicavel.
-          Recomendamos cadastrar apenas informacoes necessarias para organizar aulas, comunicar responsaveis e acompanhar a evolucao pedagogica, sempre observando o melhor interesse do aluno.
+          Quando houver dados de crianças ou adolescentes, o professor deve possuir autorização do responsável legal ou outra base legal aplicável.
+          Recomendamos cadastrar apenas informações necessárias para organizar aulas, comunicar responsáveis e acompanhar a evolução pedagógica, sempre observando o melhor interesse do aluno.
         </p>
 
         <h2>5. Finalidades</h2>
         <p>
-          Os dados sao usados para criar e proteger contas, vincular professores e alunos, permitir multiplos vinculos de um aluno com professores diferentes, organizar agenda, enviar mensagens, armazenar arquivos, gerar relatorios, apoiar analises pedagogicas, controlar pagamentos, enviar notificacoes, prestar suporte, prevenir fraude e cumprir obrigacoes legais.
+          Os dados são usados para criar e proteger contas, vincular professores e alunos, permitir múltiplos vínculos de um aluno com professores diferentes, organizar agenda, enviar mensagens, armazenar arquivos, gerar relatórios, apoiar análises pedagógicas, controlar pagamentos, enviar notificações, prestar suporte, prevenir fraude e cumprir obrigações legais.
         </p>
 
         <h2>6. Bases legais</h2>
         <p>
-          O tratamento pode ocorrer para execucao do servico, cumprimento de obrigacao legal ou regulatoria, exercicio regular de direitos, legitimo interesse, prevencao a fraude, consentimento quando necessario e protecao do melhor interesse de criancas e adolescentes.
+          O tratamento pode ocorrer para execução do serviço, cumprimento de obrigação legal ou regulatória, exercício regular de direitos, legítimo interesse, prevenção a fraude, consentimento quando necessário e proteção do melhor interesse de crianças e adolescentes.
         </p>
 
-        <h2>7. Convites e vinculos</h2>
+        <h2>7. Convites e vínculos</h2>
         <p>
-          Professores podem gerar links de convite para vincular alunos. O aluno pode criar seu proprio login e e-mail; quando isso acontecer, o cadastro do professor sera atualizado com o e-mail informado pelo aluno.
-          Tokens de convite sao temporarios, de uso unico e nao devem conter dados sensiveis.
+          Professores podem gerar links de convite para vincular alunos. O aluno pode criar seu próprio login e e-mail; quando isso acontecer, o cadastro do professor sera atualizado com o e-mail informado pelo aluno.
+          Tokens de convite são temporários, de uso único e não devem conter dados sensíveis.
         </p>
 
         <h2>8. Inteligencia artificial</h2>
         <p>
-          Recursos de IA podem auxiliar na organizacao de relatorios, identificacao de padroes de duvidas, sugestoes pedagogicas e mensagens.
-          Essas analises sao auxiliares, podem conter erros e devem ser revisadas pelo professor antes de qualquer decisao relevante ou compartilhamento com alunos e responsaveis.
+          Recursos de IA podem auxiliar na organização de relatórios, identificação de padrões de dúvidas, sugestões pedagógicas e mensagens.
+          Essas análises são auxiliares, podem conter erros e devem ser revisadas pelo professor antes de qualquer decisão relevante ou compartilhamento com alunos e responsáveis.
         </p>
 
         <h2>9. Compartilhamento com terceiros</h2>
         <p>
-          Dados podem ser compartilhados com provedores necessarios ao funcionamento do app, como hospedagem, banco de dados, autenticacao, armazenamento, pagamentos, notificacoes, links de aula e ferramentas de suporte ou IA.
-          O LuminaAI nao vende dados pessoais e nao usa dados de alunos para publicidade comportamental.
+          Dados podem ser compartilhados com provedores necessários ao funcionamento do app, como hospedagem, banco de dados, autenticação, armazenamento, pagamentos, notificações, links de aula e ferramentas de suporte ou IA.
+          O LuminaAI não vende dados pessoais e não usa dados de alunos para publicidade comportamental.
         </p>
 
-        <h2>10. Pagamentos, notificacoes e integracoes</h2>
+        <h2>10. Pagamentos, notificações e integrações</h2>
         <p>
-          O Mercado Pago pode processar pagamentos da assinatura do professor conforme suas proprias politicas.
-          Notificacoes dependem da permissao do navegador ou dispositivo e podem ser desativadas pelo usuario.
-          Integracoes externas so devem ser usadas para finalidades solicitadas pelo usuario.
+          O Mercado Pago pode processar pagamentos da assinatura do professor conforme suas próprias políticas.
+          Notificacoes dependem da permissão do navegador ou dispositivo e podem ser desativadas pelo usuário.
+          Integracoes externas so devem ser usadas para finalidades solicitadas pelo usuário.
         </p>
 
-        <h2>11. Retencao e exclusao</h2>
+        <h2>11. Retenção e exclusão</h2>
         <p>
-          Os dados sao mantidos enquanto a conta estiver ativa ou enquanto forem necessarios para prestacao do servico, historico, seguranca, cumprimento de obrigacoes legais, prevencao de fraude ou defesa de direitos.
-          Pedidos de exclusao serao avaliados conforme a LGPD, podendo haver preservacao de dados minimos quando existir obrigacao legal ou necessidade legitima.
+          Os dados são mantidos enquanto a conta estiver ativa ou enquanto forem necessários para prestação do serviço, histórico, segurança, cumprimento de obrigações legais, prevenção de fraude ou defesa de direitos.
+          Pedidos de exclusão serao avaliados conforme a LGPD, podendo haver preservação de dados mínimos quando existir obrigação legal ou necessidade legítima.
         </p>
 
         <h2>12. Seguranca</h2>
         <p>
-          Utilizamos autenticacao, controle de acesso por perfil, tokens temporarios para convites, servicos de nuvem, restricoes de permissao e medidas tecnicas razoaveis para proteger dados pessoais.
-          Nenhum sistema e totalmente imune a falhas; por isso, usuarios devem manter senhas fortes, nao compartilhar credenciais e proteger seus dispositivos.
+          Utilizamos autenticação, controle de acesso por perfil, tokens temporários para convites, serviços de nuvem, restrições de permissão e medidas tecnicas razoáveis para proteger dados pessoais.
+          Nenhum sistema e totalmente imune a falhas; por isso, usuários devem manter senhas fortes, não compartilhar credenciais e proteger seus dispositivos.
         </p>
 
         <h2>13. Direitos do titular</h2>
         <p>
-          O titular pode solicitar confirmacao de tratamento, acesso, correcao, anonimização, bloqueio, eliminacao de dados desnecessarios, portabilidade quando aplicavel, informacoes sobre compartilhamento, revogacao de consentimento, oposicao a tratamento irregular e revisao de decisoes automatizadas relevantes.
+          O titular pode solicitar confirmação de tratamento, acesso, correção, anonimização, bloqueio, eliminação de dados desnecessários, portabilidade quando aplicável, informações sobre compartilhamento, revogação de consentimento, oposição a tratamento irregular e revisão de decisões automatizadas relevantes.
         </p>
 
         <h2>14. Como exercer direitos</h2>
         <p>
-          Solicitacoes de privacidade podem ser enviadas pelo WhatsApp +1 (402) 366-7683.
-          Para proteger contas e dados, poderemos solicitar informacoes adicionais para confirmar a identidade do solicitante antes de alterar, exportar ou excluir informacoes.
+          Solicitações de privacidade podem ser enviadas pelo WhatsApp +1 (402) 366-7683.
+          Para proteger contas e dados, poderemos solicitar informações adicionais para confirmar a identidade do solicitante antes de alterar, exportar ou excluir informações.
         </p>
 
         <h2>15. Atualizacoes</h2>
         <p>
-          Esta Politica pode ser atualizada para refletir mudancas no app, na lei ou nos servicos utilizados.
-          A versao vigente sera publicada nesta pagina com a data de atualizacao.
+          Esta Política pode ser atualizada para refletir mudancas no app, na lei ou nos serviços utilizados.
+          A versão vigente sera publicada nesta página com a data de atualizacao.
         </p>
 
         <Link className="btn primary" href="/">Voltar ao inicio</Link>

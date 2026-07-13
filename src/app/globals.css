@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap');
+
 :root {
   --bg: #f6f8fb;
   --panel: #ffffff;
@@ -60,7 +62,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, Helvetica, sans-serif;
+  font-family: Manrope, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, Helvetica, sans-serif;
 }
 
 a {
@@ -11192,5 +11194,57 @@ select.input option {
     width: 48px;
     height: 48px;
     min-width: 48px;
+  }
+}
+
+/* Final shell polish: full-height blue sidebar and Manrope everywhere */
+html,
+body {
+  font-family: Manrope, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, Helvetica, sans-serif !important;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit !important;
+}
+
+@media (min-width: 761px) {
+  .teacher-portal,
+  .student-portal {
+    align-items: stretch !important;
+    min-height: 100dvh !important;
+  }
+
+  .teacher-portal .teacher-icon-sidebar,
+  .student-portal .teacher-icon-sidebar,
+  .teacher-portal:has(.teacher-agenda-home) .teacher-icon-sidebar,
+  .teacher-portal:has(.students-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.activities-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.finance-reference-page) .teacher-icon-sidebar,
+  .student-portal:has(.student-home) .teacher-icon-sidebar {
+    position: sticky !important;
+    top: 0 !important;
+    align-self: stretch !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+    background: linear-gradient(180deg, #0b3b8f 0%, #082766 48%, #061b45 100%) !important;
+    border-right: 1px solid rgba(147, 197, 253, 0.32) !important;
+    box-shadow: 18px 0 44px rgba(10, 38, 96, 0.14) !important;
+  }
+
+  .teacher-portal .teacher-icon-sidebar::before,
+  .student-portal .teacher-icon-sidebar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(180deg, rgba(59, 130, 246, 0.18), rgba(2, 6, 23, 0.16));
+    pointer-events: none;
   }
 }

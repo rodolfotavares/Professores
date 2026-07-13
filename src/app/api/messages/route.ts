@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       .select('*')
       .eq('id', body.student_id)
       .single();
-    if (studentError || !student) return json({ error: 'Aluno nao encontrado.' }, { status: 404 });
+    if (studentError || !student) return json({ error: 'Aluno não encontrado.' }, { status: 404 });
 
     const isTeacher = student.teacher_id === user.id;
     const isStudent = student.user_id === user.id;

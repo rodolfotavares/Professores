@@ -5,7 +5,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'LuminaAI',
-  description: 'Gestao de aulas particulares com professor e aluno sincronizados',
+  description: 'Gestão de aulas particulares com professor e aluno sincronizados',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,

@@ -194,7 +194,7 @@ export function TeacherHome() {
     }
     await smartLessonAction('start');
     if (!meetingLink) {
-      setError('Esta aula ainda nao tem link online. Abra Lumi Assistente e clique em gerar links das aulas existentes.');
+      setError('Esta aula ainda não tem link online. Abra Lumi Assistente e clique em gerar links das aulas existentes.');
     }
   }
 

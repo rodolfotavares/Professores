@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const code = body.access_code?.toUpperCase().trim() || '';
 
     if (!invite && !code) {
-      return Response.json({ error: 'Informe o codigo do professor ou use um link de convite.' }, { status: 400 });
+      return Response.json({ error: 'Informe o código do professor ou use um link de convite.' }, { status: 400 });
     }
 
     const teacherResult = invite
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
     const teacher = teacherResult.data;
     if (teacherResult.error || !teacher) {
-      return Response.json({ error: 'Codigo ou convite do professor invalido.' }, { status: 400 });
+      return Response.json({ error: 'Código ou convite do professor invalido.' }, { status: 400 });
     }
 
     const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({

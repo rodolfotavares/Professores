@@ -65,11 +65,11 @@ function PasswordChangeCard() {
 
     try {
       if (!isStrongPassword(newPassword)) throw new Error(passwordRuleMessage);
-      if (newPassword !== confirmPassword) throw new Error('A confirmacao da senha precisa ser igual a nova senha.');
+      if (newPassword !== confirmPassword) throw new Error('A confirmação da senha precisa ser igual a nova senha.');
 
       const { data: userData, error: userError } = await supabaseBrowser.auth.getUser();
       const email = userData.user?.email;
-      if (userError || !email) throw new Error('Nao foi possivel confirmar sua sessao.');
+      if (userError || !email) throw new Error('Não foi possível confirmar sua sessão.');
 
       const { error: signInError } = await supabaseBrowser.auth.signInWithPassword({ email, password: currentPassword });
       if (signInError) throw new Error('Senha atual incorreta.');
@@ -80,9 +80,9 @@ function PasswordChangeCard() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      setSuccess('Senha alterada com seguranca.');
+      setSuccess('Senha alterada com segurança.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nao foi possivel alterar a senha.');
+      setError(err instanceof Error ? err.message : 'Não foi possível alterar a senha.');
     } finally {
       setLoading(false);
     }
@@ -90,7 +90,7 @@ function PasswordChangeCard() {
 
   return (
     <GlassCard className="portal-summary-card">
-      <span className="eyebrow">Seguranca</span>
+      <span className="eyebrow">Segurança</span>
       <h2>Alterar senha</h2>
       <p className="muted">Confirme sua senha atual antes de criar uma nova senha de acesso.</p>
       {error && <p className="error">{error}</p>}
@@ -144,7 +144,7 @@ const supportAnswers = [
   },
   {
     keywords: ['agenda', 'aula', 'horario', 'horário', 'presenca', 'presença'],
-    answer: 'A agenda nasce dos dias e horarios cadastrados no aluno. O professor acompanha e ajusta aulas no cadastro do aluno, e o aluno visualiza os proximos encontros no Inicio do portal.',
+    answer: 'A agenda nasce dos dias e horários cadastrados no aluno. O professor acompanha e ajusta aulas no cadastro do aluno, e o aluno visualiza os próximos encontros no Início do portal.',
   },
   {
     keywords: ['mensagem', 'recado', 'chat'],
@@ -164,12 +164,12 @@ function supportReply(question: string) {
   const normalized = question.toLowerCase();
   const match = supportAnswers.find((item) => item.keywords.some((keyword) => normalized.includes(keyword)));
   if (match) return match.answer;
-  return 'Posso ajudar somente com funcoes do LuminaAI: alunos, aulas, mensagens, financeiro, instalacao, suporte e configuracoes.';
+  return 'Posso ajudar somente com funções do LuminaAI: alunos, aulas, mensagens, financeiro, instalação, suporte e configurações.';
 }
 
 export function TeacherSupportPanel() {
   const [messages, setMessages] = useState([
-    { role: 'assistant', text: 'Ola! Sou o assistente do LuminaAI. Posso ajudar com funcoes do app, como alunos, aulas, mensagens e financeiro.' },
+    { role: 'assistant', text: 'Ola! Sou o assistente do LuminaAI. Posso ajudar com funções do app, como alunos, aulas, mensagens e financeiro.' },
   ]);
   const [question, setQuestion] = useState('');
 
@@ -452,7 +452,7 @@ export function TeacherFrequencyPanel() {
       const data = await apiFetch<{ classes: ClassSchedule[] }>('/api/teacher/schedule');
       setClasses(data.classes);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao carregar frequencia.');
+      setError(err instanceof Error ? err.message : 'Falha ao carregar frequência.');
     } finally {
       setLoading(false);
     }
@@ -479,7 +479,7 @@ export function TeacherFrequencyPanel() {
         <MetricCard title="Confirmações" value={confirmed} note="confirmadas por alunos" />
         <MetricCard title="Faltas" value={absences} note="registradas na agenda" />
       </div>
-      {!loading && classes.length === 0 && <EmptyState title="Sem frequencia ainda" text="A frequencia nasce da agenda de aulas." />}
+      {!loading && classes.length === 0 && <EmptyState title="Sem frequência ainda" text="A frequência nasce da agenda de aulas." />}
       <div className="student-insight-grid">
         {Object.entries(byStudent).map(([studentId, studentClasses]) => {
           const studentName = studentClasses[0]?.students?.full_name || 'Aluno';
@@ -539,7 +539,7 @@ export function TeacherSettingsPanel() {
       const data = await apiFetch<{ profile: { full_name?: string; access_code?: string } }>('/api/teacher/profile');
       setProfile(data.profile);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao carregar configuracoes.');
+      setError(err instanceof Error ? err.message : 'Falha ao carregar configurações.');
     } finally {
       setLoading(false);
     }
@@ -555,7 +555,7 @@ export function TeacherSettingsPanel() {
         <GlassCard className="portal-summary-card">
           <span className="eyebrow">Professor</span>
           <h2>{profile?.full_name || 'Professor'}</h2>
-          <p className="muted">Seu portal esta conectado ao Supabase e sincroniza alunos, agenda e mensagens.</p>
+          <p className="muted">Seu portal está conectado ao Supabase e sincroniza alunos, agenda e mensagens.</p>
         </GlassCard>
         <GlassCard className="portal-summary-card access-code-card">
           <span className="eyebrow">Código do professor</span>
@@ -574,7 +574,7 @@ export function TeacherSettingsPanel() {
         <div className="glass-card-head">
           <div>
             <span className="eyebrow">Ajuda</span>
-            <strong>Atalhos uteis</strong>
+            <strong>Atalhos úteis</strong>
           </div>
         </div>
         <div className="support-shortcuts">
@@ -774,7 +774,7 @@ export function StudentMaterialsPanel() {
       const data = await apiFetch<{ activities: Activity[] }>('/api/student/activities');
       setActivities(data.activities);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao carregar materiais.');
+      setError(err instanceof Error ? err.message : 'Falha ao carregar matériais.');
     } finally {
       setLoading(false);
     }
@@ -793,7 +793,7 @@ export function StudentMaterialsPanel() {
         <MetricCard title="Matérias" value={new Set(activities.map((activity) => activity.subject || 'Geral')).size} note="com conteúdo" />
         <MetricCard title="Atividades" value={activities.length} note="vinculadas" />
       </div>
-      {!loading && files.length === 0 && <EmptyState title="Nenhum material ainda" text="Quando o professor anexar arquivos, eles aparecem aqui." />}
+      {!loading && files.length === 0 && <EmptyState title="Nenhum matérial ainda" text="Quando o professor anexar arquivos, eles aparecem aqui." />}
       <div className="portal-card-grid">
         {files.map((activity) => (
           <GlassCard className="portal-summary-card" key={activity.id}>
@@ -802,7 +802,7 @@ export function StudentMaterialsPanel() {
               <StatusBadge tone="warning">{activity.subject || 'Geral'}</StatusBadge>
             </div>
             <p className="muted">{activity.description || 'Material da atividade.'}</p>
-            <a className="file-link" href={activity.file_url || '#'} target="_blank">Abrir material</a>
+            <a className="file-link" href={activity.file_url || '#'} target="_blank">Abrir matérial</a>
           </GlassCard>
         ))}
       </div>
@@ -880,7 +880,7 @@ export function StudentSettingsPanel() {
           <h2>Vincular convite</h2>
           <p className="muted">Cole o token do convite ou abra o link enviado pelo professor para conectar esta conta a outra aula.</p>
           {success && <p className="success">{success}</p>}
-          <label className="label">Token do convite<input className="input" value={inviteToken} onChange={(event) => setInviteToken(event.target.value)} placeholder="Cole o codigo do link recebido" /></label>
+          <label className="label">Token do convite<input className="input" value={inviteToken} onChange={(event) => setInviteToken(event.target.value)} placeholder="Cole o código do link recebido" /></label>
           <button className="flow-login-button" type="button" onClick={acceptInvite} disabled={inviteSaving || !inviteToken.trim()}>{inviteSaving ? 'Vinculando...' : 'Vincular professor'}</button>
         </GlassCard>
       </div>

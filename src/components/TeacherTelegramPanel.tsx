@@ -39,7 +39,7 @@ export function TeacherTelegramPanel() {
       setConnection(data.connection);
       setBotUsername(data.bot_username || '');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao carregar conexao do assistente.');
+      setError(err instanceof Error ? err.message : 'Falha ao carregar conexão do assistente.');
     } finally {
       setLoading(false);
     }
@@ -60,7 +60,7 @@ export function TeacherTelegramPanel() {
       setLinkExpiresAt(data.connect_token_expires_at);
       window.open(data.deep_link, '_blank', 'noopener,noreferrer');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao abrir conexao do Telegram.');
+      setError(err instanceof Error ? err.message : 'Falha ao abrir conexão do Telegram.');
     } finally {
       setActionLoading(false);
     }
@@ -99,7 +99,7 @@ export function TeacherTelegramPanel() {
         <StatusMessage error={error} loading={loading} />
 
         <p className="muted">
-          Conecte o Lumi Assistente para consultar agenda, acompanhar pagamentos, gerar relatorios, criar planilhas e organizar sua rotina de professor sem abrir o painel.
+          Conecte o Lumi Assistente para consultar agenda, acompanhar pagamentos, gerar relatórios, criar planilhas e organizar sua rotina de professor sem abrir o painel.
         </p>
 
         <div className="support-shortcuts lumi-assistant-benefits">
@@ -113,13 +113,13 @@ export function TeacherTelegramPanel() {
           </span>
           <span className="support-shortcut">
             <strong>Conexao segura</strong>
-            <small>O link e temporario, unico e vinculado somente a sua conta.</small>
+            <small>O link e temporario, único e vinculado somente a sua conta.</small>
           </span>
         </div>
 
         {connection?.connected && (
           <p className="muted">
-            Conectado {identity ? `como ${identity}` : 'ao seu Telegram'}. Voce pode reconectar quando quiser trocar a conta usada.
+            Conectado {identity ? `como ${identity}` : 'ao seu Telegram'}. Você pode reconectar quando quiser trocar a conta usada.
           </p>
         )}
 
@@ -148,21 +148,21 @@ export function TeacherTelegramPanel() {
         </div>
 
         <p className="muted">
-          O LuminaAI cria links de aula automaticamente e permite adicionar eventos ao Google Agenda por link, sem pedir permissao sensivel e sem verificacao rigorosa do Google.
+          O LuminaAI cria links de aula automáticamente e permite adicionar eventos ao Google Agenda por link, sem pedir permissão sensivel e sem verificacao rigorosa do Google.
         </p>
 
         <div className="support-shortcuts lumi-assistant-benefits">
           <span className="support-shortcut">
-            <strong>Link online automatico</strong>
+            <strong>Link online automático</strong>
             <small>Cada aula recebe uma sala exclusiva para professor e aluno entrarem.</small>
           </span>
           <span className="support-shortcut">
             <strong>Google Agenda sem login</strong>
-            <small>O professor pode adicionar a aula ao calendario usando um link seguro de template.</small>
+            <small>O professor pode adicionar a aula ao calendário usando um link seguro de template.</small>
           </span>
           <span className="support-shortcut">
             <strong>Sem tela de verificacao</strong>
-            <small>Nao usamos escopos sensiveis como calendar.events.</small>
+            <small>Não usamos escopos sensíveis como calendar.events.</small>
           </span>
         </div>
 
