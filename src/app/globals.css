@@ -11044,3 +11044,153 @@ select.input option {
     margin: 0 auto;
   }
 }
+
+/* Lumi Assistente visual identity */
+.teacher-portal .teacher-icon-sidebar,
+.teacher-portal:has(.teacher-agenda-home) .teacher-icon-sidebar,
+.teacher-portal:has(.students-reference-page) .teacher-icon-sidebar,
+.teacher-portal:has(.activities-reference-page) .teacher-icon-sidebar,
+.teacher-portal:has(.finance-reference-page) .teacher-icon-sidebar {
+  background:
+    linear-gradient(180deg, rgba(9, 48, 126, 0.96), rgba(6, 32, 89, 0.98)) !important;
+  border-right: 1px solid rgba(147, 197, 253, 0.32) !important;
+  box-shadow: 18px 0 44px rgba(10, 38, 96, 0.14) !important;
+}
+
+.teacher-portal .compact-brand,
+.teacher-portal:has(.teacher-agenda-home) .compact-brand,
+.teacher-portal:has(.students-reference-page) .compact-brand,
+.teacher-portal:has(.activities-reference-page) .compact-brand,
+.teacher-portal:has(.finance-reference-page) .compact-brand {
+  border-bottom-color: rgba(191, 219, 254, 0.22) !important;
+}
+
+.teacher-portal .brand-mark,
+.teacher-portal:has(.teacher-agenda-home) .brand-mark,
+.teacher-portal:has(.students-reference-page) .brand-mark,
+.teacher-portal:has(.activities-reference-page) .brand-mark,
+.teacher-portal:has(.finance-reference-page) .brand-mark {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #1d4ed8, #38bdf8) !important;
+  box-shadow: 0 12px 28px rgba(56, 189, 248, 0.22) !important;
+}
+
+.teacher-portal .icon-nav a,
+.teacher-portal .sidebar-action-button,
+.teacher-portal .logout,
+.teacher-portal:has(.teacher-agenda-home) .icon-nav a,
+.teacher-portal:has(.students-reference-page) .icon-nav a,
+.teacher-portal:has(.activities-reference-page) .icon-nav a,
+.teacher-portal:has(.finance-reference-page) .icon-nav a {
+  color: #dbeafe !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(191, 219, 254, 0.18) !important;
+  box-sizing: border-box;
+}
+
+.teacher-portal .icon-nav a:hover,
+.teacher-portal .sidebar-action-button:hover,
+.teacher-portal .logout:hover,
+.teacher-portal:has(.teacher-agenda-home) .icon-nav a:hover,
+.teacher-portal:has(.students-reference-page) .icon-nav a:hover,
+.teacher-portal:has(.activities-reference-page) .icon-nav a:hover,
+.teacher-portal:has(.finance-reference-page) .icon-nav a:hover {
+  color: #ffffff !important;
+  background: rgba(59, 130, 246, 0.34) !important;
+  border-color: rgba(147, 197, 253, 0.55) !important;
+}
+
+.teacher-portal .icon-nav a svg,
+.student-portal .icon-nav a svg,
+.teacher-portal .sidebar-action-button svg,
+.student-portal .sidebar-action-button svg,
+.lumi-nav-avatar {
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  min-height: 22px !important;
+  max-width: 22px !important;
+  max-height: 22px !important;
+  object-fit: cover;
+  display: block;
+  flex: 0 0 22px;
+  pointer-events: none;
+}
+
+.lumi-nav-avatar {
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.42), 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.lumi-floating-assistant {
+  position: fixed;
+  right: clamp(14px, 2vw, 28px);
+  bottom: clamp(16px, 2vw, 28px);
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px 10px 18px;
+  border-radius: 999px;
+  color: #ffffff;
+  text-decoration: none;
+  background: linear-gradient(135deg, rgba(9, 48, 126, 0.96), rgba(37, 99, 235, 0.95));
+  border: 1px solid rgba(191, 219, 254, 0.5);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.26), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  backdrop-filter: blur(18px);
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.lumi-floating-assistant:hover {
+  transform: translateY(-3px);
+  background: linear-gradient(135deg, rgba(29, 78, 216, 0.98), rgba(14, 165, 233, 0.96));
+  box-shadow: 0 22px 54px rgba(15, 23, 42, 0.3), 0 0 34px rgba(56, 189, 248, 0.22);
+}
+
+.lumi-floating-text {
+  max-width: 168px;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.lumi-floating-assistant img {
+  width: 58px;
+  height: 58px;
+  min-width: 58px;
+  border-radius: 999px;
+  object-fit: cover;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.72), 0 0 0 6px rgba(56, 189, 248, 0.24);
+}
+
+@media (max-width: 760px) {
+  .teacher-portal .teacher-icon-sidebar,
+  .teacher-portal:has(.teacher-agenda-home) .teacher-icon-sidebar,
+  .teacher-portal:has(.students-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.activities-reference-page) .teacher-icon-sidebar,
+  .teacher-portal:has(.finance-reference-page) .teacher-icon-sidebar {
+    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+    background: rgba(8, 45, 116, 0.98) !important;
+    border-top: 1px solid rgba(147, 197, 253, 0.3) !important;
+    border-right: 0 !important;
+  }
+
+  .lumi-floating-assistant {
+    right: 12px;
+    bottom: 82px;
+    gap: 8px;
+    padding: 8px 9px 8px 12px;
+  }
+
+  .lumi-floating-text {
+    max-width: 116px;
+    font-size: 12px;
+  }
+
+  .lumi-floating-assistant img {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+  }
+}

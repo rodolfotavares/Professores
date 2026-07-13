@@ -108,6 +108,12 @@ export function AppLayout({ children, area }: { children: React.ReactNode; area:
       </header>
 
       <div className="app-content">{children}</div>
+      {area === 'teacher' && (
+        <Link className="lumi-floating-assistant" href="/teacher/telegram" aria-label="Conectar Lumi Assistente no Telegram">
+          <span className="lumi-floating-text">Quer praticidade? contate-me!</span>
+          <img src="/lumina-bot-avatar.png" alt="Lumi Assistente" />
+        </Link>
+      )}
       <OnboardingGuide area={area} />
     </section>
   );
