@@ -11,6 +11,7 @@ const generateSchema = z.object({
   observations: z.string().optional(),
   homework: z.string().optional(),
   raw_transcript: z.string().optional(),
+  teacher_guidance: z.string().optional(),
 });
 
 const reportSelect = '*, students(full_name, subject, guardian_whatsapp), class_schedules(class_date, class_time, subject, duration_minutes, actual_duration_minutes)';
@@ -76,7 +77,11 @@ export async function POST(req: NextRequest) {
       taughtContent: body.taught_content || '',
       classNotes,
       homework: body.homework || '',
-      history: history || [],
+      history: (history || []).map((item: any) => ({
+        ...item,
+        class_schedules: Array.isArray(item.class_schedules) ? item.class_schedules[0] : item.class_schedules,
+      })),
+      teacherGuidance: body.teacher_guidance || '',
     });
 
     const payload = {

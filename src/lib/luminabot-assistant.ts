@@ -9,6 +9,7 @@ import {
   syncTeacherClassesToGoogle,
 } from './google-calendar';
 import { ensureClassMeetingLink, ensureFutureClassMeetingLinks } from './class-meeting';
+import { generateLessonReport, generateMonthlyStudentReport } from './lesson-report';
 
 type CalendarTarget = 'LUMINAI' | 'GOOGLE_CALENDAR' | 'BOTH' | 'UNSPECIFIED';
 
@@ -27,6 +28,7 @@ export type ConversationIntent =
   | 'REGISTRAR_FALTA'
   | 'CONSULTAR_ALUNO'
   | 'GERAR_RELATORIO_ALUNO'
+  | 'GERAR_RELATORIO_AULA'
   | 'CRIAR_ANOTACAO_AULA'
   | 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO'
   | 'GERAR_MENSAGEM_PARA_RESPONSAVEL'
@@ -273,6 +275,7 @@ type DetectedIntent = {
   artifactDelivery?: 'document' | 'photo';
   note?: string;
   topic?: string;
+  teacherGuidance?: string;
   targetCalendar?: CalendarTarget;
   needsClarification?: string;
 };
@@ -430,6 +433,22 @@ function contextSummary(context: TeacherContext) {
     .map((item) => `${item.students?.full_name || 'Aluno'} score ${item.learning_score ?? '-'} duvidas ${item.detected_doubts || '-'}`)
     .join('\n');
   return [`Alunos:\n${students || 'Nenhum aluno.'}`, `Agenda:\n${classes || 'Nenhuma aula.'}`, `Pagamentos:\n${payments || 'Nenhum pagamento.'}`, `Relatorios:\n${reports || 'Nenhum relatorio.'}`].join('\n\n');
+}
+
+function reportMonth(report: LessonReportLite) {
+  return (report.class_schedules?.class_date || report.created_at || '').slice(0, 7);
+}
+
+function previousMonthReference() {
+  const [year, month] = monthReference().split('-').map(Number);
+  return new Date(Date.UTC(year, month - 2, 1, 12)).toISOString().slice(0, 7);
+}
+
+function filterReportsByPeriod(reports: LessonReportLite[], period = 'mes atual') {
+  const text = normalize(period);
+  if (text.includes('mes passado')) return reports.filter((report) => reportMonth(report) === previousMonthReference());
+  if (text.includes('ano')) return reports.filter((report) => reportMonth(report).startsWith(todayDate().slice(0, 4)));
+  return reports.filter((report) => reportMonth(report) === monthReference());
 }
 
 function compactLines(lines: Array<string | false | null | undefined>) {
@@ -773,6 +792,7 @@ export class EntityExtractionService {
       artifactDelivery: detectArtifactDelivery(text),
       note: this.note(raw),
       topic: raw,
+      teacherGuidance: this.teacherGuidance(raw),
       targetCalendar: calendarTargetResolver.detect(raw),
     };
   }
@@ -833,6 +853,11 @@ export class EntityExtractionService {
 
   private note(message: string) {
     const match = message.match(/:\s*(.+)$/);
+    return match?.[1]?.trim();
+  }
+
+  private teacherGuidance(message: string) {
+    const match = message.match(/(?:orienta[cç][aã]o|seguindo|de acordo com|com foco em|foque em|destaque)\s*:?\s*(.+)$/i);
     return match?.[1]?.trim();
   }
 
@@ -902,6 +927,13 @@ export class IntentDetectionService {
     if (/(envie|enviar|mande|mandar|dispare|disparar).*(e-mail|email)/.test(text) || /(e-mail|email).*(para|ao aluno|a aluna|responsavel|responsavel)/.test(text)) {
       return { intent: 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO', ...entities, studentName: entities.studentName || this.extractStudentName(raw), topic: raw };
     }
+    if (
+      (/(relatorio|relatório).*\b(aula|encontro)\b/.test(text) || /\b(aula|encontro)\b.*(relatorio|relatório)/.test(text)) &&
+      !text.includes('mensal') &&
+      !text.includes('anual')
+    ) {
+      return { intent: 'GERAR_RELATORIO_AULA', ...entities, studentName: entities.studentName || this.extractStudentName(raw), note: entities.note || raw };
+    }
     if (/(crie|cria|escreva|faca|transforme).*(mensagem|aviso|comunicado)/.test(text) || text.includes('mensagem cobrando') || text.includes('mensagem confirmando')) {
       return { intent: 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO', ...entities, studentName: entities.studentName || this.extractStudentName(raw), topic: raw };
     }
@@ -968,7 +1000,7 @@ export class IntentDetectionService {
     if (text.includes('financeiro') || text.includes('ganhos') || text.includes('recebi') || text.includes('resumo do mes')) return { intent: 'CONSULTAR_FINANCEIRO' };
     if (text.includes('precisam de mais atencao') || text.includes('dificuldade') || text.includes('dificuldades')) return { intent: 'RESUMIR_DADOS' };
     if (text.includes('evolucao') || text.includes('desempenho') || text.includes('historico')) return { intent: 'GERAR_RELATORIO_ALUNO', studentName: this.extractStudentName(raw) || entities.studentName };
-    if (text.includes('relatorio da aula') || text.includes('relatorio de aula')) return { intent: 'CRIAR_ANOTACAO_AULA', studentName: this.extractStudentName(raw), note: raw };
+    if (text.includes('relatorio da aula') || text.includes('relatorio de aula')) return { intent: 'GERAR_RELATORIO_AULA', ...entities, studentName: this.extractStudentName(raw) || entities.studentName, note: raw };
     if (text.includes('mensagem') || text.includes('avisar') || text.includes('aviso') || text.includes('comunicado') || text.includes('mae') || text.includes('responsavel')) return { intent: 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO', studentName: this.extractStudentName(raw) || entities.studentName, topic: raw };
 
     const classMatch = raw.match(/(?:marque|marca|agende|agenda|crie)\s+(?:uma\s+)?aula\s+com\s+(.+?)\s+(hoje|amanh[aã]|ontem|\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?)\s+(?:a?s|às)?\s*(\d{1,2}(?::|h)?\d{0,2})/i);
@@ -1031,6 +1063,7 @@ export class LocalRuleParser {
     }
     if (detected.intent === 'REGISTRAR_FALTA' && !detected.studentName) missing.push('studentName');
     if (detected.intent === 'GERAR_RELATORIO_ALUNO' && !detected.studentName) missing.push('studentName');
+    if (detected.intent === 'GERAR_RELATORIO_AULA' && !detected.studentName) missing.push('studentName');
     return missing;
   }
 }
@@ -1159,6 +1192,7 @@ function coerceIntent(value: unknown): ConversationIntent {
     'REGISTRAR_FALTA',
     'CONSULTAR_ALUNO',
     'GERAR_RELATORIO_ALUNO',
+    'GERAR_RELATORIO_AULA',
     'CRIAR_ANOTACAO_AULA',
     'GERAR_TEXTO_PARA_PAIS_OU_ALUNO',
     'GERAR_MENSAGEM_PARA_RESPONSAVEL',
@@ -1203,6 +1237,7 @@ function validateLLMInterpretation(payload: any): InterpretationResult | null {
     artifactDelivery: coerceArtifactDelivery(entities.artifactDelivery) || coerceArtifactDelivery(entities.artifact_delivery),
     note: typeof entities.note === 'string' ? entities.note : undefined,
     topic: typeof entities.topic === 'string' ? entities.topic : undefined,
+    teacherGuidance: typeof entities.teacherGuidance === 'string' ? entities.teacherGuidance : typeof entities.teacher_guidance === 'string' ? entities.teacher_guidance : undefined,
     targetCalendar: coerceCalendarTarget(entities.targetCalendar) || coerceCalendarTarget(entities.target_calendar),
     confidence,
     source: 'llm',
@@ -1330,7 +1365,7 @@ export class LuminaDataContextService {
         .select('student_id, summary, taught_content, student_questions, reinforcement_points, homework, next_recommendation, parent_message, guardian_message, learning_progress, learning_score, detected_doubts, learning_evidence, created_at, students(full_name, subject, guardian_whatsapp), class_schedules(class_date, class_time, subject)')
         .eq('teacher_id', teacherId)
         .order('created_at', { ascending: false })
-        .limit(30),
+        .limit(120),
     ]);
 
     if (studentsResult.error) throw studentsResult.error;
@@ -1857,7 +1892,8 @@ export class ConversationalAssistantService {
     if (detected.intent === 'GERAR_RELATORIO_ALUNOS') return this.studentsReport(connection, context, detected.period || 'mes atual', detected.artifactType, detected.artifactDelivery);
     if (detected.intent === 'RESUMIR_DADOS') return this.attentionSummary(context);
     if (detected.intent === 'CONSULTAR_ALUNO') return this.studentSummary(context, detected.studentName);
-    if (detected.intent === 'GERAR_RELATORIO_ALUNO') return this.studentReport(connection, context, detected.studentName, detected.artifactType, detected.artifactDelivery);
+    if (detected.intent === 'GERAR_RELATORIO_AULA') return this.lessonReportDraft(context, detected, originalMessage);
+    if (detected.intent === 'GERAR_RELATORIO_ALUNO') return this.studentReport(connection, context, detected.studentName, detected.period, detected.artifactType, detected.artifactDelivery, detected.teacherGuidance);
     if (detected.intent === 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO' || detected.intent === 'GERAR_MENSAGEM_PARA_RESPONSAVEL') return this.parentText(context, detected.studentName, detected.topic || originalMessage);
     if (detected.intent === 'ENVIAR_EMAIL' || detected.intent === 'GMAIL_CREATE_DRAFT') return this.gmailDisabled();
     if (detected.intent === 'CRIAR_AULA') return this.prepareCreateClass(connection, context, detected, originalMessage);
@@ -2617,10 +2653,53 @@ export class ConversationalAssistantService {
     ]);
   }
 
-  private async studentReport(connection: BotConnection, context: TeacherContext, studentName?: string, artifactType?: DetectedIntent['artifactType'], artifactDelivery?: DetectedIntent['artifactDelivery']) {
+  private lessonReportDraft(context: TeacherContext, detected: DetectedIntent, originalMessage: string) {
+    const { student, error } = this.dataContext.findStudent(context, detected.studentName);
+    if (!student) return error || botMessage(['Para qual aluno devo gerar o relatorio da aula?', '', 'Envie o nome do aluno para eu continuar.']);
+    const studentClasses = context.classes.filter((item) => item.student_id === student.id);
+    const targetClass = studentClasses.find((item) => detected.date ? item.class_date === detected.date : item.class_date === todayDate()) || studentClasses[0];
+    const subject = targetClass?.subject || student.subject || 'Aula particular';
+    const history = context.reports.filter((item) => item.student_id === student.id && (item.class_schedules?.subject || student.subject || '') === subject).slice(0, 8);
+    const generated = generateLessonReport({
+      professor: 'Professor',
+      student: student.full_name,
+      subject,
+      duration: targetClass?.duration_minutes || 60,
+      taughtContent: detected.topic || subject,
+      classNotes: detected.note || originalMessage,
+      homework: '',
+      history,
+      teacherGuidance: detected.teacherGuidance || '',
+    });
+
+    return botMessage([
+      `Preparei um rascunho de relatorio da aula de ${student.full_name}.`,
+      '',
+      '*Resumo:*',
+      `- ${generated.summary}`,
+      '',
+      '*Pontos para reforcar:*',
+      `- ${generated.reinforcement_points}`,
+      '',
+      '*Evolucao:*',
+      `- ${generated.learning_progress}`,
+      '',
+      '*Proxima aula sugerida:*',
+      `- ${generated.next_lesson_suggestion}`,
+      '',
+      '*Mensagem para responsavel:*',
+      generated.guardian_message,
+      '',
+      'Deseja que eu transforme isso em uma mensagem mais curta para enviar ao responsavel?',
+    ]);
+  }
+
+  private async studentReport(connection: BotConnection, context: TeacherContext, studentName?: string, period = 'mes atual', artifactType?: DetectedIntent['artifactType'], artifactDelivery?: DetectedIntent['artifactDelivery'], teacherGuidance?: string) {
     const { student, error } = this.dataContext.findStudent(context, studentName);
     if (!student) return error || 'Nao encontrei esse aluno.';
-    const reports = context.reports.filter((item) => item.student_id === student.id).slice(0, 5);
+    const allReports = context.reports.filter((item) => item.student_id === student.id);
+    const isMonthly = normalize(period).includes('mes') || normalize(period).includes('mensal');
+    const reports = isMonthly ? filterReportsByPeriod(allReports, period) : allReports.slice(0, 5);
     if (!reports.length) {
       return botMessage([
         `Ainda nao ha relatorios suficientes para avaliar a evolucao de ${student.full_name}.`,
@@ -2632,6 +2711,40 @@ export class ConversationalAssistantService {
     }
     const scores = reports.map((item) => item.learning_score).filter((score): score is number => typeof score === 'number');
     const avg = scores.length ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : null;
+    if (isMonthly && !artifactType) {
+      const monthly = generateMonthlyStudentReport({
+        student: student.full_name,
+        subject: student.subject,
+        period,
+        reports,
+        teacherGuidance,
+      });
+      return botMessage([
+        `Preparei o relatorio mensal completo de ${student.full_name}.`,
+        '',
+        '*Resumo do mes:*',
+        `- ${monthly.executive_summary}`,
+        '',
+        '*Dados analisados:*',
+        bullet('Relatorios registrados', monthly.total_reports),
+        bullet('Media IA', monthly.average_score !== null ? `${monthly.average_score}/100` : 'sem pontuacao suficiente'),
+        bullet('Tendencia', monthly.trend),
+        '',
+        '*Conteudos trabalhados:*',
+        ...(monthly.content_worked.length ? monthly.content_worked.slice(0, 6).map((item) => `- ${item}`) : ['- Sem conteudo detalhado nos relatorios.']),
+        '',
+        '*Pontos de atencao:*',
+        ...(monthly.recurring_difficulties.length ? monthly.recurring_difficulties.slice(0, 6).map((item) => `- ${item}`) : ['- Nenhuma dificuldade recorrente forte foi identificada.']),
+        '',
+        '*Plano recomendado:*',
+        `- ${monthly.recommended_plan}`,
+        '',
+        '*Mensagem para responsavel:*',
+        monthly.guardian_message,
+        '',
+        'Posso gerar esse relatorio em documento, planilha ou grafico se voce pedir.',
+      ]);
+    }
     if (artifactType) {
       const file = this.studentArtifact(student, reports, artifactType, avg, artifactDelivery);
       const sent = file.sendAs === 'photo' ? await telegramSendPhoto(connection, file as any) : await telegramSendDocument(connection, file);

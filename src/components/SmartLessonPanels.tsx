@@ -44,6 +44,22 @@ const demoReports = [
   },
 ];
 
+type MonthlyStudentReport = {
+  student: string;
+  subject: string;
+  period: string;
+  total_reports: number;
+  average_score: number | null;
+  trend: string;
+  executive_summary: string;
+  content_worked: string[];
+  recurring_difficulties: string[];
+  progress_analysis: string;
+  recommended_plan: string;
+  guardian_message: string;
+  full_text: string;
+};
+
 function formatDate(value?: string | null) {
   if (!value) return 'Data não definida';
   return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(`${value}T00:00:00`));
@@ -154,7 +170,14 @@ export function TeacherSmartLessonPanel() {
     taught_content: '',
     class_notes: '',
     homework: '',
+    teacher_guidance: '',
   });
+  const [monthlyForm, setMonthlyForm] = useState({
+    student_id: '',
+    month_reference: new Date().toISOString().slice(0, 7),
+    teacher_guidance: '',
+  });
+  const [monthlyReport, setMonthlyReport] = useState<MonthlyStudentReport | null>(null);
   const [draft, setDraft] = useState<Partial<LessonReport>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState('');
@@ -183,6 +206,17 @@ export function TeacherSmartLessonPanel() {
   }, []);
 
   const selected = reports.find((item) => item.id === selectedId) || reports[0] || null;
+
+  const monthlyStudents = useMemo(() => {
+    const map = new Map<string, string>();
+    reports.forEach((report) => {
+      if (report.student_id && report.students?.full_name) map.set(report.student_id, report.students.full_name);
+    });
+    classes.forEach((item) => {
+      if (item.student_id && item.students?.full_name) map.set(item.student_id, item.students.full_name);
+    });
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [classes, reports]);
 
   useEffect(() => {
     if (selected) setDraft(selected);
@@ -241,9 +275,31 @@ export function TeacherSmartLessonPanel() {
       });
       await load();
       setSelectedId(data.report.id);
-      setForm({ lesson_id: form.lesson_id, taught_content: '', class_notes: '', homework: '' });
+      setForm({ lesson_id: form.lesson_id, taught_content: '', class_notes: '', homework: '', teacher_guidance: '' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao gerar relatório.');
+    } finally {
+      setSaving('');
+    }
+  }
+
+  async function generateMonthly(event: FormEvent) {
+    event.preventDefault();
+    if (!monthlyForm.student_id) {
+      setError('Selecione um aluno para gerar o relatorio mensal.');
+      return;
+    }
+    setSaving('monthly');
+    setError('');
+    setMonthlyReport(null);
+    try {
+      const data = await apiFetch<{ monthlyReport: MonthlyStudentReport }>('/api/teacher/smart-lessons/monthly', {
+        method: 'POST',
+        body: JSON.stringify(monthlyForm),
+      });
+      setMonthlyReport(data.monthlyReport);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao gerar relatorio mensal.');
     } finally {
       setSaving('');
     }
@@ -340,7 +396,58 @@ export function TeacherSmartLessonPanel() {
             placeholder="Ex: Trabalhamos ligação iônica. O aluno entendeu a parte principal, mas teve dúvida em identificar cátion e ânion. Fizemos exercicios 1 a 4 e ficou tarefa 5 a 8."
           />
           <input value={form.homework} onChange={(event) => setForm({ ...form, homework: event.target.value })} placeholder="Tarefa combinada" />
+          <textarea
+            value={form.teacher_guidance}
+            onChange={(event) => setForm({ ...form, teacher_guidance: event.target.value })}
+            placeholder="Orientação do professor para a IA. Ex: deixe o texto mais acolhedor para os pais, destaque interpretação de texto e sugira reforço para a próxima aula."
+          />
           <button className="side-primary" disabled={saving === 'generate'}>{saving === 'generate' ? 'Gerando...' : 'Gerar relatório em 10 segundos'}</button>
+        </form>
+
+        <form className="smart-generate-card smart-monthly-card" onSubmit={generateMonthly}>
+          <div>
+            <h2>Relatório mensal completo do aluno</h2>
+            <p>Use todos os relatórios publicados do mês para gerar uma análise detalhada, sincera e pronta para enviar ao responsável.</p>
+          </div>
+          <select value={monthlyForm.student_id} onChange={(event) => setMonthlyForm({ ...monthlyForm, student_id: event.target.value })} required>
+            <option value="">Selecionar aluno</option>
+            {monthlyStudents.map((student) => (
+              <option value={student.id} key={student.id}>{student.name}</option>
+            ))}
+          </select>
+          <input
+            type="month"
+            value={monthlyForm.month_reference}
+            onChange={(event) => setMonthlyForm({ ...monthlyForm, month_reference: event.target.value })}
+          />
+          <textarea
+            value={monthlyForm.teacher_guidance}
+            onChange={(event) => setMonthlyForm({ ...monthlyForm, teacher_guidance: event.target.value })}
+            placeholder="Orientação opcional. Ex: foque na evolução para os pais, detalhe dificuldades recorrentes e proponha um plano para o próximo mês."
+          />
+          <button className="side-primary" disabled={saving === 'monthly'}>{saving === 'monthly' ? 'Gerando...' : 'Gerar relatório mensal completo'}</button>
+          {monthlyReport && (
+            <div className="monthly-report-preview">
+              <div className="monthly-report-head">
+                <span className="eyebrow">Relatório mensal</span>
+                <strong>{monthlyReport.student} - {monthlyReport.period}</strong>
+              </div>
+              <div className="monthly-report-grid">
+                <span><b>{monthlyReport.total_reports}</b> relatórios analisados</span>
+                <span><b>{monthlyReport.average_score ?? '--'}</b> média IA</span>
+                <span><b>{monthlyReport.subject}</b> matéria</span>
+              </div>
+              <p>{monthlyReport.executive_summary}</p>
+              <h3>Conteúdos trabalhados</h3>
+              <ul>{monthlyReport.content_worked.slice(0, 6).map((item) => <li key={item}>{item}</li>)}</ul>
+              <h3>Pontos de atenção</h3>
+              <ul>{monthlyReport.recurring_difficulties.length ? monthlyReport.recurring_difficulties.slice(0, 6).map((item) => <li key={item}>{item}</li>) : <li>Nenhum ponto recorrente forte foi identificado.</li>}</ul>
+              <h3>Plano recomendado</h3>
+              <p>{monthlyReport.recommended_plan}</p>
+              <h3>Mensagem para responsável</h3>
+              <p>{monthlyReport.guardian_message}</p>
+            </div>
+          )}
         </form>
 
         <div className="smart-filter-row">

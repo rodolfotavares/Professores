@@ -33,6 +33,27 @@ const sandbox = {
         ensureFutureClassMeetingLinks: async () => ({ synced: 0, meetLinks: 0 }),
       };
     }
+    if (id === './lesson-report') {
+      return {
+        generateLessonReport: () => ({
+          summary: 'Resumo de teste',
+          reinforcement_points: 'Reforco de teste',
+          learning_progress: 'Evolucao de teste',
+          next_lesson_suggestion: 'Proxima aula de teste',
+          guardian_message: 'Mensagem de teste',
+        }),
+        generateMonthlyStudentReport: () => ({
+          executive_summary: 'Resumo mensal de teste',
+          total_reports: 1,
+          average_score: 80,
+          trend: 'Evolucao positiva',
+          content_worked: ['Conteudo'],
+          recurring_difficulties: [],
+          recommended_plan: 'Plano de teste',
+          guardian_message: 'Mensagem mensal de teste',
+        }),
+      };
+    }
     if (id === 'zlib') return zlib;
     throw new Error(`Unexpected require: ${id}`);
   },
@@ -147,6 +168,8 @@ const cases = [
   ['faca um relatorio profissional do Carlos', 'GERAR_RELATORIO_ALUNO'],
   ['quero um texto sobre a evolucao da Maria', 'GERAR_RELATORIO_ALUNO'],
   ['gera um PDF com o desempenho do Joao', 'GERAR_RELATORIO_ALUNO'],
+  ['faca um relatorio da aula da Ana com orientacao para os pais', 'GERAR_RELATORIO_AULA'],
+  ['gere relatorio de aula do Pedro destacando as dificuldades', 'GERAR_RELATORIO_AULA'],
 
   ['relatorio dos alunos', 'GERAR_RELATORIO_ALUNOS'],
   ['gera uma planilha dos pagamentos pendentes', 'GERAR_RELATORIO_FINANCEIRO'],
