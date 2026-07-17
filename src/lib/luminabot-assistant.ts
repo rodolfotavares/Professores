@@ -1069,7 +1069,7 @@ export class LocalRuleParser {
   private confidence(detected: DetectedIntent, missing: string[]) {
     if (detected.intent === 'CONVERSA_GERAL') return 0.25;
     if (detected.intent === 'PEDIR_AJUDA') return 0.95;
-    if (missing.length) return 0.88;
+    if (missing.length) return 0.72;
     if (['CRIAR_AULA', 'ALTERAR_AULA', 'CANCELAR_AULA', 'REGISTRAR_PAGAMENTO', 'REGISTRAR_FALTA'].includes(detected.intent)) return 0.93;
     return 0.9;
   }
@@ -1272,11 +1272,12 @@ function validateLLMInterpretation(payload: any): InterpretationResult | null {
 }
 
 export class GroqLLMProvider implements LLMProvider {
+  private static disabledUntil = 0;
   private apiKey = process.env.GROQ_API_KEY || '';
   private model = process.env.LLM_MODEL || 'llama-3.1-8b-instant';
 
   isConfigured() {
-    return Boolean(this.apiKey && (process.env.LLM_PROVIDER || '').toLowerCase() === 'groq');
+    return Boolean(this.apiKey && (process.env.LLM_PROVIDER || '').toLowerCase() === 'groq' && Date.now() >= GroqLLMProvider.disabledUntil);
   }
 
   async complete() {
@@ -1314,12 +1315,18 @@ export class GroqLLMProvider implements LLMProvider {
           ],
         }),
       });
-      if (!response.ok) return null;
+      if (!response.ok) {
+        if ([401, 402, 403, 429].includes(response.status)) {
+          GroqLLMProvider.disabledUntil = Date.now() + 6 * 60 * 60 * 1000;
+        }
+        return null;
+      }
       const data = await response.json();
       const content = data?.choices?.[0]?.message?.content;
       if (!content) return null;
       return validateLLMInterpretation(JSON.parse(content));
     } catch {
+      GroqLLMProvider.disabledUntil = Date.now() + 30 * 60 * 1000;
       return null;
     }
   }
@@ -1345,7 +1352,7 @@ export class NaturalLanguageInterpreterService {
       context: contextSummary(context),
       localResult: local,
     });
-    if (llmResult && llmResult.confidence >= 0.6) return llmResult;
+    if (llmResult && llmResult.confidence >= 0.75) return llmResult;
 
     return {
       ...local,
@@ -1722,7 +1729,7 @@ export class ConversationalAssistantService {
         teacherId: connection.teacher_id,
         phrase: message,
         interpretation: detected,
-        status: 'pending_review',
+        status: detected.confidence >= 0.85 ? 'auto' : 'pending_review',
         source: 'llm',
       });
     }
@@ -1751,6 +1758,16 @@ export class ConversationalAssistantService {
         `*Pedido ${index + 1}:* ${this.intentLabel(detected.intent)}`,
         response,
       ].join('\n'));
+
+      if (detected.source === 'llm') {
+        await this.trainingExamples.save({
+          teacherId: connection.teacher_id,
+          phrase: part,
+          interpretation: detected,
+          status: detected.confidence >= 0.85 ? 'auto' : 'pending_review',
+          source: 'llm',
+        });
+      }
 
       if (isSensitiveIntent(detected.intent)) {
         const remaining = parts.length - index - 1;
