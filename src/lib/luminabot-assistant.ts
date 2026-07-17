@@ -257,11 +257,15 @@ type BotPendingAction =
       telegram_user_id?: string | null;
       entities?: Record<string, unknown>;
       original_message: string;
-      options: Array<{ label: string; intent: ConversationIntent; sample: string }>;
+      options: Array<{ label: string; intent: ConversationIntent; sample: string; category?: SuggestionCategory }>;
+      suggestion_level?: 'broad' | 'specific';
+      selected_category?: SuggestionCategory;
       summary: string;
       expires_at?: string;
       status?: 'waiting_option';
     };
+
+type SuggestionCategory = 'AGENDA' | 'ALUNOS' | 'FINANCEIRO' | 'RELATORIOS' | 'MENSAGENS' | 'LINKS' | 'AJUDA';
 
 type DetectedIntent = {
   intent: ConversationIntent;
@@ -449,6 +453,27 @@ function filterReportsByPeriod(reports: LessonReportLite[], period = 'mes atual'
   if (text.includes('mes passado')) return reports.filter((report) => reportMonth(report) === previousMonthReference());
   if (text.includes('ano')) return reports.filter((report) => reportMonth(report).startsWith(todayDate().slice(0, 4)));
   return reports.filter((report) => reportMonth(report) === monthReference());
+}
+
+function hasActionVerb(text: string) {
+  return /(marque|marca|agende|agenda|crie|cria|mude|muda|remarque|remarca|troque|troca|cancele|cancela|desmarque|desmarca|registre|registra|anote|anota|gere|gera|mande|manda|envie|envia|liste|lista|mostre|mostra|consulte|consulta|resuma|resumo|organize|organiza|escreva|escreve)/.test(text);
+}
+
+function splitMultiRequest(message: string) {
+  const normalizedSeparators = message
+    .replace(/(\d),(\d{2})/g, '$1__DECIMAL__$2')
+    .replace(/\s+(?:e tambem|e também|alem disso|além disso|depois disso|em seguida)\s+/gi, ' | ')
+    .replace(/\s+e\s+(?=(?:marque|marca|agende|agenda|crie|cria|mude|muda|remarque|remarca|troque|troca|cancele|cancela|desmarque|desmarca|registre|registra|anote|anota|gere|gera|mande|manda|envie|envia|liste|lista|mostre|mostra|consulte|consulta|resuma|resumo|organize|organiza|escreva|escreve)\b)/gi, ' | ');
+
+  return normalizedSeparators
+    .split(/\s*\|\s*|,\s*(?=(?:marque|marca|agende|agenda|crie|cria|mude|muda|remarque|remarca|troque|troca|cancele|cancela|desmarque|desmarca|registre|registra|anote|anota|gere|gera|mande|manda|envie|envia|liste|lista|mostre|mostra|consulte|consulta|resuma|resumo|organize|organiza|escreva|escreve)\b)/i)
+    .map((part) => part.replace(/__DECIMAL__/g, ',').trim())
+    .filter((part) => part.length > 5 && hasActionVerb(normalize(part)))
+    .slice(0, 4);
+}
+
+function isSensitiveIntent(intent: ConversationIntent) {
+  return ['CRIAR_AULA', 'ALTERAR_AULA', 'CANCELAR_AULA', 'REGISTRAR_PAGAMENTO', 'REGISTRAR_FALTA', 'CRIAR_ANOTACAO_AULA', 'ENVIAR_EMAIL', 'GMAIL_CREATE_DRAFT', 'APAGAR_HISTORICO'].includes(intent);
 }
 
 function compactLines(lines: Array<string | false | null | undefined>) {
@@ -1676,6 +1701,20 @@ export class ConversationalAssistantService {
     }
 
     const context = await this.dataContext.build(connection.teacher_id);
+    const multiParts = splitMultiRequest(message);
+    if (multiParts.length > 1) {
+      const response = await this.handleMultiRequest(connection, context, message, multiParts);
+      await this.interactionLog.record({
+        teacherId: connection.teacher_id,
+        telegramUserId: connection.telegram_user_id,
+        message,
+        response,
+        intent: 'MULTI_REQUEST',
+        metadata: { parts: multiParts },
+      });
+      return response;
+    }
+
     const detected = await this.interpreter.interpret(connection, message, context);
     const response = await this.respond(connection, detected, context, message);
     if (detected.source === 'llm' && detected.intent !== 'CONVERSA_GERAL') {
@@ -1696,6 +1735,62 @@ export class ConversationalAssistantService {
       metadata: { source: detected.source, confidence: detected.confidence, training_example_id: detected.training_example_id },
     });
     return response;
+  }
+
+  private async handleMultiRequest(connection: BotConnection, context: TeacherContext, originalMessage: string, parts: string[]) {
+    const responses: string[] = [];
+    for (const [index, part] of parts.entries()) {
+      const detected = await this.interpreter.interpret(connection, part, context);
+      if (detected.intent === 'CONVERSA_GERAL') {
+        responses.push(`Pedido ${index + 1}: nao consegui entender "${part}".`);
+        continue;
+      }
+
+      const response = await this.respond(connection, detected, context, part);
+      responses.push([
+        `*Pedido ${index + 1}:* ${this.intentLabel(detected.intent)}`,
+        response,
+      ].join('\n'));
+
+      if (isSensitiveIntent(detected.intent)) {
+        const remaining = parts.length - index - 1;
+        if (remaining > 0) {
+          responses.push(`Parei aqui porque esse pedido precisa de confirmacao. Depois que voce confirmar, envie os outros ${remaining} pedido(s) novamente ou em uma nova mensagem.`);
+        }
+        break;
+      }
+    }
+
+    return botMessage([
+      'Entendi que voce pediu mais de uma coisa.',
+      '',
+      ...responses,
+      '',
+      'Para tarefas sensiveis, eu sempre confirmo antes de alterar dados.',
+    ]);
+  }
+
+  private intentLabel(intent: ConversationIntent) {
+    const labels: Partial<Record<ConversationIntent, string>> = {
+      CONSULTAR_AGENDA: 'consultar agenda',
+      CRIAR_AULA: 'marcar aula',
+      ALTERAR_AULA: 'alterar aula',
+      CANCELAR_AULA: 'cancelar aula',
+      REGISTRAR_PAGAMENTO: 'registrar pagamento',
+      CONSULTAR_FINANCEIRO: 'consultar financeiro',
+      GERAR_RELATORIO_FINANCEIRO: 'gerar relatorio financeiro',
+      GERAR_RELATORIO_ALUNOS: 'gerar relatorio dos alunos',
+      LISTAR_PENDENCIAS: 'listar pendencias',
+      LISTAR_ALUNOS: 'listar alunos',
+      REGISTRAR_FALTA: 'registrar falta',
+      CONSULTAR_ALUNO: 'consultar aluno',
+      GERAR_RELATORIO_ALUNO: 'gerar relatorio de aluno',
+      GERAR_RELATORIO_AULA: 'gerar relatorio de aula',
+      GERAR_TEXTO_PARA_PAIS_OU_ALUNO: 'gerar mensagem',
+      ORGANIZAR_SEMANA: 'organizar semana',
+      RESUMIR_DADOS: 'resumir dados',
+    };
+    return labels[intent] || intent.toLowerCase().replace(/_/g, ' ');
   }
 
   private async handlePendingAction(connection: BotConnection, message: string) {
@@ -1737,6 +1832,28 @@ export class ConversationalAssistantService {
           'Toque em uma opcao ou responda com o numero dela.',
         ]);
       }
+
+      if (action.suggestion_level === 'broad' && selected.category) {
+        const nextOptions = this.specificSuggestionOptions(selected.category, action.original_message);
+        const nextAction: BotPendingAction = {
+          ...action,
+          options: nextOptions,
+          suggestion_level: 'specific',
+          selected_category: selected.category,
+          summary: `escolher acao especifica de ${selected.label}`,
+          expires_at: pendingExpiration(),
+        };
+        await this.state.set(connection, nextAction);
+        return botMessage([
+          `Perfeito, vamos por ${selected.label.toLowerCase()}.`,
+          '',
+          '*Agora escolha a acao mais parecida:*',
+          ...nextOptions.map((option, index) => `- ${index + 1}. ${option.label}`),
+          '',
+          'Responda com o numero ou com o nome da opcao.',
+        ]);
+      }
+
       await this.trainingExamples.save({
         teacherId: connection.teacher_id,
         phrase: action.original_message,
@@ -1761,7 +1878,7 @@ export class ConversationalAssistantService {
           missing_fields: [],
         },
         context,
-        selected.sample
+        action.original_message
       );
     }
 
@@ -1990,7 +2107,7 @@ export class ConversationalAssistantService {
   }
 
   private async unknownWithOptions(connection: BotConnection, originalMessage: string, reason: string) {
-    const options = this.suggestionOptions(originalMessage);
+    const options = this.broadSuggestionOptions(originalMessage);
     const action: BotPendingAction = {
       type: 'SUGGEST_INTENT',
       intent: 'CONVERSA_GERAL',
@@ -1998,6 +2115,7 @@ export class ConversationalAssistantService {
       telegram_user_id: connection.telegram_user_id,
       original_message: originalMessage,
       options,
+      suggestion_level: 'broad',
       summary: 'escolher a melhor acao para a mensagem',
       expires_at: pendingExpiration(),
       status: 'waiting_option',
@@ -2006,33 +2124,89 @@ export class ConversationalAssistantService {
     return botMessage([
       reason,
       '',
-      '*Talvez voce queira:*',
+      '*Primeiro, escolha a area:*',
       ...options.map((option, index) => `- ${index + 1}. ${option.label}`),
       '',
-      'Toque em uma opcao ou responda com o numero dela. Assim eu aprendo para as proximas mensagens parecidas.',
+      'Depois eu mostro opcoes mais especificas ate chegar no resultado certo.',
     ]);
   }
 
-  private suggestionOptions(message: string) {
+  private broadSuggestionOptions(message: string) {
     const text = normalize(message);
-    const base = [
+    const options = [
+      { label: 'Agenda e aulas', intent: 'CONVERSA_GERAL' as ConversationIntent, sample: 'agenda e aulas', category: 'AGENDA' as SuggestionCategory },
+      { label: 'Alunos', intent: 'CONVERSA_GERAL' as ConversationIntent, sample: 'alunos', category: 'ALUNOS' as SuggestionCategory },
+      { label: 'Financeiro e pagamentos', intent: 'CONVERSA_GERAL' as ConversationIntent, sample: 'financeiro e pagamentos', category: 'FINANCEIRO' as SuggestionCategory },
+      { label: 'Relatorios e evolucao', intent: 'CONVERSA_GERAL' as ConversationIntent, sample: 'relatorios e evolucao', category: 'RELATORIOS' as SuggestionCategory },
+      { label: 'Mensagens para responsaveis', intent: 'CONVERSA_GERAL' as ConversationIntent, sample: 'mensagens para responsaveis', category: 'MENSAGENS' as SuggestionCategory },
+      { label: 'Links de aula online', intent: 'CONVERSA_GERAL' as ConversationIntent, sample: 'links de aula online', category: 'LINKS' as SuggestionCategory },
+      { label: 'Ajuda geral', intent: 'PEDIR_AJUDA' as ConversationIntent, sample: 'o que voce consegue fazer', category: 'AJUDA' as SuggestionCategory },
+    ];
+    if (/(pagamento|financeiro|recebi|devendo|pendente|valor)/.test(text)) return [options[2], options[0], options[3], options[1], options[6]];
+    if (/(relatorio|evolucao|desempenho|grafico|planilha|pdf)/.test(text)) return [options[3], options[1], options[2], options[4], options[6]];
+    if (/(link|sala|online|video|meet|aula)/.test(text)) return [options[5], options[0], options[1], options[3], options[6]];
+    if (/(aluno|aluna|responsavel|mae|pai)/.test(text)) return [options[1], options[4], options[3], options[0], options[6]];
+    return options.slice(0, 6);
+  }
+
+  private specificSuggestionOptions(category: SuggestionCategory, message: string) {
+    const text = normalize(message);
+    const agenda = [
+      { label: 'Consultar agenda de hoje', intent: 'CONSULTAR_AGENDA' as ConversationIntent, sample: 'como esta minha agenda de hoje' },
+      { label: 'Marcar uma aula', intent: 'CRIAR_AULA' as ConversationIntent, sample: 'marque aula com Ana amanha as 15h' },
+      { label: 'Remarcar uma aula', intent: 'ALTERAR_AULA' as ConversationIntent, sample: 'remarque a aula da Ana para amanha as 15h' },
+      { label: 'Cancelar uma aula', intent: 'CANCELAR_AULA' as ConversationIntent, sample: 'cancele a aula da Ana de hoje' },
+      { label: 'Organizar minha semana', intent: 'ORGANIZAR_SEMANA' as ConversationIntent, sample: 'me ajude a organizar minha semana' },
+    ];
+    const links = [
       { label: 'Enviar link de uma aula', intent: 'ENVIAR_LINK_AULA' as ConversationIntent, sample: 'mande o link da aula de hoje' },
       { label: 'Gerar links das aulas futuras', intent: 'GERAR_LINKS_AULAS' as ConversationIntent, sample: 'gerar links das aulas futuras' },
+      { label: 'Consultar agenda de hoje', intent: 'CONSULTAR_AGENDA' as ConversationIntent, sample: 'como esta minha agenda de hoje' },
+    ];
+    const financeiro = [
+      { label: 'Ver resumo financeiro', intent: 'CONSULTAR_FINANCEIRO' as ConversationIntent, sample: 'me de um resumo financeiro deste mes' },
+      { label: 'Listar pagamentos pendentes', intent: 'LISTAR_PENDENCIAS' as ConversationIntent, sample: 'quem esta com pagamento pendente' },
+      { label: 'Registrar pagamento', intent: 'REGISTRAR_PAGAMENTO' as ConversationIntent, sample: 'registre pagamento da Ana de 100 reais' },
+      { label: 'Gerar planilha financeira', intent: 'GERAR_RELATORIO_FINANCEIRO' as ConversationIntent, sample: 'gere uma planilha do financeiro deste mes' },
+      { label: 'Gerar grafico financeiro', intent: 'GERAR_RELATORIO_FINANCEIRO' as ConversationIntent, sample: 'crie um grafico dos meus recebimentos' },
+    ];
+    const alunos = [
+      { label: 'Listar alunos', intent: 'LISTAR_ALUNOS' as ConversationIntent, sample: 'listar alunos' },
+      { label: 'Consultar um aluno', intent: 'CONSULTAR_ALUNO' as ConversationIntent, sample: 'como esta a Ana' },
+      { label: 'Gerar relatorio de aluno', intent: 'GERAR_RELATORIO_ALUNO' as ConversationIntent, sample: 'gera relatorio da Ana' },
+      { label: 'Registrar falta', intent: 'REGISTRAR_FALTA' as ConversationIntent, sample: 'Ana faltou hoje' },
+      { label: 'Ver alunos que precisam de atencao', intent: 'RESUMIR_DADOS' as ConversationIntent, sample: 'quais alunos precisam de mais atencao' },
+    ];
+    const relatorios = [
+      { label: 'Relatorio mensal de um aluno', intent: 'GERAR_RELATORIO_ALUNO' as ConversationIntent, sample: 'gere relatorio mensal da Ana' },
+      { label: 'Relatorio de uma aula', intent: 'GERAR_RELATORIO_AULA' as ConversationIntent, sample: 'gere relatorio da aula da Ana' },
+      { label: 'Relatorio dos alunos', intent: 'GERAR_RELATORIO_ALUNOS' as ConversationIntent, sample: 'relatorio dos alunos' },
+      { label: 'Planilha de alunos', intent: 'GERAR_RELATORIO_ALUNOS' as ConversationIntent, sample: 'manda uma planilha com meus alunos ativos' },
+      { label: 'Grafico financeiro', intent: 'GERAR_RELATORIO_FINANCEIRO' as ConversationIntent, sample: 'crie um grafico dos meus recebimentos' },
+    ];
+    const mensagens = [
+      { label: 'Mensagem para responsavel', intent: 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO' as ConversationIntent, sample: 'crie uma mensagem para a mae do Joao' },
+      { label: 'Aviso de falta', intent: 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO' as ConversationIntent, sample: 'escreva um aviso de falta para os responsaveis da Maria' },
+      { label: 'Cobranca educada', intent: 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO' as ConversationIntent, sample: 'faca uma mensagem cobrando pagamento de forma educada' },
+      { label: 'Confirmar aula', intent: 'GERAR_TEXTO_PARA_PAIS_OU_ALUNO' as ConversationIntent, sample: 'escreva uma mensagem confirmando aula com Pedro' },
+    ];
+    const help = [
+      { label: 'Ver tudo que posso fazer', intent: 'PEDIR_AJUDA' as ConversationIntent, sample: 'o que voce consegue fazer por mim' },
       { label: 'Consultar agenda de hoje', intent: 'CONSULTAR_AGENDA' as ConversationIntent, sample: 'como esta minha agenda de hoje' },
       { label: 'Ver resumo financeiro', intent: 'CONSULTAR_FINANCEIRO' as ConversationIntent, sample: 'me de um resumo financeiro deste mes' },
       { label: 'Listar alunos', intent: 'LISTAR_ALUNOS' as ConversationIntent, sample: 'listar alunos' },
     ];
-    if (/(pagamento|financeiro|recebi|devendo|pendente)/.test(text)) {
-      return [base[3], { label: 'Listar pagamentos pendentes', intent: 'LISTAR_PENDENCIAS' as ConversationIntent, sample: 'quem esta com pagamento pendente' }, base[4], base[2], base[0]];
-    }
-    if (/(aluno|aluna|relatorio|evolucao|desempenho)/.test(text)) {
-      return [base[4], { label: 'Gerar relatorio de aluno', intent: 'GERAR_RELATORIO_ALUNO' as ConversationIntent, sample: 'gera relatorio de um aluno' }, base[2], base[0], base[3]];
-    }
-    if (/(link|sala|online|video|aula)/.test(text)) return [base[0], base[1], base[2], base[4], base[3]];
-    return base;
+
+    if (category === 'AGENDA') return agenda;
+    if (category === 'LINKS') return links;
+    if (category === 'FINANCEIRO') return financeiro;
+    if (category === 'ALUNOS') return alunos;
+    if (category === 'RELATORIOS') return relatorios;
+    if (category === 'MENSAGENS') return mensagens;
+    return help;
   }
 
-  private selectSuggestionOption(options: Array<{ label: string; intent: ConversationIntent; sample: string }>, message: string) {
+  private selectSuggestionOption(options: Array<{ label: string; intent: ConversationIntent; sample: string; category?: SuggestionCategory }>, message: string) {
     const text = normalize(message);
     const number = Number(text.match(/\d+/)?.[0] || 0);
     if (number >= 1 && number <= options.length) return options[number - 1];
